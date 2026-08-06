@@ -1,0 +1,21 @@
+# Normalise line endings. The backend runs in Linux containers while
+# development happens on Windows, so text is stored LF in the repo.
+* text=auto eol=lf
+
+# Shell scripts must stay LF or they fail to execute in the container.
+*.sh text eol=lf
+docker/entrypoint.sh text eol=lf
+
+# Windows-only files keep CRLF.
+*.bat text eol=crlf
+*.ps1 text eol=crlf
+
+# Binary — never touch.
+*.png binary
+*.jpg binary
+*.jpeg binary
+*.gif binary
+*.ico binary
+*.pdf binary
+*.woff binary
+*.woff2 binary
