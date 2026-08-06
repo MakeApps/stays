@@ -1,0 +1,407 @@
+/* ============================================================
+   LocalShouts Loader System
+   - Pure CSS animations, no JS dependency
+   - Respects prefers-reduced-motion
+   - Uses brand purple #7c3aed + navy #1e1b4b
+   ============================================================ */
+
+:root {
+  --ls-purple:        #7c3aed;
+  --ls-purple-700:    #6d28d9;
+  --ls-purple-300:    #c4b5fd;
+  --ls-purple-100:    #ede9fe;
+  --ls-lavender:      #a78bfa;
+  --ls-navy:          #1e1b4b;
+  --ls-navy-soft:     #2d2766;
+  --ls-glow:          0 0 0 0 rgba(124, 58, 237, .55);
+  --ls-glow-soft:     0 8px 30px -8px rgba(124, 58, 237, .45);
+}
+
+/* ─────────── 1) GLYPH (animated speech-bubble mark) ─────────── */
+.ls-glyph {
+  display: inline-block;
+  position: relative;
+  width: 1em;
+  height: 1em;
+  vertical-align: middle;
+  color: var(--ls-purple);
+  flex-shrink: 0;
+}
+.ls-glyph svg { width: 100%; height: 100%; display: block; overflow: visible; }
+
+/* The bubble path uses a dash trace so it draws itself in a loop */
+.ls-glyph .bubble-stroke {
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 2.6;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+  stroke-dasharray: 70 110;
+  stroke-dashoffset: 0;
+  animation: ls-trace 2.4s cubic-bezier(.65,.05,.36,1) infinite;
+  filter: drop-shadow(0 0 6px rgba(124, 58, 237, .55));
+}
+.ls-glyph .bubble-fill {
+  fill: currentColor;
+  opacity: .08;
+  transform-origin: 50% 55%;
+  animation: ls-bubble-pulse 2.4s cubic-bezier(.4,0,.2,1) infinite;
+}
+.ls-glyph .spark {
+  fill: currentColor;
+  transform-origin: 50% 50%;
+  opacity: 0;
+  animation: ls-spark 2.4s cubic-bezier(.4,0,.2,1) infinite;
+}
+.ls-glyph .spark--b { animation-delay: .35s; }
+.ls-glyph .spark--c { animation-delay: .7s; }
+
+@keyframes ls-trace {
+  0%   { stroke-dashoffset: 180; }
+  60%  { stroke-dashoffset: 0; }
+  100% { stroke-dashoffset: -180; }
+}
+@keyframes ls-bubble-pulse {
+  0%, 100% { opacity: .06; transform: scale(.94); }
+  50%      { opacity: .18; transform: scale(1.04); }
+}
+@keyframes ls-spark {
+  0%, 60%  { opacity: 0;  transform: scale(.4) rotate(0deg); }
+  68%      { opacity: 1;  transform: scale(1.2) rotate(180deg); }
+  90%      { opacity: .6; transform: scale(1) rotate(360deg); }
+  100%     { opacity: 0;  transform: scale(.6) rotate(360deg); }
+}
+
+/* ─────────── 2) INLINE RING ─────────── */
+.ls-ring {
+  display: inline-block;
+  position: relative;
+  width: 1.5em;
+  height: 1.5em;
+  vertical-align: middle;
+  flex-shrink: 0;
+  --ring-track: rgba(124, 58, 237, .14);
+  --ring-arc: var(--ls-purple);
+}
+.ls-ring::before,
+.ls-ring::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  border-radius: 50%;
+  border: 2px solid transparent;
+}
+.ls-ring::before {
+  border-color: var(--ring-track);
+}
+.ls-ring::after {
+  border-top-color: var(--ring-arc);
+  border-right-color: var(--ring-arc);
+  animation: ls-spin .9s linear infinite;
+  filter: drop-shadow(0 0 4px rgba(124,58,237,.45));
+}
+.ls-ring--sm { width: 1em;   height: 1em;   }
+.ls-ring--md { width: 1.5em; height: 1.5em; }
+.ls-ring--lg { width: 2.5em; height: 2.5em; }
+.ls-ring--xl { width: 4em;   height: 4em;   }
+.ls-ring--xl::before, .ls-ring--xl::after { border-width: 3px; }
+.ls-ring--lg::before, .ls-ring--lg::after { border-width: 2.5px; }
+
+/* "AI" variant — conic gradient with rotating glow */
+.ls-ring--ai {
+  background: conic-gradient(
+    from 0deg,
+    transparent 0deg,
+    var(--ls-purple) 90deg,
+    var(--ls-lavender) 180deg,
+    var(--ls-purple) 270deg,
+    transparent 360deg
+  );
+  -webkit-mask: radial-gradient(circle, transparent 56%, #000 60%);
+          mask: radial-gradient(circle, transparent 56%, #000 60%);
+  animation: ls-spin 1.4s linear infinite;
+  filter: drop-shadow(0 0 6px rgba(124,58,237,.5));
+}
+.ls-ring--ai::before, .ls-ring--ai::after { display: none; }
+
+/* "Halo" variant — pulse without spinning */
+.ls-ring--halo {
+  background: var(--ls-purple);
+  -webkit-mask: radial-gradient(circle, transparent 50%, #000 55%);
+          mask: radial-gradient(circle, transparent 50%, #000 55%);
+  animation: ls-halo 1.6s cubic-bezier(.4,0,.2,1) infinite;
+}
+.ls-ring--halo::before, .ls-ring--halo::after { display: none; }
+
+@keyframes ls-spin   { to { transform: rotate(360deg); } }
+@keyframes ls-halo {
+  0%, 100% { transform: scale(.9);  opacity: .25; filter: blur(0px); }
+  50%      { transform: scale(1.05); opacity: .9; filter: blur(.5px); }
+}
+
+/* ─────────── 3) THREE-DOT TYPING ─────────── */
+.ls-dots {
+  display: inline-flex;
+  gap: 5px;
+  align-items: center;
+  vertical-align: middle;
+}
+.ls-dots span {
+  width: 6px; height: 6px;
+  border-radius: 50%;
+  background: currentColor;
+  opacity: .25;
+  animation: ls-dot 1.2s ease-in-out infinite;
+}
+.ls-dots span:nth-child(2) { animation-delay: .15s; }
+.ls-dots span:nth-child(3) { animation-delay: .3s; }
+@keyframes ls-dot {
+  0%, 80%, 100% { opacity: .25; transform: translateY(0); }
+  40%           { opacity: 1;   transform: translateY(-3px); }
+}
+
+/* ─────────── 4) PROGRESS BAR (indeterminate) ─────────── */
+.ls-bar {
+  position: relative;
+  width: 100%;
+  height: 3px;
+  border-radius: 99px;
+  background: rgba(124, 58, 237, .12);
+  overflow: hidden;
+}
+.ls-bar::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  width: 40%;
+  border-radius: inherit;
+  background: linear-gradient(90deg, transparent, var(--ls-purple), var(--ls-lavender), transparent);
+  animation: ls-bar-slide 1.6s cubic-bezier(.4,0,.2,1) infinite;
+}
+@keyframes ls-bar-slide {
+  0%   { transform: translateX(-100%); }
+  100% { transform: translateX(300%); }
+}
+
+/* ─────────── 5) FULL-PAGE OVERLAY ─────────── */
+.ls-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 9999;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-direction: column;
+  gap: 22px;
+  padding: 32px;
+  background: radial-gradient(120% 80% at 50% 0%, rgba(124,58,237,.06), transparent 60%),
+              rgba(255, 255, 255, .82);
+  backdrop-filter: blur(20px) saturate(140%);
+  -webkit-backdrop-filter: blur(20px) saturate(140%);
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity .35s cubic-bezier(.4,0,.2,1);
+}
+.ls-overlay.is-active {
+  opacity: 1;
+  pointer-events: auto;
+}
+.ls-overlay--dark {
+  background: radial-gradient(120% 80% at 50% 0%, rgba(124,58,237,.25), transparent 60%),
+              rgba(15, 13, 38, .72);
+  color: #fff;
+}
+
+.ls-overlay-stage {
+  position: relative;
+  width: 120px;
+  height: 120px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+/* Pulsing aura behind glyph */
+.ls-overlay-stage::before,
+.ls-overlay-stage::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  border-radius: 50%;
+  background: radial-gradient(circle, rgba(124,58,237,.55), rgba(124,58,237,0) 70%);
+  animation: ls-aura 2.4s cubic-bezier(.4,0,.2,1) infinite;
+}
+.ls-overlay-stage::after { animation-delay: 1.2s; }
+@keyframes ls-aura {
+  0%   { transform: scale(.6); opacity: .8; }
+  70%  { transform: scale(1.6); opacity: 0;  }
+  100% { transform: scale(1.6); opacity: 0;  }
+}
+
+/* Inner conic ring */
+.ls-overlay-ring {
+  position: absolute;
+  inset: 8px;
+  border-radius: 50%;
+  background: conic-gradient(
+    from 0deg,
+    transparent 0deg,
+    var(--ls-purple) 80deg,
+    var(--ls-lavender) 160deg,
+    transparent 240deg,
+    transparent 360deg
+  );
+  -webkit-mask: radial-gradient(circle, transparent 64%, #000 68%);
+          mask: radial-gradient(circle, transparent 64%, #000 68%);
+  animation: ls-spin 2s linear infinite;
+  filter: drop-shadow(0 0 10px rgba(124,58,237,.55));
+}
+.ls-overlay-glyph {
+  position: relative;
+  width: 56px;
+  height: 56px;
+  color: var(--ls-purple);
+  z-index: 2;
+}
+.ls-overlay-glyph svg { width: 100%; height: 100%; }
+
+/* Wordmark + caption */
+.ls-overlay-word {
+  height: 22px;
+  opacity: .9;
+  animation: ls-fade-up .8s cubic-bezier(.4,0,.2,1) both;
+  filter: drop-shadow(0 4px 14px rgba(124,58,237,.2));
+}
+.ls-overlay-caption {
+  font: 500 14px/1.4 -apple-system, BlinkMacSystemFont, "Segoe UI", Inter, sans-serif;
+  color: var(--ls-navy);
+  opacity: .75;
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  letter-spacing: .01em;
+  animation: ls-fade-up .8s .15s cubic-bezier(.4,0,.2,1) both;
+}
+.ls-overlay--dark .ls-overlay-caption { color: rgba(255,255,255,.8); }
+.ls-overlay--dark .ls-overlay-word { filter: brightness(0) invert(1) drop-shadow(0 4px 14px rgba(124,58,237,.5)); }
+
+@keyframes ls-fade-up {
+  0%   { opacity: 0; transform: translateY(8px); }
+  100% { opacity: 1; transform: translateY(0);   }
+}
+
+/* ─────────── 6) BUTTON LOADING STATE ─────────── */
+.ls-btn {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  padding: 10px 18px;
+  font: 600 14px/1 -apple-system, BlinkMacSystemFont, "Segoe UI", Inter, sans-serif;
+  letter-spacing: .005em;
+  border-radius: 12px;
+  border: 1px solid transparent;
+  cursor: pointer;
+  transition: all .2s cubic-bezier(.4,0,.2,1);
+  user-select: none;
+  -webkit-user-select: none;
+}
+.ls-btn--primary {
+  background: var(--ls-purple);
+  color: #fff;
+  box-shadow: 0 1px 0 rgba(255,255,255,.12) inset, 0 6px 20px -6px rgba(124,58,237,.5);
+}
+.ls-btn--primary:hover { background: var(--ls-purple-700); transform: translateY(-1px); box-shadow: 0 1px 0 rgba(255,255,255,.12) inset, 0 10px 24px -6px rgba(124,58,237,.6); }
+.ls-btn--primary:active { transform: translateY(0); }
+
+.ls-btn--ghost {
+  background: #fff;
+  border-color: rgba(124,58,237,.2);
+  color: var(--ls-navy);
+  box-shadow: 0 1px 2px rgba(15,13,38,.04);
+}
+.ls-btn--ghost:hover { border-color: var(--ls-purple); color: var(--ls-purple); }
+
+/* The loading state — keeps width, swaps content visually */
+.ls-btn.is-loading {
+  pointer-events: none;
+  /* keep width by hiding the original label, placing loader absolutely */
+}
+.ls-btn.is-loading .ls-btn-label { visibility: hidden; }
+.ls-btn-loader {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  opacity: 0;
+  transform: scale(.9);
+  transition: opacity .2s, transform .2s cubic-bezier(.4,0,.2,1);
+  pointer-events: none;
+}
+.ls-btn.is-loading .ls-btn-loader {
+  opacity: 1;
+  transform: scale(1);
+}
+.ls-btn--primary .ls-btn-loader .ls-ring::before { border-color: rgba(255,255,255,.25); }
+.ls-btn--primary .ls-btn-loader .ls-ring::after  { border-top-color: #fff; border-right-color: #fff; }
+.ls-btn--primary .ls-btn-loader .ls-glyph        { color: #fff; }
+
+/* Subtle progress shimmer overlay during long ops */
+.ls-btn.is-loading::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  background: linear-gradient(
+    90deg,
+    transparent 0%,
+    rgba(255,255,255,.18) 50%,
+    transparent 100%
+  );
+  background-size: 200% 100%;
+  animation: ls-btn-shimmer 1.4s linear infinite;
+  pointer-events: none;
+  mix-blend-mode: overlay;
+}
+.ls-btn--ghost.is-loading::after { mix-blend-mode: normal; opacity: .6; }
+@keyframes ls-btn-shimmer {
+  0%   { background-position: 200% 0; }
+  100% { background-position: -200% 0; }
+}
+
+/* ─────────── 7) SKELETON BLOCKS ─────────── */
+.ls-skel {
+  background: linear-gradient(90deg,
+    rgba(124,58,237,.06) 0%,
+    rgba(124,58,237,.12) 50%,
+    rgba(124,58,237,.06) 100%);
+  background-size: 200% 100%;
+  border-radius: 8px;
+  animation: ls-skel 1.4s linear infinite;
+}
+@keyframes ls-skel {
+  0%   { background-position: 200% 0; }
+  100% { background-position: -200% 0; }
+}
+
+/* ─────────── REDUCED MOTION ─────────── */
+@media (prefers-reduced-motion: reduce) {
+  .ls-glyph .bubble-stroke,
+  .ls-glyph .bubble-fill,
+  .ls-glyph .spark,
+  .ls-ring::after,
+  .ls-ring--ai,
+  .ls-ring--halo,
+  .ls-dots span,
+  .ls-bar::before,
+  .ls-overlay-stage::before,
+  .ls-overlay-stage::after,
+  .ls-overlay-ring,
+  .ls-skel,
+  .ls-btn.is-loading::after {
+    animation-duration: 4s !important;
+    animation-iteration-count: 1 !important;
+  }
+}

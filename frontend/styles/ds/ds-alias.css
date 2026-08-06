@@ -1,0 +1,30 @@
+/* ============================================================
+   Token aliases — required, not cosmetic.
+
+   Tailwind v4's `@theme` EMITS its keys into :root. Mapping a theme key onto a
+   design-system variable of the same name therefore produces a self-referential
+   custom property — `--shadow-md: var(--shadow-md)` resolves to itself.
+
+   CSS treats that as guaranteed-invalid and the value silently disappears — no
+   error, no warning, just missing shadows. Re-exporting the colliding names
+   under a --ds-* prefix breaks the cycle.
+
+   This is the COMPLETE collision set between colors_and_type.css and Tailwind's
+   default theme namespace: 9 names. Everything else is safe, because the DS
+   uses --r-* (Tailwind wants --radius-*), --fs-* (Tailwind wants --text-*), and
+   bare colour names (Tailwind wants --color-*).
+   ============================================================ */
+
+:root {
+  --ds-font-sans: var(--font-sans);
+  --ds-font-mono: var(--font-mono);
+
+  --ds-shadow-xs: var(--shadow-xs);
+  --ds-shadow-sm: var(--shadow-sm);
+  --ds-shadow-md: var(--shadow-md);
+  --ds-shadow-lg: var(--shadow-lg);
+  --ds-shadow-xl: var(--shadow-xl);
+
+  --ds-ease-out: var(--ease-out);
+  --ds-ease-in-out: var(--ease-in-out);
+}

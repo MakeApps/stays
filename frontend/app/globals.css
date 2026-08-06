@@ -1,0 +1,120 @@
+/* ============================================================
+   The layer order below is the entire Tailwind ↔ design-system integration.
+
+   Declaring it once, up front, buys two things that nothing else does:
+
+   1. `base` before `ds` — Tailwind's Preflight resets `button`, `input`,
+      `table` and `h1`. Without this ordering it silently destroys `.btn`,
+      `.data-table` and `.page-header h1` from the approved design.
+
+   2. `utilities` after `ds` — `className="card p-0"` overrides `.card`'s
+      padding with no specificity war and no `!important`, regardless of
+      selector weight. That is precisely the design's own
+      "semantic class + inline override" idiom, translated 1:1.
+   ============================================================ */
+
+@layer theme, base, ds, components, utilities;
+
+@import "tailwindcss/theme.css" layer(theme);
+@import "tailwindcss/preflight.css" layer(base);
+
+/* Vendored design system — drift-checked against _ds/ by scripts/verify-ds.mjs.
+   ds-alias must come first: it breaks the self-reference cycle described in
+   that file, and @theme below depends on it. */
+@import "../styles/ds/ds-alias.css" layer(ds);
+@import "../styles/ds/colors_and_type.css" layer(ds);
+@import "../styles/ds/loader.css" layer(ds);
+@import "../styles/ds/admin.css" layer(ds);
+@import "../styles/ds/app-additions.css" layer(ds);
+
+@import "tailwindcss/utilities.css" layer(utilities);
+
+/* ============================================================
+   Token bridge.
+
+   Every value is a var() reference, never a copied literal, so the DS files
+   stay the single source of truth for colour and type.
+   ============================================================ */
+
+@theme {
+  /* ---- brand ---- */
+  --color-brand: var(--brand-purple);
+  --color-brand-600: var(--brand-purple-600);
+  --color-brand-700: var(--brand-purple-700);
+  --color-brand-50: var(--brand-purple-50);
+  --color-brand-100: var(--brand-purple-100);
+  --color-brand-200: var(--brand-purple-200);
+  --color-lavender: var(--brand-lavender);
+  --color-navy: var(--brand-navy);
+
+  /* ---- surfaces ---- */
+  --color-bg: var(--bg);
+  --color-bg-alt: var(--bg-alt);
+  --color-surface: var(--surface);
+  --color-surface-2: var(--surface-2);
+  --color-line: var(--line);
+  --color-line-strong: var(--line-strong);
+  --color-muted: var(--muted);
+
+  /* ---- text ---- */
+  --color-fg: var(--fg);
+  --color-fg-2: var(--fg-2);
+  --color-fg-3: var(--fg-3);
+  --color-fg-4: var(--fg-4);
+
+  /* ---- semantic ---- */
+  --color-success: var(--success);
+  --color-success-bg: var(--success-bg);
+  --color-success-border: var(--success-border);
+  --color-warning: var(--warning);
+  --color-warning-bg: var(--warning-bg);
+  --color-warning-border: var(--warning-border);
+  --color-danger: var(--danger);
+  --color-danger-bg: var(--danger-bg);
+  --color-danger-border: var(--danger-border);
+  --color-info: var(--info);
+  --color-info-bg: var(--info-bg);
+  --color-info-border: var(--info-border);
+  --color-gold: var(--gold);
+
+  /* ---- type scale ----
+     Deliberately REPLACES Tailwind's defaults. The DS base size is 14px, not
+     16px, so `text-base` means 14px throughout this app. */
+  --text-xxs: var(--fs-xxs);   /* 11 */
+  --text-xs: var(--fs-xs);     /* 12 */
+  --text-sm: var(--fs-sm);     /* 13 */
+  --text-base: var(--fs-base); /* 14 */
+  --text-md: var(--fs-md);     /* 15 */
+  --text-lg: var(--fs-lg);     /* 17 */
+  --text-xl: var(--fs-xl);     /* 20 */
+  --text-2xl: var(--fs-2xl);   /* 24 */
+  --text-3xl: var(--fs-3xl);   /* 30 */
+  --text-4xl: var(--fs-4xl);   /* 36 */
+
+  /* ---- radii ----
+     Also replaces Tailwind's defaults: `rounded-xl` is 16px here, not 12px. */
+  --radius-xs: var(--r-xs);
+  --radius-sm: var(--r-sm);
+  --radius-md: var(--r-md);
+  --radius-lg: var(--r-lg);
+  --radius-xl: var(--r-xl);
+  --radius-2xl: var(--r-2xl);
+
+  /* ---- shadows / fonts / motion (via the --ds-* aliases) ---- */
+  --shadow-xs: var(--ds-shadow-xs);
+  --shadow-sm: var(--ds-shadow-sm);
+  --shadow-md: var(--ds-shadow-md);
+  --shadow-lg: var(--ds-shadow-lg);
+  --shadow-xl: var(--ds-shadow-xl);
+
+  --font-sans: var(--ds-font-sans);
+  --font-mono: var(--ds-font-mono);
+
+  --ease-out: var(--ds-ease-out);
+  --ease-in-out: var(--ds-ease-in-out);
+  --default-transition-duration: 180ms; /* --t-base */
+
+  /* Spacing needs no mapping at all: the DS scale (--sp-1..16 =
+     4,8,12,16,20,24,32,40,48,64) is already Tailwind's default 4px scale, so
+     `gap-4` IS --sp-4 and every `gap:16px` in the design converts exactly. */
+}

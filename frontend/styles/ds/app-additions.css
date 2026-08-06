@@ -1,0 +1,86 @@
+/* ============================================================
+   Additions that belong to the app, not to the design system.
+
+   The prototype kept these in its <helmet> block rather than in the DS files,
+   so they live here instead of polluting the vendored copies (which are
+   drift-checked against _ds/ in CI).
+   ============================================================ */
+
+/* --- fonts, re-bound from next/font (see the delta note in colors_and_type.css) --- */
+:root {
+  --font-sans: var(--font-inter), -apple-system, BlinkMacSystemFont, "Segoe UI", system-ui, sans-serif;
+  --font-mono: var(--font-jetbrains), ui-monospace, "SF Mono", Menlo, monospace;
+  --font-script: var(--font-dancing), cursive;
+}
+
+/* --- keyframes from the design (Condo Manager.dc.html lines 18–22) --- */
+@keyframes lsFade {
+  from { opacity: 0; transform: translateY(6px); }
+  to   { opacity: 1; transform: none; }
+}
+@keyframes lsShimmer {
+  0%   { background-position: -420px 0; }
+  100% { background-position: 420px 0; }
+}
+@keyframes lsToast {
+  from { opacity: 0; transform: translateY(12px) scale(.98); }
+  to   { opacity: 1; transform: none; }
+}
+@keyframes lsPop {
+  from { opacity: 0; transform: translateY(8px) scale(.985); }
+  to   { opacity: 1; transform: none; }
+}
+@keyframes lsSlide {
+  from { transform: translateX(24px); opacity: .6; }
+  to   { transform: none; opacity: 1; }
+}
+
+/* --- base rules from the design (lines 23–27) --- */
+html, body { margin: 0; padding: 0; background: var(--bg); }
+a { color: var(--brand-purple); text-decoration: none; }
+a:hover { color: var(--brand-purple-600); text-decoration: underline; }
+input, select, textarea, button { font-family: var(--font-sans); }
+::selection { background: var(--brand-purple-100); }
+
+/* --- shimmer block, used by every skeleton in the design --- */
+.ls-shimmer {
+  background: linear-gradient(90deg, var(--muted) 25%, #fff 50%, var(--muted) 75%);
+  background-size: 420px 100%;
+  animation: lsShimmer 1.4s infinite linear;
+}
+
+/* --- field error state ---
+   The DS styles `.field small` as hint text (used in the design's condo modal).
+   Errors reuse that slot rather than introducing a competing component. */
+.field small.error { color: var(--danger); }
+.field input[aria-invalid="true"],
+.field select[aria-invalid="true"],
+.field textarea[aria-invalid="true"] {
+  border-color: var(--danger-border);
+}
+.field input[aria-invalid="true"]:focus,
+.field select[aria-invalid="true"]:focus,
+.field textarea[aria-invalid="true"]:focus {
+  border-color: var(--danger);
+  box-shadow: 0 0 0 3px rgba(185, 28, 28, .12);
+}
+
+/* --- focus visibility ---
+   The design relies on :focus styling for inputs only; keyboard users need a
+   visible ring on every interactive element. */
+:where(a, button, [role="button"], summary):focus-visible {
+  outline: 2px solid var(--brand-purple);
+  outline-offset: 2px;
+  border-radius: var(--r-xs);
+}
+
+/* --- reduced motion ---
+   The design animates unconditionally. Honour the OS preference. */
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after {
+    animation-duration: .01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: .01ms !important;
+    scroll-behavior: auto !important;
+  }
+}
