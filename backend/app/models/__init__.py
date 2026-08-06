@@ -1,0 +1,40 @@
+"""Model package.
+
+Every model is imported here so that ``Base.metadata`` is fully populated
+before Alembic autogenerate runs. A model that is only imported lazily is a
+model Alembic will happily propose dropping.
+"""
+
+from app.models.activity_log import ActivityAction, ActivityEntity, ActivityLog
+from app.models.base import (
+    GUID,
+    AuditMixin,
+    Base,
+    SoftDeleteMixin,
+    TimestampMixin,
+    UUIDPrimaryKeyMixin,
+    utcnow,
+    uuid7,
+)
+from app.models.condo import Condo, CondoImage, PropertyType
+from app.models.user import RefreshToken, Role, User
+
+__all__ = [
+    "GUID",
+    "ActivityAction",
+    "ActivityEntity",
+    "ActivityLog",
+    "AuditMixin",
+    "Base",
+    "Condo",
+    "CondoImage",
+    "PropertyType",
+    "RefreshToken",
+    "Role",
+    "SoftDeleteMixin",
+    "TimestampMixin",
+    "User",
+    "UUIDPrimaryKeyMixin",
+    "utcnow",
+    "uuid7",
+]
