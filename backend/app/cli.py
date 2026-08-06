@@ -17,7 +17,9 @@ from app.models.user import Role, User
 def register_cli(app: Flask) -> None:
     @app.cli.command("create-admin")
     @click.option("--email", default=None, help="Defaults to ADMIN_EMAIL from the environment.")
-    @click.option("--password", default=None, help="Defaults to ADMIN_PASSWORD; generated if unset.")
+    @click.option(
+        "--password", default=None, help="Defaults to ADMIN_PASSWORD; generated if unset."
+    )
     @click.option("--name", default=None, help="Defaults to ADMIN_NAME.")
     def create_admin(email: str | None, password: str | None, name: str | None) -> None:
         """Create or update the bootstrap Admin. There is no public signup."""

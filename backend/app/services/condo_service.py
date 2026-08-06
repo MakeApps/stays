@@ -110,12 +110,12 @@ class CondoService:
         condo = self.get(condo_id)
         data = payload.model_dump(exclude_unset=True)
 
-        if "code" in data and data["code"] and data["code"] != condo.code:
-            if self.repo.code_taken(data["code"], exclude_id=condo.id):
-                raise DuplicateError(
-                    f"Condo code {data['code']} is already in use.",
-                    details={"fields": {"code": ["That code is already taken."]}},
-                )
+        renaming = "code" in data and data["code"] and data["code"] != condo.code
+        if renaming and self.repo.code_taken(data["code"], exclude_id=condo.id):
+            raise DuplicateError(
+                f"Condo code {data['code']} is already in use.",
+                details={"fields": {"code": ["That code is already taken."]}},
+            )
 
         for field in (
             "code",

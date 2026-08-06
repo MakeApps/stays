@@ -56,8 +56,18 @@ target-version = "py312"
 [tool.ruff.lint]
 select = ["E", "F", "I", "N", "UP", "B", "S", "C4", "SIM", "RUF"]
 ignore = [
-    "S101",  # assert is fine in tests
-    "B008",  # Flask/Depends-style defaults
+    "S101",   # assert is fine in tests
+    "B008",   # Flask/Depends-style defaults
+    # `class Role(str, Enum)` is the standard SQLAlchemy pattern: members stay
+    # JSON-serialisable and compare equal to their stored value.
+    "UP042",
+    # PEP 695 type parameters. TypeVar/Generic is still correct and reads more
+    # clearly alongside `from __future__ import annotations`.
+    "UP046",
+    "UP047",
+    # Prose in docstrings and comments uses en dashes deliberately.
+    "RUF002",
+    "RUF003",
 ]
 
 [tool.ruff.lint.per-file-ignores]

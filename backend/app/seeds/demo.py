@@ -10,10 +10,11 @@ the prototype rather than against nothing.
 
 from __future__ import annotations
 
+from sqlalchemy import func, select
+
 from app.common.money import to_minor
 from app.extensions import db
 from app.models.condo import Condo, PropertyType
-from sqlalchemy import func, select
 
 # code, name, beds, baths, sqm, night, month, cleaning, deposit
 DESIGN_CONDOS: list[tuple[str, str, int, int, int, int, int, int, int]] = [

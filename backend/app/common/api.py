@@ -12,7 +12,8 @@ from collections.abc import Callable
 from typing import Any, ParamSpec, TypeVar, cast
 
 from flask import request
-from pydantic import BaseModel, ValidationError as PydanticValidationError
+from pydantic import BaseModel
+from pydantic import ValidationError as PydanticValidationError
 
 from app.common.errors import ValidationError
 

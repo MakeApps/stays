@@ -153,6 +153,5 @@ def _stamp_created_by(mapper: Any, connection: Any, target: Any) -> None:
 
 @event.listens_for(Base, "before_update", propagate=True)
 def _stamp_updated_by(mapper: Any, connection: Any, target: Any) -> None:
-    if isinstance(target, AuditMixin):
-        if (actor := get_current_user_id()) is not None:
-            target.updated_by = actor
+    if isinstance(target, AuditMixin) and (actor := get_current_user_id()) is not None:
+        target.updated_by = actor

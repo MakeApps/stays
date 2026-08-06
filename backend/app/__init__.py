@@ -42,6 +42,7 @@ def create_app(settings: Settings | None = None) -> Flask:
         MAX_CONTENT_LENGTH=s.UPLOAD_MAX_BYTES,
         JSON_SORT_KEYS=False,
         PROPAGATE_EXCEPTIONS=False,
+        RATELIMIT_ENABLED=s.RATELIMIT_ENABLED,
     )
 
     # Only meaningful behind a reverse proxy; harmless locally. Without it,

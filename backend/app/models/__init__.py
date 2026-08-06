@@ -33,8 +33,8 @@ __all__ = [
     "Role",
     "SoftDeleteMixin",
     "TimestampMixin",
-    "User",
     "UUIDPrimaryKeyMixin",
+    "User",
     "utcnow",
     "uuid7",
 ]

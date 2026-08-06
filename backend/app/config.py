@@ -63,6 +63,9 @@ class Settings(BaseSettings):
 
     CORS_ORIGINS: str = "http://localhost:3000"
 
+    # Disabled only under test: the suite signs in dozens of times and would
+    # otherwise throttle itself into false failures.
+    RATELIMIT_ENABLED: bool = True
     RATELIMIT_STORAGE_URI: str = "memory://"
     RATELIMIT_DEFAULT: str = "600 per hour"
     RATELIMIT_LOGIN: str = "10 per minute"

@@ -16,6 +16,7 @@ import structlog
 from flask import Blueprint, current_app, jsonify
 from sqlalchemy import text
 
+from app.auth.decorators import public
 from app.extensions import db
 
 log = structlog.get_logger("app.health")
@@ -41,7 +42,7 @@ def _probe(
             "ok": True,
             "latency_ms": round((time.perf_counter() - started) * 1000, 2),
         }
-    except Exception as exc:  # noqa: BLE001 - a probe reports, never raises
+    except Exception as exc:
         result = {
             "ok": False,
             "latency_ms": round((time.perf_counter() - started) * 1000, 2),
@@ -59,11 +60,13 @@ def _probe(
 
 
 @bp.get("/healthz")
+@public
 def healthz() -> Any:
     return jsonify({"status": "ok"}), 200
 
 
 @bp.get("/readyz")
+@public
 def readyz() -> Any:
     checks = {
         "database": _probe("database", lambda: db.session.execute(text("SELECT 1"))),
@@ -78,6 +81,7 @@ def readyz() -> Any:
 
 
 @bp.get("/version")
+@public
 def version() -> Any:
     s = current_app.config["SETTINGS"]
     return jsonify(

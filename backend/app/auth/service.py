@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import uuid
+from contextlib import suppress
 from dataclasses import dataclass
 from datetime import datetime, timedelta
 
@@ -72,10 +73,10 @@ class AuthService:
         return user
 
     def _waste_time(self) -> None:
-        try:
+        # The verification is expected to fail; the point is the elapsed time,
+        # so that an unknown address costs the same as a wrong password.
+        with suppress(Exception):
             password_hasher.verify(_DUMMY_HASH, "not-the-password")
-        except Exception:  # noqa: BLE001 - the point is the elapsed time
-            pass
 
     # ---------- issue ----------
     def issue_session(
@@ -135,6 +136,11 @@ class AuthService:
 
         if record.rotated_to is not None or record.revoked_at is not None:
             self._revoke_family(record.family_id)
+            # Commit before raising. The caller's commit sits after rotate()
+            # returns, so without this the revocation is rolled back with the
+            # failed request and the leaked family stays usable — which is the
+            # exact opposite of what reuse detection is for.
+            db.session.commit()
             log.warning(
                 "refresh_token_reuse_detected",
                 family_id=str(record.family_id),
