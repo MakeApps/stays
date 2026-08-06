@@ -1,0 +1,2618 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<link rel="stylesheet" href="_ds/localshouts-design-system-019dfd7a-459f-77bb-8f2b-d32d02b3ff35/colors_and_type.css">
+<link rel="stylesheet" href="_ds/localshouts-design-system-019dfd7a-459f-77bb-8f2b-d32d02b3ff35/loaders/loader.css">
+<link rel="stylesheet" href="_ds/localshouts-design-system-019dfd7a-459f-77bb-8f2b-d32d02b3ff35/ui_kits/admin/admin.css">
+<script src="_ds/localshouts-design-system-019dfd7a-459f-77bb-8f2b-d32d02b3ff35/_ds_bundle.js"></script>
+<script src="image-slot.js"></script>
+<style>
+@keyframes lsFade { from { opacity: 0; transform: translateY(6px); } to { opacity: 1; transform: none; } }
+@keyframes lsShimmer { 0% { background-position: -420px 0; } 100% { background-position: 420px 0; } }
+@keyframes lsToast { from { opacity: 0; transform: translateY(12px) scale(.98); } to { opacity: 1; transform: none; } }
+@keyframes lsPop { from { opacity: 0; transform: translateY(8px) scale(.985); } to { opacity: 1; transform: none; } }
+@keyframes lsSlide { from { transform: translateX(24px); opacity: .6; } to { transform: none; opacity: 1; } }
+html, body { margin: 0; padding: 0; background: var(--bg); }
+a { color: var(--brand-purple); text-decoration: none; }
+a:hover { color: var(--brand-purple-600); text-decoration: underline; }
+input, select, textarea, button { font-family: var(--font-sans); }
+::selection { background: var(--brand-purple-100); }
+</style>
+</helmet>
+
+<div class="ls-base app" style="min-height:100vh">
+
+  <aside class="{{ sidebarClass }}">
+    <div class="sidebar-brand" style="display:flex;align-items:center;gap:10px">
+      <div style="width:28px;height:28px;border-radius:9px;background:var(--brand-purple);display:flex;align-items:center;justify-content:center;box-shadow:var(--shadow-purple-soft)">
+        <svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="#fff" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 21h18M5 21V5a2 2 0 0 1 2-2h6a2 2 0 0 1 2 2v16M9 7h2M9 11h2M9 15h2M15 11h4v10"></path></svg>
+      </div>
+      <div style="font:700 17px/1 var(--font-sans);letter-spacing:-.02em;color:var(--brand-navy)">Baan<span style="color:var(--brand-purple)">.</span></div>
+    </div>
+
+    <nav class="sidebar-nav">
+      <div class="sidebar-group">Manage</div>
+      <a class="{{ navDashboard }}" style="cursor:pointer" onClick="{{ goDashboard }}">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="7" height="9" rx="1.5"></rect><rect x="14" y="3" width="7" height="5" rx="1.5"></rect><rect x="14" y="12" width="7" height="9" rx="1.5"></rect><rect x="3" y="16" width="7" height="5" rx="1.5"></rect></svg>
+        Dashboard
+      </a>
+      <a class="{{ navCondos }}" style="cursor:pointer" onClick="{{ goCondos }}">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 21h18M5 21V5a2 2 0 0 1 2-2h6a2 2 0 0 1 2 2v16M9 7h2M9 11h2M9 15h2M15 11h4v10"></path></svg>
+        Condos
+      </a>
+      <a class="{{ navBookings }}" style="cursor:pointer" onClick="{{ goBookings }}">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 2h16v20l-3-2-3 2-3-2-3 2z"></path><path d="M8 8h8M8 12h8M8 16h5"></path></svg>
+        Bookings
+      </a>
+      <a class="{{ navCalendar }}" style="cursor:pointer" onClick="{{ goCalendar }}">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="18" rx="2"></rect><path d="M8 2v4M16 2v4M3 10h18"></path></svg>
+        Calendar
+      </a>
+      <a class="{{ navIncome }}" style="cursor:pointer" onClick="{{ goIncome }}">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 7l-8.5 8.5-5-5L2 17"></path><path d="M16 7h6v6"></path></svg>
+        Income
+      </a>
+      <a class="{{ navExpenses }}" style="cursor:pointer" onClick="{{ goExpenses }}">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 7H4a1 1 0 0 1 0-2h13a2 2 0 0 0-2-2H5a2 2 0 0 0-2 2v12a2 2 0 0 0 2 2h15a1 1 0 0 0 1-1V8a1 1 0 0 0-1-1z"></path><circle cx="17" cy="13" r="1.3"></circle></svg>
+        Expenses
+      </a>
+
+      <div class="sidebar-group">Quick add</div>
+      <a class="sidebar-item" style="cursor:pointer;color:var(--brand-purple)" onClick="{{ openExpNew }}">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 5v14M5 12h14"></path></svg>
+        New expense
+      </a>
+      <a class="sidebar-item" style="cursor:pointer;color:var(--brand-purple)" onClick="{{ openAdd }}">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 5v14M5 12h14"></path></svg>
+        New condo
+      </a>
+      <a class="sidebar-item" style="cursor:pointer;color:var(--brand-purple)" onClick="{{ goBookings }}">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 5v14M5 12h14"></path></svg>
+        New booking
+      </a>
+    </nav>
+
+    <div class="sidebar-bottom">
+      <div class="user-pill" style="background:var(--surface-2)">
+        <div class="user-avatar">P</div>
+        <div style="min-width:0">
+          <div class="user-name">Pim Suwannarat</div>
+          <div class="user-email">Owner · 9 units</div>
+        </div>
+      </div>
+    </div>
+  </aside>
+
+  <sc-if value="{{ navOpen }}" hint-placeholder-val="{{ false }}">
+    <div class="sidebar-overlay" onClick="{{ closeNav }}"></div>
+  </sc-if>
+
+  <main class="main" style="max-width:1440px;min-width:0">
+
+    <div class="mobile-topbar" style="margin:-20px -20px 20px">
+      <button class="hamburger" onClick="{{ toggleNav }}">
+        <svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 6h18M3 12h18M3 18h18"></path></svg>
+      </button>
+      <div style="display:flex;align-items:center;gap:8px;flex:1">
+        <div style="width:24px;height:24px;border-radius:8px;background:var(--brand-purple);display:flex;align-items:center;justify-content:center">
+          <svg viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="#fff" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 21h18M5 21V5a2 2 0 0 1 2-2h6a2 2 0 0 1 2 2v16M9 7h2M9 11h2M9 15h2M15 11h4v10"></path></svg>
+        </div>
+        <span style="font:700 15px/1 var(--font-sans);letter-spacing:-.02em;color:var(--brand-navy)">Baan<span style="color:var(--brand-purple)">.</span></span>
+      </div>
+      <button class="icon-btn" style="border:0" onClick="{{ notify }}">
+        <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 8a6 6 0 0 0-12 0c0 7-3 9-3 9h18s-3-2-3-9"></path><path d="M13.7 21a2 2 0 0 1-3.4 0"></path></svg>
+      </button>
+    </div>
+
+    <div class="desktop-only" style="display:flex;align-items:center;gap:12px;margin-bottom:24px;flex-wrap:wrap">
+      <div class="search-box" style="flex:1;max-width:420px">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="7"></circle><path d="M21 21l-4.3-4.3"></path></svg>
+        <input placeholder="Search guests, condos, booking codes…" value="{{ topSearch }}" onChange="{{ onTopSearch }}" onKeyDown="{{ onTopSearchKey }}">
+      </div>
+      <div style="flex:1"></div>
+      <button class="icon-btn" title="Reload data" onClick="{{ refresh }}">
+        <svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12a9 9 0 1 1-3-6.7L21 8"></path><path d="M21 3v5h-5"></path></svg>
+      </button>
+      <button class="icon-btn" style="position:relative" title="Notifications" onClick="{{ notify }}">
+        <svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 8a6 6 0 0 0-12 0c0 7-3 9-3 9h18s-3-2-3-9"></path><path d="M13.7 21a2 2 0 0 1-3.4 0"></path></svg>
+        <span style="position:absolute;top:5px;right:5px;width:7px;height:7px;border-radius:999px;background:var(--brand-purple);border:1.5px solid #fff"></span>
+      </button>
+      <div style="display:flex;align-items:center;gap:8px;padding:4px 10px 4px 4px;border:1px solid var(--line);border-radius:999px;background:var(--surface)">
+        <div class="user-avatar" style="width:26px;height:26px;font-size:11px">P</div>
+        <span style="font:600 13px/1 var(--font-sans);color:var(--fg-2)">Pim</span>
+      </div>
+    </div>
+
+    <sc-if value="{{ isDashboard }}" hint-placeholder-val="{{ true }}">
+      <section data-screen-label="Dashboard" style="animation:lsFade 280ms var(--ease-out) both">
+
+        <div class="page-header">
+          <div>
+            <h1>Dashboard</h1>
+            <div class="t-small" style="margin-top:6px">Thursday, 6 August 2026 · 9 units in Bangkok</div>
+          </div>
+          <div class="actions">
+            <button class="btn btn-outline" onClick="{{ openAdd }}">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 5v14M5 12h14"></path></svg>
+              Add condo
+            </button>
+            <button class="btn btn-primary" onClick="{{ goBookings }}">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 5v14M5 12h14"></path></svg>
+              New booking
+            </button>
+          </div>
+        </div>
+
+        <sc-if value="{{ loading }}" hint-placeholder-val="{{ false }}">
+          <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(190px,1fr));gap:16px;margin-bottom:24px">
+            <sc-for list="{{ skel7 }}" as="s" hint-placeholder-count="7">
+              <div class="card" style="padding:18px;display:flex;flex-direction:column;gap:12px">
+                <div style="width:36px;height:36px;border-radius:10px;background:linear-gradient(90deg,var(--muted) 25%,#fff 50%,var(--muted) 75%);background-size:420px 100%;animation:lsShimmer 1.4s infinite linear"></div>
+                <div style="width:60%;height:24px;border-radius:6px;background:linear-gradient(90deg,var(--muted) 25%,#fff 50%,var(--muted) 75%);background-size:420px 100%;animation:lsShimmer 1.4s infinite linear"></div>
+                <div style="width:80%;height:10px;border-radius:6px;background:linear-gradient(90deg,var(--muted) 25%,#fff 50%,var(--muted) 75%);background-size:420px 100%;animation:lsShimmer 1.4s infinite linear"></div>
+              </div>
+            </sc-for>
+          </div>
+          <div style="display:flex;gap:16px;flex-wrap:wrap">
+            <div class="card" style="flex:2 1 520px;height:300px"></div>
+            <div class="card" style="flex:1 1 280px;height:300px"></div>
+          </div>
+        </sc-if>
+
+        <sc-if value="{{ ready }}" hint-placeholder-val="{{ true }}">
+          <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(186px,1fr));gap:16px;margin-bottom:24px">
+
+            <div class="stat">
+              <div class="stat-icon purple">
+                <svg viewBox="0 0 24 24" width="17" height="17" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 21h18M5 21V5a2 2 0 0 1 2-2h6a2 2 0 0 1 2 2v16M9 7h2M9 11h2M9 15h2M15 11h4v10"></path></svg>
+              </div>
+              <div class="stat-value">{{ kTotal }}</div>
+              <div style="display:flex;align-items:center;justify-content:space-between;gap:8px">
+                <div class="stat-label">Total condos</div>
+                <span class="stat-delta neutral">3 buildings</span>
+              </div>
+            </div>
+
+            <div class="stat">
+              <div class="stat-icon blue">
+                <svg viewBox="0 0 24 24" width="17" height="17" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"></path><circle cx="9" cy="7" r="4"></circle><path d="M22 21v-2a4 4 0 0 0-3-3.9"></path></svg>
+              </div>
+              <div class="stat-value">{{ kOccupied }}</div>
+              <div style="display:flex;align-items:center;justify-content:space-between;gap:8px">
+                <div class="stat-label">Occupied today</div>
+                <span class="stat-delta up">{{ kOccPct }}</span>
+              </div>
+            </div>
+
+            <div class="stat">
+              <div class="stat-icon green">
+                <svg viewBox="0 0 24 24" width="17" height="17" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M2 20v-8a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v8M2 16h20M6 10V7a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v3"></path></svg>
+              </div>
+              <div class="stat-value">{{ kVacant }}</div>
+              <div style="display:flex;align-items:center;justify-content:space-between;gap:8px">
+                <div class="stat-label">Vacant today</div>
+                <a style="font:600 12px/1 var(--font-sans);cursor:pointer" onClick="{{ goCondos }}">Fill them</a>
+              </div>
+            </div>
+
+            <div class="stat">
+              <div class="stat-icon purple">
+                <svg viewBox="0 0 24 24" width="17" height="17" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 7H4a1 1 0 0 1 0-2h13a2 2 0 0 0-2-2H5a2 2 0 0 0-2 2v12a2 2 0 0 0 2 2h15a1 1 0 0 0 1-1V8a1 1 0 0 0-1-1z"></path><circle cx="17" cy="13" r="1.3"></circle></svg>
+              </div>
+              <div class="stat-value">{{ kToday }}</div>
+              <div style="display:flex;align-items:center;justify-content:space-between;gap:8px">
+                <div class="stat-label">Today's revenue</div>
+                <span class="stat-delta neutral">accrued</span>
+              </div>
+            </div>
+
+            <div class="stat">
+              <div class="stat-icon green">
+                <svg viewBox="0 0 24 24" width="17" height="17" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 7l-8.5 8.5-5-5L2 17"></path><path d="M16 7h6v6"></path></svg>
+              </div>
+              <div class="stat-value">{{ kMonth }}</div>
+              <div style="display:flex;align-items:center;justify-content:space-between;gap:8px">
+                <div class="stat-label">August revenue</div>
+                <span class="stat-delta up">+11%</span>
+              </div>
+            </div>
+
+            <div class="stat">
+              <div class="stat-icon amber">
+                <svg viewBox="0 0 24 24" width="17" height="17" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M15 3h4a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2h-4M10 17l5-5-5-5M15 12H3"></path></svg>
+              </div>
+              <div class="stat-value">{{ kCheckins }}</div>
+              <div style="display:flex;align-items:center;justify-content:space-between;gap:8px">
+                <div class="stat-label">Check-ins · 7 days</div>
+                <a style="font:600 12px/1 var(--font-sans);cursor:pointer" onClick="{{ goCalendar }}">View</a>
+              </div>
+            </div>
+
+            <div class="stat">
+              <div class="stat-icon amber">
+                <svg viewBox="0 0 24 24" width="17" height="17" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4M16 17l5-5-5-5M21 12H9"></path></svg>
+              </div>
+              <div class="stat-value">{{ kCheckouts }}</div>
+              <div style="display:flex;align-items:center;justify-content:space-between;gap:8px">
+                <div class="stat-label">Check-outs · 7 days</div>
+                <a style="font:600 12px/1 var(--font-sans);cursor:pointer" onClick="{{ goCalendar }}">View</a>
+              </div>
+            </div>
+          </div>
+
+          <div style="display:flex;gap:16px;flex-wrap:wrap;margin-bottom:16px">
+            <div class="card" style="flex:2 1 560px;min-width:0">
+              <div class="card-head">
+                <div>
+                  <h3 class="card-title">Income by day</h3>
+                  <div class="t-caption" style="margin-top:4px">August 2026 · accrued nightly</div>
+                </div>
+                <div style="text-align:right;min-width:120px">
+                  <div style="font:700 15px/1.2 var(--font-sans);color:var(--fg)">{{ hoverAmount }}</div>
+                  <div class="t-caption">{{ hoverLabel }}</div>
+                </div>
+              </div>
+              <div style="display:flex;align-items:flex-end;gap:3px;height:180px;padding-top:8px">
+                <sc-for list="{{ chartDays }}" as="d" hint-placeholder-count="31">
+                  <div style="flex:1;height:100%;display:flex;flex-direction:column;justify-content:flex-end;align-items:stretch;gap:6px;cursor:default" onMouseEnter="{{ d.onEnter }}">
+                    <div style="{{ d.barStyle }}"></div>
+                    <div style="{{ d.tickStyle }}">{{ d.tick }}</div>
+                  </div>
+                </sc-for>
+              </div>
+              <div style="display:flex;justify-content:space-between;margin-top:10px;padding-top:12px;border-top:1px solid var(--line)">
+                <div><div class="t-caption">Avg / day</div><div style="font:600 14px/1.3 var(--font-sans);color:var(--fg)">{{ avgDay }}</div></div>
+                <div><div class="t-caption">Best day</div><div style="font:600 14px/1.3 var(--font-sans);color:var(--fg)">{{ bestDay }}</div></div>
+                <div><div class="t-caption">Booked nights</div><div style="font:600 14px/1.3 var(--font-sans);color:var(--fg)">{{ totalNights }}</div></div>
+                <div><div class="t-caption">Outstanding</div><div style="font:600 14px/1.3 var(--font-sans);color:var(--warning)">{{ outstanding }}</div></div>
+              </div>
+            </div>
+
+            <div class="card" style="flex:1 1 300px;min-width:0">
+              <div class="card-head"><h3 class="card-title">Occupancy today</h3></div>
+              <div style="display:flex;align-items:center;gap:20px;padding:6px 0 14px">
+                <div style="position:relative;width:112px;height:112px;flex:none">
+                  <div style="{{ occDonut }}"></div>
+                  <div style="position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center">
+                    <div style="font:700 22px/1 var(--font-sans);color:var(--fg);letter-spacing:-.02em">{{ kOccPct }}</div>
+                    <div class="t-caption" style="margin-top:2px">occupied</div>
+                  </div>
+                </div>
+                <div style="display:flex;flex-direction:column;gap:12px;min-width:0;flex:1">
+                  <div style="display:flex;align-items:center;gap:8px">
+                    <span style="width:8px;height:8px;border-radius:999px;background:var(--info);flex:none"></span>
+                    <span style="font:500 13px/1 var(--font-sans);color:var(--fg-2);flex:1">Occupied</span>
+                    <strong style="font:700 14px/1 var(--font-sans);color:var(--fg)">{{ kOccupied }}</strong>
+                  </div>
+                  <div style="display:flex;align-items:center;gap:8px">
+                    <span style="width:8px;height:8px;border-radius:999px;background:var(--success);flex:none"></span>
+                    <span style="font:500 13px/1 var(--font-sans);color:var(--fg-2);flex:1">Vacant</span>
+                    <strong style="font:700 14px/1 var(--font-sans);color:var(--fg)">{{ kVacant }}</strong>
+                  </div>
+                  <div style="display:flex;align-items:center;gap:8px">
+                    <span style="width:8px;height:8px;border-radius:999px;background:var(--danger);flex:none"></span>
+                    <span style="font:500 13px/1 var(--font-sans);color:var(--fg-2);flex:1">Maintenance</span>
+                    <strong style="font:700 14px/1 var(--font-sans);color:var(--fg)">{{ kMaint }}</strong>
+                  </div>
+                </div>
+              </div>
+              <div style="padding:12px 14px;background:var(--brand-purple-50);border-radius:12px">
+                <div class="t-caption" style="color:var(--brand-purple-700)">Next 30 days</div>
+                <div style="font:600 13px/1.5 var(--font-sans);color:var(--fg-2);margin-top:4px">{{ occNote }}</div>
+              </div>
+            </div>
+          </div>
+
+          <div style="display:flex;gap:16px;flex-wrap:wrap">
+            <div class="table-card" style="flex:2 1 560px;min-width:0">
+              <div style="display:flex;align-items:center;justify-content:space-between;padding:18px 20px 14px">
+                <div>
+                  <h3 class="card-title">Upcoming bookings</h3>
+                  <div class="t-caption" style="margin-top:4px">Next check-ins, soonest first</div>
+                </div>
+                <a style="font:600 13px/1 var(--font-sans);cursor:pointer" onClick="{{ goCalendar }}">Open calendar →</a>
+              </div>
+              <sc-if value="{{ hasUpcoming }}" hint-placeholder-val="{{ true }}">
+                <div style="overflow-x:auto">
+                <table class="data-table" style="min-width:620px">
+                  <thead>
+                    <tr><th>Guest</th><th>Condo</th><th>Check-in</th><th>Check-out</th><th style="text-align:right">Amount</th><th>Status</th></tr>
+                  </thead>
+                  <tbody>
+                    <sc-for list="{{ upcoming }}" as="b" hint-placeholder-count="5">
+                      <tr style="cursor:pointer" onClick="{{ b.onOpen }}">
+                        <td>
+                          <div style="display:flex;align-items:center;gap:10px">
+                            <div style="{{ b.avatarStyle }}">{{ b.initials }}</div>
+                            <div><strong>{{ b.guest }}</strong><div class="t-caption">{{ b.nightsLabel }}</div></div>
+                          </div>
+                        </td>
+                        <td>{{ b.condoName }}<div class="t-caption">{{ b.condo }}</div></td>
+                        <td>{{ b.inLabel }}</td>
+                        <td>{{ b.outLabel }}</td>
+                        <td style="text-align:right"><strong>{{ b.amountLabel }}</strong></td>
+                        <td><span class="{{ b.payPill }}">{{ b.payLabel }}</span></td>
+                      </tr>
+                    </sc-for>
+                  </tbody>
+                </table>
+                </div>
+              </sc-if>
+              <sc-if value="{{ hasUpcomingCards }}" hint-placeholder-val="{{ false }}">
+                <div style="display:flex;flex-direction:column;gap:10px;padding:0 16px 16px">
+                  <sc-for list="{{ upcomingCards }}" as="b" hint-placeholder-count="3">
+                    <div style="padding:14px;border:1px solid var(--line);border-radius:12px;background:var(--surface-2);cursor:pointer" onClick="{{ b.onOpen }}">
+                      <div style="display:flex;align-items:flex-start;gap:10px">
+                        <div style="{{ b.avatarStyle }}">{{ b.initials }}</div>
+                        <div style="flex:1;min-width:0">
+                          <div style="font:600 14px/1.3 var(--font-sans);color:var(--fg)">{{ b.guest }}</div>
+                          <div class="t-caption" style="margin-top:2px">{{ b.condoName }}</div>
+                        </div>
+                        <span class="{{ b.payPill }}">{{ b.payLabel }}</span>
+                      </div>
+                      <div style="display:flex;align-items:center;justify-content:space-between;margin-top:12px;padding-top:10px;border-top:1px solid var(--line)">
+                        <span style="font:500 13px/1 var(--font-sans);color:var(--fg-2)">{{ b.inLabel }} → {{ b.outLabel }}</span>
+                        <strong style="font:700 14px/1 var(--font-sans);color:var(--fg)">{{ b.amountLabel }}</strong>
+                      </div>
+                    </div>
+                  </sc-for>
+                </div>
+              </sc-if>
+              <sc-if value="{{ noUpcoming }}" hint-placeholder-val="{{ false }}">
+                <div style="padding:48px 24px;text-align:center">
+                  <div style="width:52px;height:52px;border-radius:14px;background:var(--brand-purple-50);color:var(--brand-purple);display:inline-flex;align-items:center;justify-content:center;margin-bottom:14px">
+                    <svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="18" rx="2"></rect><path d="M8 2v4M16 2v4M3 10h18"></path></svg>
+                  </div>
+                  <div style="font:600 15px/1.3 var(--font-sans);color:var(--fg)">No bookings yet</div>
+                  <div class="t-small" style="margin:6px 0 16px">Take your first booking — it takes about 30 seconds.</div>
+                  <button class="btn btn-primary btn-sm" onClick="{{ goBookings }}">New booking</button>
+                </div>
+              </sc-if>
+            </div>
+
+            <sc-if value="{{ showActivity }}" hint-placeholder-val="{{ true }}">
+              <div class="card" style="flex:1 1 300px;min-width:0">
+                <div class="card-head"><h3 class="card-title">Recent activity</h3></div>
+                <div style="display:flex;flex-direction:column;gap:2px">
+                  <sc-for list="{{ activity }}" as="a" hint-placeholder-count="5">
+                    <div style="display:flex;gap:12px;padding:10px 0">
+                      <div style="display:flex;flex-direction:column;align-items:center;flex:none">
+                        <div style="{{ a.dotStyle }}"></div>
+                        <div style="width:1px;flex:1;background:var(--line);margin-top:4px"></div>
+                      </div>
+                      <div style="min-width:0;padding-bottom:2px">
+                        <div style="font:600 13px/1.4 var(--font-sans);color:var(--fg)">{{ a.title }}</div>
+                        <div class="t-small" style="margin-top:2px">{{ a.body }}</div>
+                        <div class="t-caption" style="color:var(--fg-4);margin-top:4px">{{ a.when }}</div>
+                      </div>
+                    </div>
+                  </sc-for>
+                </div>
+              </div>
+            </sc-if>
+          </div>
+        </sc-if>
+      </section>
+    </sc-if>
+
+    <sc-if value="{{ isCondos }}" hint-placeholder-val="{{ false }}">
+      <section data-screen-label="Condos" style="animation:lsFade 280ms var(--ease-out) both">
+        <div class="page-header">
+          <div>
+            <h1>Condos</h1>
+            <div class="t-small" style="margin-top:6px">{{ condoSummary }}</div>
+          </div>
+          <div class="actions">
+            <button class="btn btn-primary" style="padding:12px 20px;font-size:15px" onClick="{{ openAdd }}">
+              <svg viewBox="0 0 24 24" width="17" height="17" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 5v14M5 12h14"></path></svg>
+              Add condo
+            </button>
+          </div>
+        </div>
+
+        <div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:20px">
+          <sc-for list="{{ condoFilters }}" as="f" hint-placeholder-count="5">
+            <button style="{{ f.style }}" onClick="{{ f.onClick }}">{{ f.label }}<span style="{{ f.countStyle }}">{{ f.count }}</span></button>
+          </sc-for>
+        </div>
+
+        <sc-if value="{{ loading }}" hint-placeholder-val="{{ false }}">
+          <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(300px,1fr));gap:20px">
+            <sc-for list="{{ skel6 }}" as="s" hint-placeholder-count="6">
+              <div class="card" style="padding:0;overflow:hidden">
+                <div style="height:168px;background:linear-gradient(90deg,var(--muted) 25%,#fff 50%,var(--muted) 75%);background-size:420px 100%;animation:lsShimmer 1.4s infinite linear"></div>
+                <div style="padding:18px;display:flex;flex-direction:column;gap:10px">
+                  <div style="width:65%;height:16px;border-radius:6px;background:var(--muted)"></div>
+                  <div style="width:40%;height:11px;border-radius:6px;background:var(--muted)"></div>
+                  <div style="width:100%;height:38px;border-radius:10px;background:var(--muted);margin-top:6px"></div>
+                </div>
+              </div>
+            </sc-for>
+          </div>
+        </sc-if>
+
+        <sc-if value="{{ hasCondos }}" hint-placeholder-val="{{ true }}">
+          <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(300px,1fr));gap:20px">
+            <sc-for list="{{ condoCards }}" as="c" hint-placeholder-count="6">
+              <div class="card" style="padding:0;overflow:hidden;cursor:pointer;transition:box-shadow 180ms var(--ease-out),transform 180ms var(--ease-out)" style-hover="box-shadow:var(--shadow-md);transform:translateY(-2px)" onClick="{{ c.onOpen }}">
+                <div style="position:relative;height:172px;background:var(--bg-alt)">
+                  <image-slot id="{{ c.slotId }}" shape="rect" placeholder="{{ c.slotHint }}"></image-slot>
+                  <div style="position:absolute;top:12px;left:12px;pointer-events:none">
+                    <span class="{{ c.pillClass }}" style="background:rgba(255,255,255,.92);backdrop-filter:blur(8px)"><span class="dot"></span>{{ c.statusLabel }}</span>
+                  </div>
+                  <div style="position:absolute;top:12px;right:12px;pointer-events:none">
+                    <span style="display:inline-flex;padding:4px 9px;border-radius:6px;background:rgba(30,27,75,.62);backdrop-filter:blur(6px);font:500 11px/1.3 var(--font-mono);color:#fff">{{ c.code }}</span>
+                  </div>
+                </div>
+                <div style="padding:18px">
+                  <div style="display:flex;align-items:flex-start;justify-content:space-between;gap:10px">
+                    <div style="min-width:0">
+                      <div style="font:600 16px/1.3 var(--font-sans);color:var(--fg);letter-spacing:-.01em">{{ c.name }}</div>
+                      <div class="t-small" style="margin-top:3px">{{ c.spec }}</div>
+                    </div>
+                  </div>
+                  <div style="display:flex;gap:10px;margin:16px 0;padding:12px 14px;background:var(--surface-2);border:1px solid var(--line);border-radius:12px">
+                    <div style="flex:1">
+                      <div class="t-caption">Per night</div>
+                      <div style="font:700 16px/1.2 var(--font-sans);color:var(--fg);margin-top:3px">{{ c.nightLabel }}</div>
+                    </div>
+                    <div style="width:1px;background:var(--line)"></div>
+                    <div style="flex:1">
+                      <div class="t-caption">Per month</div>
+                      <div style="font:700 16px/1.2 var(--font-sans);color:var(--fg);margin-top:3px">{{ c.monthLabel }}</div>
+                    </div>
+                  </div>
+                  <div style="display:flex;align-items:center;justify-content:space-between;gap:10px;margin:-6px 0 14px">
+                    <span class="t-caption">{{ c.feeLabel }}</span>
+                    <span style="font:600 12px/1 var(--font-sans);color:var(--success)">{{ c.netLabel }}</span>
+                  </div>
+                  <div style="display:flex;gap:8px">
+                    <button class="btn btn-outline btn-sm" style="flex:1;justify-content:center" onClick="{{ c.onCalendar }}">
+                      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="18" rx="2"></rect><path d="M8 2v4M16 2v4M3 10h18"></path></svg>
+                      View calendar
+                    </button>
+                    <button class="btn btn-outline btn-sm" style="flex:1;justify-content:center" onClick="{{ c.onEdit }}">
+                      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 20h9M16.5 3.5a2.1 2.1 0 0 1 3 3L7 19l-4 1 1-4z"></path></svg>
+                      Edit
+                    </button>
+                  </div>
+                </div>
+              </div>
+            </sc-for>
+          </div>
+        </sc-if>
+
+        <sc-if value="{{ noCondos }}" hint-placeholder-val="{{ false }}">
+          <div class="card" style="padding:72px 24px;text-align:center">
+            <div style="width:64px;height:64px;border-radius:18px;background:var(--brand-purple-50);color:var(--brand-purple);display:inline-flex;align-items:center;justify-content:center;margin-bottom:18px">
+              <svg viewBox="0 0 24 24" width="28" height="28" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 21h18M5 21V5a2 2 0 0 1 2-2h6a2 2 0 0 1 2 2v16M9 7h2M9 11h2M9 15h2M15 11h4v10"></path></svg>
+            </div>
+            <div class="t-h4">{{ emptyCondoTitle }}</div>
+            <div class="t-small" style="margin:8px auto 20px;max-width:320px">{{ emptyCondoBody }}</div>
+            <button class="btn btn-primary" onClick="{{ openAdd }}">Add your first condo</button>
+          </div>
+        </sc-if>
+      </section>
+    </sc-if>
+
+    <sc-if value="{{ isBookings }}" hint-placeholder-val="{{ false }}">
+      <section data-screen-label="Booking form" style="animation:lsFade 280ms var(--ease-out) both">
+        <div class="page-header">
+          <div>
+            <h1>{{ formTitle }}</h1>
+            <div class="t-small" style="margin-top:6px">Pick a condo, set the dates, the money works itself out.</div>
+          </div>
+        </div>
+
+        <div style="{{ formColsStyle }}">
+
+          <div style="{{ formFieldsStyle }}">
+
+            <sc-if value="{{ conflict }}" hint-placeholder-val="{{ false }}">
+              <div style="display:flex;gap:12px;padding:16px;background:var(--danger-bg);border:1px solid var(--danger-border);border-radius:12px;animation:lsPop 180ms var(--ease-out) both">
+                <div style="color:var(--danger);flex:none;margin-top:1px">
+                  <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10.3 3.9 1.8 18a2 2 0 0 0 1.7 3h17a2 2 0 0 0 1.7-3L13.7 3.9a2 2 0 0 0-3.4 0z"></path><path d="M12 9v4M12 17h.01"></path></svg>
+                </div>
+                <div>
+                  <div style="font:700 14px/1.3 var(--font-sans);color:var(--danger)">Booking conflict</div>
+                  <div style="font:400 13px/1.5 var(--font-sans);color:var(--danger);opacity:.9;margin-top:3px">{{ conflictMsg }}</div>
+                </div>
+              </div>
+            </sc-if>
+
+            <div class="card">
+              <div class="card-head"><h3 class="card-title">Condo &amp; guest</h3></div>
+              <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:16px">
+                <div class="field" style="grid-column:1/-1">
+                  <label>Select condo</label>
+                  <select value="{{ form.condo }}" onChange="{{ onFormCondo }}" style="height:46px;font-size:15px">
+                    <sc-for list="{{ condoOptions }}" as="o" hint-placeholder-count="9">
+                      <option value="{{ o.code }}">{{ o.label }}</option>
+                    </sc-for>
+                  </select>
+                </div>
+                <div class="field">
+                  <label>Guest name</label>
+                  <input value="{{ form.guest }}" onChange="{{ onFormGuest }}" placeholder="e.g. Sarah Chen" style="height:46px;font-size:15px">
+                </div>
+                <div class="field">
+                  <label>Phone number</label>
+                  <input value="{{ form.phone }}" onChange="{{ onFormPhone }}" placeholder="+66 8x xxx xxxx" style="height:46px;font-size:15px">
+                </div>
+                <div class="field" style="grid-column:1/-1">
+                  <label>Email</label>
+                  <input value="{{ form.email }}" onChange="{{ onFormEmail }}" placeholder="guest@email.com" style="height:46px;font-size:15px">
+                </div>
+              </div>
+            </div>
+
+            <div class="card">
+              <div class="card-head"><h3 class="card-title">Stay dates</h3></div>
+              <div style="display:flex;gap:16px;align-items:flex-end;flex-wrap:wrap">
+                <div class="field" style="flex:1 1 180px">
+                  <label>Check-in</label>
+                  <input type="date" value="{{ form.checkIn }}" onChange="{{ onFormIn }}" style="height:46px;font-size:15px">
+                </div>
+                <div style="padding-bottom:14px;color:var(--fg-4)">
+                  <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14M13 6l6 6-6 6"></path></svg>
+                </div>
+                <div class="field" style="flex:1 1 180px">
+                  <label>Check-out</label>
+                  <input type="date" value="{{ form.checkOut }}" onChange="{{ onFormOut }}" style="height:46px;font-size:15px">
+                </div>
+                <div style="flex:0 0 auto;padding:10px 16px;background:var(--brand-purple-50);border-radius:10px;text-align:center;min-width:96px">
+                  <div style="font:700 20px/1.1 var(--font-sans);color:var(--brand-purple-700)">{{ nights }}</div>
+                  <div class="t-caption" style="color:var(--brand-purple-700)">nights</div>
+                </div>
+              </div>
+            </div>
+
+            <div class="card">
+              <div class="card-head"><h3 class="card-title">Pricing</h3></div>
+              <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(240px,1fr));gap:12px;margin-bottom:18px">
+                <div style="{{ modeNightlyStyle }}" onClick="{{ setModeNightly }}">
+                  <div style="{{ radioNightlyStyle }}"></div>
+                  <div>
+                    <div style="font:600 14px/1.2 var(--font-sans);color:var(--fg)">Calculate from night rate</div>
+                    <div class="t-caption" style="margin-top:3px">Rate × nights = total</div>
+                  </div>
+                </div>
+                <div style="{{ modeTotalStyle }}" onClick="{{ setModeTotal }}">
+                  <div style="{{ radioTotalStyle }}"></div>
+                  <div>
+                    <div style="font:600 14px/1.2 var(--font-sans);color:var(--fg)">Enter total manually</div>
+                    <div class="t-caption" style="margin-top:3px">Total ÷ nights = rate</div>
+                  </div>
+                </div>
+              </div>
+
+              <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(160px,1fr));gap:16px">
+                <div class="field">
+                  <label>{{ nightRateLabel }}</label>
+                  <div style="{{ nightWrapStyle }}">
+                    <span style="font:500 14px/1 var(--font-sans);color:var(--fg-3)">฿</span>
+                    <input value="{{ nightRateValue }}" onChange="{{ onNightRate }}" disabled="{{ nightDisabled }}" style="border:0;outline:0;background:transparent;padding:0;width:100%;font:600 15px/1 var(--font-sans);color:var(--fg)">
+                  </div>
+                </div>
+                <div class="field">
+                  <label>{{ totalLabel }}</label>
+                  <div style="{{ totalWrapStyle }}">
+                    <span style="font:500 14px/1 var(--font-sans);color:var(--fg-3)">฿</span>
+                    <input value="{{ totalValue }}" onChange="{{ onTotalManual }}" disabled="{{ totalDisabled }}" style="border:0;outline:0;background:transparent;padding:0;width:100%;font:600 15px/1 var(--font-sans);color:var(--fg)">
+                  </div>
+                </div>
+                <div class="field">
+                  <label>Discount</label>
+                  <div style="display:flex;align-items:center;gap:8px;padding:12px;border:1px solid var(--line-strong);border-radius:8px;background:var(--surface)">
+                    <span style="font:500 14px/1 var(--font-sans);color:var(--fg-3)">฿</span>
+                    <input value="{{ form.discount }}" onChange="{{ onDiscount }}" style="border:0;outline:0;background:transparent;padding:0;width:100%;font:600 15px/1 var(--font-sans);color:var(--fg)">
+                  </div>
+                </div>
+                <div class="field">
+                  <label>Cleaning fee</label>
+                  <div style="display:flex;align-items:center;gap:8px;padding:12px;border:1px solid var(--line-strong);border-radius:8px;background:var(--surface)">
+                    <span style="font:500 14px/1 var(--font-sans);color:var(--fg-3)">฿</span>
+                    <input value="{{ form.cleaning }}" onChange="{{ onCleaning }}" style="border:0;outline:0;background:transparent;padding:0;width:100%;font:600 15px/1 var(--font-sans);color:var(--fg)">
+                  </div>
+                </div>
+                <div class="field">
+                  <label>Other charges</label>
+                  <div style="display:flex;align-items:center;gap:8px;padding:12px;border:1px solid var(--line-strong);border-radius:8px;background:var(--surface)">
+                    <span style="font:500 14px/1 var(--font-sans);color:var(--fg-3)">฿</span>
+                    <input value="{{ form.other }}" onChange="{{ onOther }}" style="border:0;outline:0;background:transparent;padding:0;width:100%;font:600 15px/1 var(--font-sans);color:var(--fg)">
+                  </div>
+                </div>
+                <div class="field">
+                  <label>Tax</label>
+                  <div style="display:flex;align-items:center;gap:8px;padding:12px;border:1px solid var(--line-strong);border-radius:8px;background:var(--surface)">
+                    <input value="{{ form.taxPct }}" onChange="{{ onTax }}" style="border:0;outline:0;background:transparent;padding:0;width:100%;font:600 15px/1 var(--font-sans);color:var(--fg)">
+                    <span style="font:500 14px/1 var(--font-sans);color:var(--fg-3)">%</span>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <div class="card">
+              <div class="card-head"><h3 class="card-title">Payment</h3></div>
+              <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:16px">
+                <div class="field">
+                  <label>Amount received</label>
+                  <div style="display:flex;align-items:center;gap:8px;padding:12px;border:1px solid var(--line-strong);border-radius:8px;background:var(--surface)">
+                    <span style="font:500 14px/1 var(--font-sans);color:var(--fg-3)">฿</span>
+                    <input value="{{ form.received }}" onChange="{{ onReceived }}" style="border:0;outline:0;background:transparent;padding:0;width:100%;font:600 15px/1 var(--font-sans);color:var(--fg)">
+                  </div>
+                </div>
+                <div class="field">
+                  <label>Balance</label>
+                  <div style="{{ balanceWrapStyle }}">{{ balanceLabel }}</div>
+                </div>
+                <div class="field">
+                  <label>Payment status</label>
+                  <select value="{{ form.payStatus }}" onChange="{{ onPayStatus }}" style="height:44px">
+                    <option value="paid">Paid</option>
+                    <option value="partial">Partial</option>
+                    <option value="pending">Pending</option>
+                  </select>
+                </div>
+                <div class="field" style="grid-column:1/-1">
+                  <label>Notes</label>
+                  <textarea rows="3" value="{{ form.notes }}" onChange="{{ onNotes }}" placeholder="Late arrival, extra bed, agent name…"></textarea>
+                </div>
+              </div>
+            </div>
+
+            <div style="position:sticky;bottom:0;display:flex;gap:10px;justify-content:flex-end;padding:14px 16px;background:rgba(255,255,255,.85);backdrop-filter:blur(12px);border:1px solid var(--line);border-radius:14px;box-shadow:var(--shadow-md)">
+              <button class="btn btn-outline" onClick="{{ cancelForm }}">Cancel</button>
+              <button class="{{ saveBtnClass }}" style="padding:12px 22px;font-size:15px" onClick="{{ saveBooking }}">
+                <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6L9 17l-5-5"></path></svg>
+                {{ saveLabel }}
+              </button>
+            </div>
+          </div>
+
+          <div style="{{ formSummaryStyle }}">
+            <div class="card" style="border-radius:20px;box-shadow:var(--shadow-md);border-color:transparent">
+              <div style="display:flex;align-items:center;justify-content:space-between;padding-bottom:16px;border-bottom:1px solid var(--line)">
+                <div>
+                  <div class="t-eyebrow">Live total</div>
+                  <div style="font:700 15px/1.3 var(--font-sans);color:var(--fg);margin-top:6px">{{ summaryCondo }}</div>
+                </div>
+                <span class="{{ summaryPill }}">{{ summaryStatus }}</span>
+              </div>
+
+              <div style="display:flex;flex-direction:column;gap:11px;padding:16px 0">
+                <div style="display:flex;justify-content:space-between;align-items:baseline">
+                  <span style="font:500 13px/1.4 var(--font-sans);color:var(--fg-3)">{{ nights }} nights × {{ rateLabel }}</span>
+                  <span style="font:600 14px/1.4 var(--font-sans);color:var(--fg)">{{ subtotalLabel }}</span>
+                </div>
+                <div style="display:flex;justify-content:space-between;align-items:baseline">
+                  <span style="font:500 13px/1.4 var(--font-sans);color:var(--fg-3)">Discount</span>
+                  <span style="{{ discountStyle }}">{{ discountLabel }}</span>
+                </div>
+                <div style="display:flex;justify-content:space-between;align-items:baseline">
+                  <span style="font:500 13px/1.4 var(--font-sans);color:var(--fg-3)">Cleaning fee</span>
+                  <span style="font:600 14px/1.4 var(--font-sans);color:var(--fg-2)">{{ cleaningLabel }}</span>
+                </div>
+                <div style="display:flex;justify-content:space-between;align-items:baseline">
+                  <span style="font:500 13px/1.4 var(--font-sans);color:var(--fg-3)">Other charges</span>
+                  <span style="font:600 14px/1.4 var(--font-sans);color:var(--fg-2)">{{ otherLabel }}</span>
+                </div>
+                <div style="display:flex;justify-content:space-between;align-items:baseline">
+                  <span style="font:500 13px/1.4 var(--font-sans);color:var(--fg-3)">Tax {{ taxPctLabel }}</span>
+                  <span style="font:600 14px/1.4 var(--font-sans);color:var(--fg-2)">{{ taxLabel }}</span>
+                </div>
+              </div>
+
+              <div style="display:flex;justify-content:space-between;align-items:baseline;padding:16px 0;border-top:1px solid var(--line);border-bottom:1px solid var(--line)">
+                <span style="font:600 15px/1.2 var(--font-sans);color:var(--fg)">Total</span>
+                <span style="font:700 26px/1.1 var(--font-sans);color:var(--fg);letter-spacing:-.02em">{{ totalAmountLabel }}</span>
+              </div>
+
+              <div style="display:flex;flex-direction:column;gap:11px;padding-top:16px">
+                <div style="display:flex;justify-content:space-between;align-items:baseline">
+                  <span style="font:500 13px/1.4 var(--font-sans);color:var(--fg-3)">Received</span>
+                  <span style="font:600 14px/1.4 var(--font-sans);color:var(--success)">{{ receivedLabel }}</span>
+                </div>
+                <div style="display:flex;justify-content:space-between;align-items:baseline">
+                  <span style="font:600 14px/1.4 var(--font-sans);color:var(--fg)">Balance due</span>
+                  <span style="{{ balanceTextStyle }}">{{ balanceLabel }}</span>
+                </div>
+              </div>
+
+              <div style="margin-top:18px;padding:12px 14px;background:var(--surface-2);border:1px solid var(--line);border-radius:12px">
+                <div class="t-caption">{{ stayLabel }}</div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+    </sc-if>
+
+    <sc-if value="{{ isCalendar }}" hint-placeholder-val="{{ false }}">
+      <section data-screen-label="Calendar" style="animation:lsFade 280ms var(--ease-out) both">
+        <div class="page-header">
+          <div>
+            <h1>Calendar</h1>
+            <div class="t-small" style="margin-top:6px">{{ calSummary }}</div>
+          </div>
+          <div class="actions">
+            <button class="btn btn-primary" onClick="{{ goBookings }}">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 5v14M5 12h14"></path></svg>
+              New booking
+            </button>
+          </div>
+        </div>
+
+        <div style="display:flex;gap:10px;flex-wrap:wrap;align-items:center;margin-bottom:16px">
+          <div style="display:flex;background:var(--surface);border:1px solid var(--line-strong);border-radius:10px;overflow:hidden">
+            <button style="{{ viewMonthStyle }}" onClick="{{ setViewMonth }}">Month</button>
+            <button style="{{ viewWeekStyle }}" onClick="{{ setViewWeek }}">Week</button>
+          </div>
+          <button class="btn btn-outline btn-sm" onClick="{{ goToday }}">Today</button>
+          <div style="display:flex;align-items:center;gap:4px;margin-left:4px">
+            <button class="icon-btn" onClick="{{ prevMonth }}">
+              <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M15 18l-6-6 6-6"></path></svg>
+            </button>
+            <div style="font:600 15px/1 var(--font-sans);color:var(--fg);min-width:132px;text-align:center">{{ monthLabel }}</div>
+            <button class="icon-btn" onClick="{{ nextMonth }}">
+              <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 18l6-6-6-6"></path></svg>
+            </button>
+          </div>
+          <div style="flex:1"></div>
+          <select class="filter-sel" value="{{ calCondo }}" onChange="{{ onCalCondo }}">
+            <option value="all">All condos</option>
+            <sc-for list="{{ condoOptions }}" as="o" hint-placeholder-count="9">
+              <option value="{{ o.code }}">{{ o.short }}</option>
+            </sc-for>
+          </select>
+          <select class="filter-sel" value="{{ calStatus }}" onChange="{{ onCalStatus }}">
+            <option value="all">All statuses</option>
+            <option value="booked">Booked</option>
+            <option value="pending">Pending</option>
+            <option value="maintenance">Maintenance</option>
+          </select>
+          <div class="search-box" style="min-width:200px;padding:7px 12px">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="7"></circle><path d="M21 21l-4.3-4.3"></path></svg>
+            <input placeholder="Search guest" value="{{ calSearch }}" onChange="{{ onCalSearch }}">
+          </div>
+        </div>
+
+        <div class="table-card">
+         <div style="overflow-x:auto;border-radius:16px">
+          <div style="{{ calTrackStyle }}">
+            <div style="width:196px;flex:none;padding:12px 16px;font:600 11px/1 var(--font-sans);letter-spacing:.05em;text-transform:uppercase;color:var(--fg-3);border-right:1px solid var(--line);position:sticky;left:0;z-index:3;background:var(--surface-2)">Condo</div>
+            <div style="{{ dayHeadGridStyle }}">
+              <sc-for list="{{ calDays }}" as="d" hint-placeholder-count="31">
+                <div style="{{ d.headStyle }}">
+                  <div style="font:600 9px/1 var(--font-sans);letter-spacing:.06em;color:var(--fg-4);text-transform:uppercase">{{ d.dow }}</div>
+                  <div style="{{ d.numStyle }}">{{ d.num }}</div>
+                </div>
+              </sc-for>
+            </div>
+          </div>
+
+          <sc-for list="{{ calRows }}" as="r" hint-placeholder-count="9">
+            <div style="{{ calRowTrackStyle }}">
+              <div style="width:196px;flex:none;padding:10px 16px;border-right:1px solid var(--line);display:flex;align-items:center;gap:10px;position:sticky;left:0;z-index:2;background:var(--surface)">
+                <span style="{{ r.dotStyle }}"></span>
+                <div style="min-width:0">
+                  <div style="font:600 13px/1.3 var(--font-sans);color:var(--fg);white-space:nowrap;overflow:hidden;text-overflow:ellipsis">{{ r.name }}</div>
+                  <div style="font:400 11px/1.3 var(--font-mono);color:var(--fg-3);margin-top:2px">{{ r.code }}</div>
+                </div>
+              </div>
+              <div style="flex:1;position:relative;min-width:0">
+                <div style="{{ dayGridStyle }}">
+                  <sc-for list="{{ calDays }}" as="d" hint-placeholder-count="31">
+                    <div style="{{ d.cellStyle }}"></div>
+                  </sc-for>
+                </div>
+                <sc-for list="{{ r.bars }}" as="b" hint-placeholder-count="2">
+                  <div style="{{ b.style }}" onClick="{{ b.onClick }}" title="{{ b.title }}">
+                    <span style="overflow:hidden;text-overflow:ellipsis;white-space:nowrap">{{ b.label }}</span>
+                  </div>
+                </sc-for>
+              </div>
+            </div>
+          </sc-for>
+
+          <sc-if value="{{ noCalRows }}" hint-placeholder-val="{{ false }}">
+            <div class="empty" style="padding:56px 20px">
+              <div style="font:600 15px/1.3 var(--font-sans);color:var(--fg)">Nothing matches those filters</div>
+              <div class="t-small" style="margin-top:6px">Clear the guest search or pick another status.</div>
+            </div>
+          </sc-if>
+         </div>
+        </div>
+
+        <div style="display:flex;gap:20px;flex-wrap:wrap;align-items:center;margin-top:16px;padding:14px 18px;background:var(--surface);border:1px solid var(--line);border-radius:14px">
+          <span class="t-eyebrow">Legend</span>
+          <div style="display:flex;align-items:center;gap:8px"><span style="width:14px;height:14px;border-radius:4px;background:var(--success-bg);border:1px solid var(--success-border)"></span><span style="font:500 13px/1 var(--font-sans);color:var(--fg-2)">Available</span></div>
+          <div style="display:flex;align-items:center;gap:8px"><span style="width:14px;height:14px;border-radius:4px;background:var(--info-bg);border:1px solid var(--info-border)"></span><span style="font:500 13px/1 var(--font-sans);color:var(--fg-2)">Booked</span></div>
+          <div style="display:flex;align-items:center;gap:8px"><span style="width:14px;height:14px;border-radius:4px;background:var(--warning-bg);border:1px solid var(--warning-border)"></span><span style="font:500 13px/1 var(--font-sans);color:var(--fg-2)">Pending</span></div>
+          <div style="display:flex;align-items:center;gap:8px"><span style="width:14px;height:14px;border-radius:4px;background:var(--danger-bg);border:1px solid var(--danger-border)"></span><span style="font:500 13px/1 var(--font-sans);color:var(--fg-2)">Maintenance</span></div>
+          <div style="flex:1"></div>
+          <span class="t-caption">Click any bar to open the booking</span>
+        </div>
+      </section>
+    </sc-if>
+
+    <sc-if value="{{ isIncome }}" hint-placeholder-val="{{ false }}">
+      <section data-screen-label="Income" style="animation:lsFade 280ms var(--ease-out) both">
+        <div class="page-header">
+          <div>
+            <h1>Income</h1>
+            <div class="t-small" style="margin-top:6px">August 2026 · accrued by night, cash tracked separately</div>
+          </div>
+          <div class="actions">
+            <select class="filter-sel" value="{{ calStatus }}" onChange="{{ onCalStatus }}">
+              <option value="all">All statuses</option>
+              <option value="booked">Booked</option>
+              <option value="pending">Pending</option>
+              <option value="maintenance">Maintenance</option>
+            </select>
+            <button class="btn btn-outline" onClick="{{ exportCsv }}">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3v12M7 10l5 5 5-5M5 21h14"></path></svg>
+              Export
+            </button>
+          </div>
+        </div>
+
+        <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(190px,1fr));gap:16px;margin-bottom:24px">
+          <div class="stat">
+            <div class="stat-icon purple">
+              <svg viewBox="0 0 24 24" width="17" height="17" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"></circle><path d="M12 7v5l3 2"></path></svg>
+            </div>
+            <div class="stat-value">{{ kToday }}</div>
+            <div class="stat-label">Today's income</div>
+          </div>
+          <div class="stat">
+            <div class="stat-icon blue">
+              <svg viewBox="0 0 24 24" width="17" height="17" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="18" rx="2"></rect><path d="M8 2v4M16 2v4M3 10h18"></path></svg>
+            </div>
+            <div class="stat-value">{{ kWeek }}</div>
+            <div class="stat-label">This week</div>
+          </div>
+          <div class="stat">
+            <div class="stat-icon green">
+              <svg viewBox="0 0 24 24" width="17" height="17" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 7l-8.5 8.5-5-5L2 17"></path><path d="M16 7h6v6"></path></svg>
+            </div>
+            <div class="stat-value">{{ kMonth }}</div>
+            <div style="display:flex;align-items:center;justify-content:space-between;gap:8px">
+              <div class="stat-label">This month</div>
+              <span class="stat-delta up">+11%</span>
+            </div>
+          </div>
+          <div class="stat">
+            <div class="stat-icon red">
+              <svg viewBox="0 0 24 24" width="17" height="17" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M2 7l8.5 8.5 5-5L22 17"></path><path d="M22 17v-6h-6"></path></svg>
+            </div>
+            <div class="stat-value">{{ kExpensesMonth }}</div>
+            <div style="display:flex;align-items:center;justify-content:space-between;gap:8px">
+              <div class="stat-label">Expenses</div>
+              <a style="font:600 12px/1 var(--font-sans);cursor:pointer" onClick="{{ goExpenses }}">Details</a>
+            </div>
+          </div>
+          <div class="stat" style="border-color:transparent;box-shadow:var(--shadow-md)">
+            <div class="stat-icon green">
+              <svg viewBox="0 0 24 24" width="17" height="17" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2v20M17 6.5c0-2-2.2-3.5-5-3.5s-5 1.3-5 3.4c0 4.3 10 2.2 10 6.6 0 2.2-2.2 3.5-5 3.5s-5-1.4-5-3.5"></path></svg>
+            </div>
+            <div style="{{ netStyle }}">{{ kNet }}</div>
+            <div style="display:flex;align-items:center;justify-content:space-between;gap:8px">
+              <div class="stat-label">Net profit</div>
+              <span class="stat-delta up">{{ kMargin }}</span>
+            </div>
+          </div>
+          <div class="stat">
+            <div class="stat-icon amber">
+              <svg viewBox="0 0 24 24" width="17" height="17" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10.3 3.9 1.8 18a2 2 0 0 0 1.7 3h17a2 2 0 0 0 1.7-3L13.7 3.9a2 2 0 0 0-3.4 0z"></path><path d="M12 9v4M12 17h.01"></path></svg>
+            </div>
+            <div class="stat-value">{{ outstanding }}</div>
+            <div style="display:flex;align-items:center;justify-content:space-between;gap:8px">
+              <div class="stat-label">Outstanding balance</div>
+              <span class="stat-delta neutral">{{ outstandingCount }}</span>
+            </div>
+          </div>
+        </div>
+
+        <div style="display:flex;gap:16px;flex-wrap:wrap;margin-bottom:16px">
+          <div class="card" style="flex:2 1 520px;min-width:0">
+            <div class="card-head">
+              <div>
+                <h3 class="card-title">Revenue vs expenses</h3>
+                <div class="t-caption" style="margin-top:4px">Last six months · net printed above each pair</div>
+              </div>
+              <div style="display:flex;gap:14px">
+                <span style="display:flex;align-items:center;gap:6px;font:500 12px/1 var(--font-sans);color:var(--fg-3)"><span style="width:9px;height:9px;border-radius:3px;background:var(--brand-purple)"></span>Revenue</span>
+                <span style="display:flex;align-items:center;gap:6px;font:500 12px/1 var(--font-sans);color:var(--fg-3)"><span style="width:9px;height:9px;border-radius:3px;background:var(--warning)"></span>Expenses</span>
+              </div>
+            </div>
+            <div style="display:flex;align-items:flex-end;gap:16px;height:200px;padding-top:8px">
+              <sc-for list="{{ rvsE }}" as="t" hint-placeholder-count="6">
+                <div style="flex:1;height:100%;display:flex;flex-direction:column;justify-content:flex-end;gap:8px;text-align:center;min-width:0">
+                  <div style="font:600 11px/1 var(--font-sans);color:var(--success)">{{ t.netLabel }}</div>
+                  <div style="display:flex;align-items:flex-end;gap:4px;height:100%">
+                    <div style="{{ t.revStyle }}"></div>
+                    <div style="{{ t.expStyle }}"></div>
+                  </div>
+                  <div style="font:500 11px/1 var(--font-sans);color:var(--fg-3)">{{ t.month }}</div>
+                </div>
+              </sc-for>
+            </div>
+          </div>
+
+          <div class="card" style="flex:1 1 280px;min-width:0">
+            <div class="card-head"><h3 class="card-title">Payment status</h3></div>
+            <div style="display:flex;align-items:center;gap:20px;padding:6px 0 16px">
+              <div style="position:relative;width:104px;height:104px;flex:none">
+                <div style="{{ payDonut }}"></div>
+                <div style="position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center">
+                  <div style="font:700 20px/1 var(--font-sans);color:var(--fg)">{{ payTotal }}</div>
+                  <div class="t-caption">bookings</div>
+                </div>
+              </div>
+              <div style="display:flex;flex-direction:column;gap:12px;flex:1">
+                <div style="display:flex;align-items:center;gap:8px">
+                  <span style="width:8px;height:8px;border-radius:999px;background:var(--success)"></span>
+                  <span style="font:500 13px/1 var(--font-sans);color:var(--fg-2);flex:1">Paid</span>
+                  <strong style="font:700 14px/1 var(--font-sans);color:var(--fg)">{{ payPaid }}</strong>
+                </div>
+                <div style="display:flex;align-items:center;gap:8px">
+                  <span style="width:8px;height:8px;border-radius:999px;background:var(--warning)"></span>
+                  <span style="font:500 13px/1 var(--font-sans);color:var(--fg-2);flex:1">Partial</span>
+                  <strong style="font:700 14px/1 var(--font-sans);color:var(--fg)">{{ payPartial }}</strong>
+                </div>
+                <div style="display:flex;align-items:center;gap:8px">
+                  <span style="width:8px;height:8px;border-radius:999px;background:var(--fg-4)"></span>
+                  <span style="font:500 13px/1 var(--font-sans);color:var(--fg-2);flex:1">Pending</span>
+                  <strong style="font:700 14px/1 var(--font-sans);color:var(--fg)">{{ payPending }}</strong>
+                </div>
+              </div>
+            </div>
+            <div style="display:flex;flex-direction:column;gap:10px;padding-top:16px;border-top:1px solid var(--line)">
+              <div style="display:flex;justify-content:space-between">
+                <span style="font:500 13px/1.4 var(--font-sans);color:var(--fg-3)">Total revenue</span>
+                <strong style="font:600 14px/1.4 var(--font-sans);color:var(--fg)">{{ kMonth }}</strong>
+              </div>
+              <div style="display:flex;justify-content:space-between;align-items:center">
+                <span style="font:500 13px/1.4 var(--font-sans);color:var(--fg-3)">Expenses</span>
+                <strong style="font:600 14px/1.4 var(--font-sans);color:var(--warning)">−{{ kExpensesMonth }}</strong>
+              </div>
+              <div style="display:flex;justify-content:space-between;padding-top:10px;border-top:1px solid var(--line)">
+                <span style="font:600 14px/1.4 var(--font-sans);color:var(--fg)">Net income</span>
+                <strong style="font:700 16px/1.4 var(--font-sans);color:var(--success)">{{ kNet }}</strong>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div class="table-card">
+          <div style="display:flex;align-items:center;justify-content:space-between;padding:18px 20px 14px">
+            <div>
+              <h3 class="card-title">Profit by condo</h3>
+              <div class="t-caption" style="margin-top:4px">August 2026 · revenue less recorded expenses</div>
+            </div>
+          </div>
+          <sc-if value="{{ showIncomeCards }}" hint-placeholder-val="{{ false }}">
+            <div style="display:flex;flex-direction:column;gap:10px;padding:0 16px 16px">
+              <sc-for list="{{ incomeCards }}" as="r" hint-placeholder-count="4">
+                <div style="padding:14px;border:1px solid var(--line);border-radius:12px;background:var(--surface-2)">
+                  <div style="display:flex;align-items:flex-start;justify-content:space-between;gap:10px">
+                    <div style="min-width:0">
+                      <div style="font:600 14px/1.3 var(--font-sans);color:var(--fg)">{{ r.name }}</div>
+                      <div style="font:400 11px/1.4 var(--font-mono);color:var(--fg-3);margin-top:2px">{{ r.code }}</div>
+                    </div>
+                    <span class="{{ r.occPill }}">{{ r.occ }}</span>
+                  </div>
+                  <div style="display:flex;gap:14px;margin-top:12px;padding-top:10px;border-top:1px solid var(--line)">
+                    <div style="flex:1"><div class="t-caption">Revenue</div><div style="font:700 14px/1.3 var(--font-sans);color:var(--fg);margin-top:2px">{{ r.revenue }}</div></div>
+                    <div style="flex:1"><div class="t-caption">Expenses</div><div style="font:600 14px/1.3 var(--font-sans);color:var(--warning);margin-top:2px">{{ r.expenses }}</div></div>
+                    <div style="flex:1"><div class="t-caption">Net profit</div><div style="{{ r.netStyle }}">{{ r.net }}</div></div>
+                  </div>
+                </div>
+              </sc-for>
+              <div style="display:flex;justify-content:space-between;padding:14px;border-radius:12px;background:var(--brand-purple-50)">
+                <span style="font:700 14px/1 var(--font-sans);color:var(--brand-purple-700)">Total</span>
+                <span style="font:700 14px/1 var(--font-sans);color:var(--brand-purple-700)">{{ kMonth }}</span>
+              </div>
+            </div>
+          </sc-if>
+          <sc-if value="{{ showIncomeTable }}" hint-placeholder-val="{{ true }}">
+          <div style="overflow-x:auto">
+          <table class="data-table" style="min-width:860px">
+            <thead>
+              <tr><th>Condo</th><th style="text-align:right">Bookings</th><th style="text-align:right">Booked Nights</th><th style="text-align:right">Revenue</th><th style="text-align:right">Expenses</th><th style="text-align:right">Net Profit</th><th style="text-align:right">Occupancy</th></tr>
+            </thead>
+            <tbody>
+              <sc-for list="{{ incomeRows }}" as="r" hint-placeholder-count="9">
+                <tr>
+                  <td><strong>{{ r.name }}</strong><div class="t-caption">{{ r.code }}</div></td>
+                  <td style="text-align:right">{{ r.bookings }}</td>
+                  <td style="text-align:right">{{ r.nights }}</td>
+                  <td style="text-align:right"><strong>{{ r.revenue }}</strong></td>
+                  <td style="text-align:right;color:var(--warning)">{{ r.expenses }}</td>
+                  <td style="text-align:right"><span style="{{ r.netStyle }}">{{ r.net }}</span></td>
+                  <td style="text-align:right"><span class="{{ r.occPill }}">{{ r.occ }}</span></td>
+                </tr>
+              </sc-for>
+            </tbody>
+            <tfoot>
+              <tr style="background:var(--surface-2)">
+                <td style="padding:14px 16px;font:700 14px/1 var(--font-sans);color:var(--fg)">Total</td>
+                <td style="text-align:right;font:700 14px/1 var(--font-sans);color:var(--fg)">{{ totalBookings }}</td>
+                <td style="text-align:right;font:700 14px/1 var(--font-sans);color:var(--fg)">{{ totalNights }}</td>
+                <td style="text-align:right;font:700 14px/1 var(--font-sans);color:var(--fg)">{{ kMonth }}</td>
+                <td style="text-align:right;font:700 14px/1 var(--font-sans);color:var(--warning)">{{ kExpensesMonth }}</td>
+                <td style="text-align:right;font:700 14px/1 var(--font-sans);color:var(--success)">{{ kNet }}</td>
+                <td style="text-align:right;font:700 14px/1 var(--font-sans);color:var(--fg)">{{ occAll }}</td>
+              </tr>
+            </tfoot>
+          </table>
+          </div>
+          </sc-if>
+        </div>
+      </section>
+    </sc-if>
+
+    <sc-if value="{{ isExpenses }}" hint-placeholder-val="{{ false }}">
+      <section data-screen-label="Expenses" style="animation:lsFade 280ms var(--ease-out) both">
+        <div class="page-header">
+          <div>
+            <h1>Expenses</h1>
+            <div class="t-small" style="margin-top:6px">August 2026 · {{ expCount }} recorded · {{ kExpPending }} still to pay</div>
+          </div>
+          <div class="actions">
+            <div style="display:flex;background:var(--surface);border:1px solid var(--line-strong);border-radius:10px;overflow:hidden">
+              <button style="{{ expOverviewTabStyle }}" onClick="{{ setExpOverview }}">Overview</button>
+              <button style="{{ expListTabStyle }}" onClick="{{ setExpList }}">All expenses</button>
+            </div>
+            <button class="btn btn-primary" onClick="{{ openExpNew }}">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 5v14M5 12h14"></path></svg>
+              Add expense
+            </button>
+          </div>
+        </div>
+
+        <sc-if value="{{ expIsOverview }}" hint-placeholder-val="{{ true }}">
+          <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:16px;margin-bottom:16px">
+            <div class="stat">
+              <div class="stat-icon amber">
+                <svg viewBox="0 0 24 24" width="17" height="17" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"></circle><path d="M12 7v5l3 2"></path></svg>
+              </div>
+              <div class="stat-value">{{ kExpToday }}</div>
+              <div class="stat-label">Today's expenses</div>
+            </div>
+            <div class="stat">
+              <div class="stat-icon red">
+                <svg viewBox="0 0 24 24" width="17" height="17" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M2 7l8.5 8.5 5-5L22 17"></path><path d="M22 17v-6h-6"></path></svg>
+              </div>
+              <div class="stat-value">{{ kExpMonth }}</div>
+              <div style="display:flex;align-items:center;justify-content:space-between;gap:8px">
+                <div class="stat-label">Monthly expenses</div>
+                <a style="font:600 12px/1 var(--font-sans);cursor:pointer" onClick="{{ setExpList }}">Breakdown</a>
+              </div>
+            </div>
+            <div class="stat">
+              <div class="stat-icon purple">
+                <svg viewBox="0 0 24 24" width="17" height="17" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 7l-8.5 8.5-5-5L2 17"></path><path d="M16 7h6v6"></path></svg>
+              </div>
+              <div class="stat-value">{{ kMonth }}</div>
+              <div class="stat-label">Total revenue</div>
+            </div>
+            <div class="stat" style="border-color:transparent;box-shadow:var(--shadow-md)">
+              <div class="stat-icon green">
+                <svg viewBox="0 0 24 24" width="17" height="17" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2v20M17 6.5c0-2-2.2-3.5-5-3.5s-5 1.3-5 3.4c0 4.3 10 2.2 10 6.6 0 2.2-2.2 3.5-5 3.5s-5-1.4-5-3.5"></path></svg>
+              </div>
+              <div style="{{ netStyle }}">{{ kNetProfit }}</div>
+              <div style="display:flex;align-items:center;justify-content:space-between;gap:8px">
+                <div class="stat-label">Net profit</div>
+                <span class="stat-delta up">{{ kMargin }}</span>
+              </div>
+            </div>
+            <div class="stat">
+              <div class="stat-icon amber">
+                <svg viewBox="0 0 24 24" width="17" height="17" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 2h16v20l-3-2-3 2-3-2-3 2z"></path><path d="M8 8h8M8 12h8"></path></svg>
+              </div>
+              <div class="stat-value">{{ kExpPending }}</div>
+              <div style="display:flex;align-items:center;justify-content:space-between;gap:8px">
+                <div class="stat-label">Pending expenses</div>
+                <span class="stat-delta neutral">{{ expPendingCount }}</span>
+              </div>
+            </div>
+          </div>
+
+          <div style="display:flex;gap:16px;flex-wrap:wrap;margin-bottom:16px">
+            <div class="card" style="flex:1 1 320px;min-width:0">
+              <div class="card-head">
+                <div>
+                  <h3 class="card-title">Expenses by category</h3>
+                  <div class="t-caption" style="margin-top:4px">August 2026</div>
+                </div>
+              </div>
+              <div style="display:flex;align-items:center;gap:22px;flex-wrap:wrap">
+                <div style="position:relative;width:120px;height:120px;flex:none">
+                  <div style="{{ expDonut }}"></div>
+                  <div style="position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center">
+                    <div style="font:700 20px/1 var(--font-sans);color:var(--fg);letter-spacing:-.02em">{{ expDonutTotal }}</div>
+                    <div class="t-caption" style="margin-top:2px">total</div>
+                  </div>
+                </div>
+                <div style="flex:1;min-width:160px;display:flex;flex-direction:column;gap:10px">
+                  <sc-for list="{{ catLegend }}" as="c" hint-placeholder-count="6">
+                    <div style="display:flex;align-items:center;gap:9px">
+                      <span style="{{ c.dotStyle }}"></span>
+                      <span style="font:500 13px/1.3 var(--font-sans);color:var(--fg-2);flex:1;min-width:0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">{{ c.cat }}</span>
+                      <span class="t-caption" style="color:var(--fg-4)">{{ c.pct }}</span>
+                      <strong style="font:600 13px/1.3 var(--font-sans);color:var(--fg);min-width:62px;text-align:right">{{ c.amount }}</strong>
+                    </div>
+                  </sc-for>
+                </div>
+              </div>
+            </div>
+
+            <div class="card" style="flex:1 1 300px;min-width:0">
+              <div class="card-head">
+                <div>
+                  <h3 class="card-title">Monthly expense trend</h3>
+                  <div class="t-caption" style="margin-top:4px">Last six months</div>
+                </div>
+              </div>
+              <div style="display:flex;align-items:flex-end;gap:12px;height:172px;padding-top:8px">
+                <sc-for list="{{ expTrend }}" as="t" hint-placeholder-count="6">
+                  <div style="flex:1;height:100%;display:flex;flex-direction:column;justify-content:flex-end;gap:8px;text-align:center">
+                    <div style="font:600 11px/1 var(--font-sans);color:var(--fg-2)">{{ t.label }}</div>
+                    <div style="{{ t.barStyle }}"></div>
+                    <div style="font:500 11px/1 var(--font-sans);color:var(--fg-3)">{{ t.month }}</div>
+                  </div>
+                </sc-for>
+              </div>
+            </div>
+          </div>
+
+          <div style="display:flex;gap:16px;flex-wrap:wrap">
+            <div class="card" style="flex:2 1 480px;min-width:0">
+              <div class="card-head">
+                <div>
+                  <h3 class="card-title">Revenue vs expenses</h3>
+                  <div class="t-caption" style="margin-top:4px">Net profit printed above each pair</div>
+                </div>
+                <div style="display:flex;gap:14px">
+                  <span style="display:flex;align-items:center;gap:6px;font:500 12px/1 var(--font-sans);color:var(--fg-3)"><span style="width:9px;height:9px;border-radius:3px;background:var(--brand-purple)"></span>Revenue</span>
+                  <span style="display:flex;align-items:center;gap:6px;font:500 12px/1 var(--font-sans);color:var(--fg-3)"><span style="width:9px;height:9px;border-radius:3px;background:var(--warning)"></span>Expenses</span>
+                </div>
+              </div>
+              <div style="display:flex;align-items:flex-end;gap:16px;height:200px;padding-top:8px">
+                <sc-for list="{{ rvsE }}" as="t" hint-placeholder-count="6">
+                  <div style="flex:1;height:100%;display:flex;flex-direction:column;justify-content:flex-end;gap:8px;text-align:center;min-width:0">
+                    <div style="font:600 11px/1 var(--font-sans);color:var(--success)">{{ t.netLabel }}</div>
+                    <div style="display:flex;align-items:flex-end;gap:4px;height:100%">
+                      <div style="{{ t.revStyle }}"></div>
+                      <div style="{{ t.expStyle }}"></div>
+                    </div>
+                    <div style="font:500 11px/1 var(--font-sans);color:var(--fg-3)">{{ t.month }}</div>
+                  </div>
+                </sc-for>
+              </div>
+            </div>
+
+            <div class="card" style="flex:1 1 300px;min-width:0">
+              <div class="card-head">
+                <h3 class="card-title">Recent expenses</h3>
+                <a style="font:600 13px/1 var(--font-sans);cursor:pointer" onClick="{{ setExpList }}">See all</a>
+              </div>
+              <sc-if value="{{ hasRecentExp }}" hint-placeholder-val="{{ true }}">
+                <div style="display:flex;flex-direction:column;gap:2px">
+                  <sc-for list="{{ recentExp }}" as="e" hint-placeholder-count="6">
+                    <div style="display:flex;align-items:center;gap:12px;padding:11px 8px;border-radius:10px;cursor:pointer;transition:background 120ms" style-hover="background:var(--surface-2)" onClick="{{ e.onOpen }}">
+                      <div style="min-width:0;flex:1">
+                        <div style="font:600 13px/1.3 var(--font-sans);color:var(--fg);white-space:nowrap;overflow:hidden;text-overflow:ellipsis">{{ e.desc }}</div>
+                        <div class="t-caption" style="margin-top:3px">{{ e.dateLabel }} · {{ e.condoName }}</div>
+                      </div>
+                      <div style="text-align:right">
+                        <div style="font:700 13px/1.3 var(--font-sans);color:var(--fg)">{{ e.amountLabel }}</div>
+                        <div class="t-caption" style="margin-top:3px">{{ e.cat }}</div>
+                      </div>
+                    </div>
+                  </sc-for>
+                </div>
+              </sc-if>
+              <sc-if value="{{ noExpRows }}" hint-placeholder-val="{{ false }}">
+                <div style="padding:36px 12px;text-align:center">
+                  <div style="width:46px;height:46px;border-radius:14px;background:var(--brand-purple-50);color:var(--brand-purple);display:inline-flex;align-items:center;justify-content:center;margin-bottom:12px">
+                    <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 2h16v20l-3-2-3 2-3-2-3 2z"></path><path d="M8 8h8M8 12h8"></path></svg>
+                  </div>
+                  <div style="font:600 14px/1.3 var(--font-sans);color:var(--fg)">Nothing logged yet</div>
+                  <div class="t-small" style="margin:6px 0 14px">Add your first bill to see profit.</div>
+                  <button class="btn btn-primary btn-sm" onClick="{{ openExpNew }}">Add expense</button>
+                </div>
+              </sc-if>
+            </div>
+          </div>
+        </sc-if>
+
+        <sc-if value="{{ expIsList }}" hint-placeholder-val="{{ false }}">
+          <div style="display:flex;gap:10px;flex-wrap:wrap;align-items:center;margin-bottom:16px">
+            <div class="search-box" style="flex:1;min-width:220px;max-width:320px">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="7"></circle><path d="M21 21l-4.3-4.3"></path></svg>
+              <input placeholder="Search vendor, description…" value="{{ expSearch }}" onChange="{{ onExpSearch }}">
+            </div>
+            <select class="filter-sel" value="{{ expRange }}" onChange="{{ onExpRange }}">
+              <option value="month">This month</option>
+              <option value="7d">Last 7 days</option>
+              <option value="30d">Last 30 days</option>
+              <option value="all">All dates</option>
+            </select>
+            <select class="filter-sel" value="{{ expCondo }}" onChange="{{ onExpCondo }}">
+              <option value="all">All condos</option>
+              <sc-for list="{{ condoOptions }}" as="o" hint-placeholder-count="9">
+                <option value="{{ o.code }}">{{ o.short }}</option>
+              </sc-for>
+            </select>
+            <select class="filter-sel" value="{{ expCat }}" onChange="{{ onExpCat }}">
+              <option value="all">All categories</option>
+              <sc-for list="{{ cats }}" as="c" hint-placeholder-count="15">
+                <option value="{{ c.name }}">{{ c.name }}</option>
+              </sc-for>
+            </select>
+            <select class="filter-sel" value="{{ expStatus }}" onChange="{{ onExpStatus }}">
+              <option value="all">All statuses</option>
+              <option value="paid">Paid</option>
+              <option value="pending">Pending</option>
+              <option value="cancelled">Cancelled</option>
+            </select>
+            <div style="flex:1"></div>
+            <button class="btn btn-outline btn-sm" onClick="{{ exportExp }}">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3v12M7 10l5 5 5-5M5 21h14"></path></svg>
+              Export
+            </button>
+          </div>
+
+          <div class="table-card">
+            <div style="display:flex;align-items:center;justify-content:space-between;gap:12px;padding:16px 20px 12px;flex-wrap:wrap">
+              <div class="t-caption">Showing {{ expShownCount }} expenses</div>
+              <sc-if value="{{ expFiltered }}" hint-placeholder-val="{{ false }}">
+                <a style="font:600 13px/1 var(--font-sans);cursor:pointer" onClick="{{ clearExpFilters }}">Clear filters</a>
+              </sc-if>
+            </div>
+
+            <sc-if value="{{ expLoading }}" hint-placeholder-val="{{ false }}">
+              <div style="display:flex;flex-direction:column;gap:2px;padding:0 20px 20px">
+                <sc-for list="{{ skel6 }}" as="s" hint-placeholder-count="6">
+                  <div style="display:flex;align-items:center;gap:16px;padding:14px 0;border-bottom:1px solid var(--line)">
+                    <div style="width:60px;height:11px;border-radius:6px;background:linear-gradient(90deg,var(--muted) 25%,#fff 50%,var(--muted) 75%);background-size:420px 100%;animation:lsShimmer 1.4s infinite linear"></div>
+                    <div style="width:150px;height:11px;border-radius:6px;background:var(--muted)"></div>
+                    <div style="width:84px;height:20px;border-radius:999px;background:var(--muted)"></div>
+                    <div style="flex:1;height:11px;border-radius:6px;background:var(--muted)"></div>
+                    <div style="width:70px;height:11px;border-radius:6px;background:var(--muted)"></div>
+                  </div>
+                </sc-for>
+              </div>
+            </sc-if>
+
+            <sc-if value="{{ showExpTable }}" hint-placeholder-val="{{ true }}">
+              <div style="overflow-x:auto">
+                <table class="data-table" style="min-width:940px">
+                  <thead>
+                    <tr><th>Date</th><th>Condo</th><th>Category</th><th>Description</th><th style="text-align:right">Amount</th><th>Payment Method</th><th>Status</th><th style="text-align:right">Actions</th></tr>
+                  </thead>
+                  <tbody>
+                    <sc-for list="{{ expRows }}" as="e" hint-placeholder-count="8">
+                      <tr style="cursor:pointer" onClick="{{ e.onOpen }}">
+                        <td style="white-space:nowrap"><strong>{{ e.dateLabel }}</strong></td>
+                        <td>{{ e.condoName }}<div class="t-caption">{{ e.condo }}</div></td>
+                        <td><span class="{{ e.catPill }}">{{ e.cat }}</span></td>
+                        <td>{{ e.desc }}<div class="t-caption">{{ e.vendor }}</div></td>
+                        <td style="{{ e.amountStyle }}">{{ e.amountLabel }}</td>
+                        <td>{{ e.method }}</td>
+                        <td><span class="{{ e.statusPill }}">{{ e.statusLabel }}</span></td>
+                        <td>
+                          <div style="display:flex;gap:6px;justify-content:flex-end">
+                            <button class="icon-btn" style="width:28px;height:28px" onClick="{{ e.onEdit }}">
+                              <svg viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 20h9M16.5 3.5a2.1 2.1 0 0 1 3 3L7 19l-4 1 1-4z"></path></svg>
+                            </button>
+                            <button class="icon-btn danger" style="width:28px;height:28px" onClick="{{ e.onDelete }}">
+                              <svg viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 6h18M8 6V4h8v2M19 6l-1 14H6L5 6"></path></svg>
+                            </button>
+                          </div>
+                        </td>
+                      </tr>
+                    </sc-for>
+                  </tbody>
+                </table>
+              </div>
+            </sc-if>
+
+            <sc-if value="{{ showExpCards }}" hint-placeholder-val="{{ false }}">
+              <div style="display:flex;flex-direction:column;gap:10px;padding:0 16px 16px">
+                <sc-for list="{{ expCards }}" as="e" hint-placeholder-count="5">
+                  <div style="padding:14px;border:1px solid var(--line);border-radius:12px;background:var(--surface-2)" onClick="{{ e.onOpen }}">
+                    <div style="display:flex;align-items:flex-start;justify-content:space-between;gap:10px">
+                      <div style="min-width:0">
+                        <div style="font:600 14px/1.3 var(--font-sans);color:var(--fg)">{{ e.desc }}</div>
+                        <div class="t-caption" style="margin-top:3px">{{ e.dateLabel }} · {{ e.condoName }} · {{ e.vendor }}</div>
+                      </div>
+                      <div style="{{ e.amountStyle }}">{{ e.amountLabel }}</div>
+                    </div>
+                    <div style="display:flex;align-items:center;gap:8px;margin-top:12px;padding-top:10px;border-top:1px solid var(--line);flex-wrap:wrap">
+                      <span class="{{ e.catPill }}">{{ e.cat }}</span>
+                      <span class="{{ e.statusPill }}">{{ e.statusLabel }}</span>
+                      <span class="t-caption">{{ e.method }}</span>
+                      <div style="flex:1"></div>
+                      <button class="icon-btn" style="width:28px;height:28px" onClick="{{ e.onEdit }}">
+                        <svg viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 20h9M16.5 3.5a2.1 2.1 0 0 1 3 3L7 19l-4 1 1-4z"></path></svg>
+                      </button>
+                      <button class="icon-btn danger" style="width:28px;height:28px" onClick="{{ e.onDelete }}">
+                        <svg viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 6h18M8 6V4h8v2M19 6l-1 14H6L5 6"></path></svg>
+                      </button>
+                    </div>
+                  </div>
+                </sc-for>
+              </div>
+            </sc-if>
+
+            <sc-if value="{{ noExpRows }}" hint-placeholder-val="{{ false }}">
+              <div style="padding:64px 24px;text-align:center">
+                <div style="width:58px;height:58px;border-radius:16px;background:var(--brand-purple-50);color:var(--brand-purple);display:inline-flex;align-items:center;justify-content:center;margin-bottom:16px">
+                  <svg viewBox="0 0 24 24" width="26" height="26" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="7"></circle><path d="M21 21l-4.3-4.3"></path></svg>
+                </div>
+                <div class="t-h4">{{ noExpTitle }}</div>
+                <div class="t-small" style="margin:8px auto 20px;max-width:320px">{{ noExpBody }}</div>
+                <div style="display:flex;gap:10px;justify-content:center">
+                  <sc-if value="{{ expFiltered }}" hint-placeholder-val="{{ false }}">
+                    <button class="btn btn-outline" onClick="{{ clearExpFilters }}">Clear filters</button>
+                  </sc-if>
+                  <button class="btn btn-primary" onClick="{{ openExpNew }}">Add expense</button>
+                </div>
+              </div>
+            </sc-if>
+          </div>
+        </sc-if>
+      </section>
+    </sc-if>
+
+  </main>
+
+  <sc-if value="{{ drawerOpen }}" hint-placeholder-val="{{ false }}">
+    <div style="position:fixed;inset:0;z-index:80;display:flex;justify-content:flex-end">
+      <div style="position:absolute;inset:0;background:rgba(30,27,75,.4);backdrop-filter:blur(6px)" onClick="{{ closeDrawer }}"></div>
+      <div style="position:relative;width:420px;max-width:92vw;height:100%;background:var(--surface);box-shadow:var(--shadow-xl);display:flex;flex-direction:column;animation:lsSlide 280ms var(--ease-out) both">
+        <div style="display:flex;align-items:flex-start;justify-content:space-between;gap:12px;padding:22px 24px;border-bottom:1px solid var(--line)">
+          <div>
+            <span class="{{ drawer.pill }}">{{ drawer.statusLabel }}</span>
+            <div style="font:700 20px/1.25 var(--font-sans);color:var(--fg);letter-spacing:-.01em;margin-top:10px">{{ drawer.guest }}</div>
+            <div class="t-small" style="margin-top:4px">{{ drawer.condoName }} · {{ drawer.code }}</div>
+          </div>
+          <button class="modal-close" onClick="{{ closeDrawer }}">
+            <svg viewBox="0 0 24 24" width="17" height="17" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 6L6 18M6 6l12 12"></path></svg>
+          </button>
+        </div>
+
+        <div style="flex:1;overflow-y:auto;padding:22px 24px;display:flex;flex-direction:column;gap:18px">
+          <div style="display:flex;gap:12px">
+            <div style="flex:1;padding:14px;background:var(--surface-2);border:1px solid var(--line);border-radius:12px">
+              <div class="t-caption">Check-in</div>
+              <div style="font:600 15px/1.2 var(--font-sans);color:var(--fg);margin-top:5px">{{ drawer.inLabel }}</div>
+            </div>
+            <div style="flex:1;padding:14px;background:var(--surface-2);border:1px solid var(--line);border-radius:12px">
+              <div class="t-caption">Check-out</div>
+              <div style="font:600 15px/1.2 var(--font-sans);color:var(--fg);margin-top:5px">{{ drawer.outLabel }}</div>
+            </div>
+            <div style="flex:0 0 76px;padding:14px;background:var(--brand-purple-50);border-radius:12px;text-align:center">
+              <div class="t-caption" style="color:var(--brand-purple-700)">Nights</div>
+              <div style="font:700 17px/1.2 var(--font-sans);color:var(--brand-purple-700);margin-top:5px">{{ drawer.nights }}</div>
+            </div>
+          </div>
+
+          <div style="display:flex;flex-direction:column;gap:11px">
+            <div style="display:flex;justify-content:space-between"><span style="font:500 13px/1.4 var(--font-sans);color:var(--fg-3)">Night rate</span><span style="font:600 14px/1.4 var(--font-sans);color:var(--fg-2)">{{ drawer.rate }}</span></div>
+            <div style="display:flex;justify-content:space-between"><span style="font:500 13px/1.4 var(--font-sans);color:var(--fg-3)">Total amount</span><span style="font:600 14px/1.4 var(--font-sans);color:var(--fg)">{{ drawer.amount }}</span></div>
+            <div style="display:flex;justify-content:space-between"><span style="font:500 13px/1.4 var(--font-sans);color:var(--fg-3)">Received</span><span style="font:600 14px/1.4 var(--font-sans);color:var(--success)">{{ drawer.received }}</span></div>
+            <div style="display:flex;justify-content:space-between;padding-top:11px;border-top:1px solid var(--line)"><span style="font:600 14px/1.4 var(--font-sans);color:var(--fg)">Balance</span><span style="{{ drawer.balanceStyle }}">{{ drawer.balance }}</span></div>
+          </div>
+
+          <div style="padding:14px;background:var(--surface-2);border:1px solid var(--line);border-radius:12px">
+            <div class="t-caption">Contact</div>
+            <div style="font:500 13px/1.6 var(--font-sans);color:var(--fg-2);margin-top:6px">{{ drawer.phone }}<br>{{ drawer.email }}</div>
+          </div>
+
+          <sc-if value="{{ drawer.hasNotes }}" hint-placeholder-val="{{ false }}">
+            <div>
+              <div class="t-eyebrow" style="margin-bottom:8px">Notes</div>
+              <div style="font:400 13px/1.6 var(--font-sans);color:var(--fg-2)">{{ drawer.notes }}</div>
+            </div>
+          </sc-if>
+        </div>
+
+        <div style="display:flex;gap:10px;padding:16px 24px;border-top:1px solid var(--line);background:var(--surface-2)">
+          <button class="btn btn-outline" style="flex:1;justify-content:center" onClick="{{ editFromDrawer }}">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 20h9M16.5 3.5a2.1 2.1 0 0 1 3 3L7 19l-4 1 1-4z"></path></svg>
+            Edit booking
+          </button>
+          <button class="btn btn-outline" style="color:var(--danger);border-color:var(--danger-border);background:var(--danger-bg)" onClick="{{ askDelete }}">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 6h18M8 6V4h8v2M19 6l-1 14H6L5 6M10 11v6M14 11v6"></path></svg>
+            Delete
+          </button>
+        </div>
+      </div>
+    </div>
+  </sc-if>
+
+  <sc-if value="{{ expDrawerOpen }}" hint-placeholder-val="{{ false }}">
+    <div style="position:fixed;inset:0;z-index:90;display:flex;justify-content:flex-end">
+      <div style="position:absolute;inset:0;background:rgba(30,27,75,.4);backdrop-filter:blur(6px)" onClick="{{ closeExpDrawer }}"></div>
+      <div style="position:relative;width:480px;max-width:94vw;height:100%;background:var(--surface);box-shadow:var(--shadow-xl);display:flex;flex-direction:column;animation:lsSlide 280ms var(--ease-out) both">
+        <div style="display:flex;align-items:flex-start;justify-content:space-between;gap:12px;padding:20px 24px;border-bottom:1px solid var(--line)">
+          <div>
+            <h2 style="font:700 20px/1.2 var(--font-sans);margin:0;letter-spacing:-.01em">{{ expDrawerTitle }}</h2>
+            <div class="t-caption" style="margin-top:4px">Attach the receipt now and you'll never hunt for it later.</div>
+          </div>
+          <button class="modal-close" onClick="{{ closeExpDrawer }}">
+            <svg viewBox="0 0 24 24" width="17" height="17" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 6L6 18M6 6l12 12"></path></svg>
+          </button>
+        </div>
+
+        <div style="flex:1;overflow-y:auto;padding:20px 24px;display:flex;flex-direction:column;gap:16px">
+          <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:14px">
+            <div class="field">
+              <label>Expense date</label>
+              <input type="date" value="{{ ex.day }}" onChange="{{ onExDay }}" style="height:44px">
+            </div>
+            <div class="field">
+              <label>Amount (฿)</label>
+              <div style="display:flex;align-items:center;gap:8px;padding:11px 12px;border:1px solid var(--line-strong);border-radius:8px;background:var(--surface)">
+                <span style="font:500 14px/1 var(--font-sans);color:var(--fg-3)">฿</span>
+                <input value="{{ ex.amount }}" onChange="{{ onExAmount }}" placeholder="0" style="border:0;outline:0;background:transparent;padding:0;width:100%;font:700 15px/1 var(--font-sans);color:var(--fg)">
+              </div>
+            </div>
+            <div class="field" style="grid-column:1/-1">
+              <label>Select condo</label>
+              <select value="{{ ex.condo }}" onChange="{{ onExCondo }}" style="height:44px">
+                <sc-for list="{{ condoOptions }}" as="o" hint-placeholder-count="9">
+                  <option value="{{ o.code }}">{{ o.short }}</option>
+                </sc-for>
+              </select>
+            </div>
+            <div class="field">
+              <label>Expense category</label>
+              <select value="{{ ex.cat }}" onChange="{{ onExCat }}" style="height:44px">
+                <sc-for list="{{ cats }}" as="c" hint-placeholder-count="15">
+                  <option value="{{ c.name }}">{{ c.name }}</option>
+                </sc-for>
+              </select>
+            </div>
+            <div class="field">
+              <label>Payment method</label>
+              <select value="{{ ex.method }}" onChange="{{ onExMethod }}" style="height:44px">
+                <sc-for list="{{ methods }}" as="m" hint-placeholder-count="5">
+                  <option value="{{ m.name }}">{{ m.name }}</option>
+                </sc-for>
+              </select>
+            </div>
+            <div class="field">
+              <label>Vendor</label>
+              <input value="{{ ex.vendor }}" onChange="{{ onExVendor }}" placeholder="e.g. MEA, Khun Malee">
+            </div>
+            <div class="field">
+              <label>Reference number</label>
+              <input value="{{ ex.ref }}" onChange="{{ onExRef }}" placeholder="INV-4471" style="font-family:var(--font-mono);font-size:13px">
+            </div>
+            <div class="field" style="grid-column:1/-1">
+              <label>Description</label>
+              <textarea rows="2" value="{{ ex.desc }}" onChange="{{ onExDesc }}" placeholder="What was this for?"></textarea>
+            </div>
+            <div class="field" style="grid-column:1/-1">
+              <label>Receipt</label>
+              <div style="{{ dropStyle }}" onDragOverCapture="{{ onDragOverCapture }}" onDragLeaveCapture="{{ onDragLeaveCapture }}" onDropCapture="{{ onDropCapture }}">
+                <div style="height:120px"><image-slot id="expense-receipt" shape="rounded" radius="10" fit="contain" placeholder="Drag a receipt photo here, or click to browse"></image-slot></div>
+                <sc-if value="{{ uploading }}" hint-placeholder-val="{{ false }}">
+                  <div style="margin-top:12px">
+                    <div style="display:flex;justify-content:space-between;margin-bottom:6px">
+                      <span style="font:500 12px/1 var(--font-sans);color:var(--fg-2)">Uploading {{ receiptName }}</span>
+                      <span style="font:600 12px/1 var(--font-sans);color:var(--brand-purple)">{{ uploadPctLabel }}</span>
+                    </div>
+                    <div style="height:6px;border-radius:999px;background:var(--muted);overflow:hidden">
+                      <div style="{{ uploadBarStyle }}"></div>
+                    </div>
+                  </div>
+                </sc-if>
+                <sc-if value="{{ uploadDone }}" hint-placeholder-val="{{ false }}">
+                  <div style="display:flex;align-items:center;gap:8px;margin-top:12px;color:var(--success)">
+                    <svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6L9 17l-5-5"></path></svg>
+                    <span style="font:600 12px/1 var(--font-sans)">{{ receiptName }} attached</span>
+                  </div>
+                </sc-if>
+              </div>
+            </div>
+            <div class="field" style="grid-column:1/-1">
+              <label>Status</label>
+              <select value="{{ ex.status }}" onChange="{{ onExStatus }}" style="height:44px">
+                <option value="paid">Paid</option>
+                <option value="pending">Pending</option>
+                <option value="cancelled">Cancelled</option>
+              </select>
+            </div>
+          </div>
+        </div>
+
+        <div style="display:flex;align-items:center;gap:10px;padding:16px 24px;border-top:1px solid var(--line);background:var(--surface-2)">
+          <div style="flex:1;min-width:0">
+            <div class="t-caption">Total</div>
+            <div style="font:700 18px/1.2 var(--font-sans);color:var(--fg);margin-top:2px">{{ exAmountPreview }}</div>
+          </div>
+          <button class="btn btn-outline" onClick="{{ closeExpDrawer }}">Cancel</button>
+          <button class="btn btn-primary" onClick="{{ saveExpense }}">{{ expSaveLabel }}</button>
+        </div>
+      </div>
+    </div>
+  </sc-if>
+
+  <sc-if value="{{ expDetailOpen }}" hint-placeholder-val="{{ false }}">
+    <div style="position:fixed;inset:0;z-index:85;display:flex;justify-content:flex-end">
+      <div style="position:absolute;inset:0;background:rgba(30,27,75,.4);backdrop-filter:blur(6px)" onClick="{{ closeExpDetail }}"></div>
+      <div style="position:relative;width:430px;max-width:92vw;height:100%;background:var(--surface);box-shadow:var(--shadow-xl);display:flex;flex-direction:column;animation:lsSlide 280ms var(--ease-out) both">
+        <div style="display:flex;align-items:flex-start;justify-content:space-between;gap:12px;padding:22px 24px;border-bottom:1px solid var(--line)">
+          <div>
+            <div style="display:flex;gap:8px">
+              <span class="{{ expDetail.catPill }}">{{ expDetail.cat }}</span>
+              <span class="{{ expDetail.statusPill }}">{{ expDetail.statusLabel }}</span>
+            </div>
+            <div style="font:700 24px/1.2 var(--font-sans);color:var(--fg);letter-spacing:-.02em;margin-top:12px">{{ expDetail.amountLabel }}</div>
+            <div class="t-small" style="margin-top:4px">{{ expDetail.desc }}</div>
+          </div>
+          <button class="modal-close" onClick="{{ closeExpDetail }}">
+            <svg viewBox="0 0 24 24" width="17" height="17" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 6L6 18M6 6l12 12"></path></svg>
+          </button>
+        </div>
+
+        <div style="flex:1;overflow-y:auto;padding:22px 24px;display:flex;flex-direction:column;gap:18px">
+          <div>
+            <div class="t-eyebrow" style="margin-bottom:8px">Receipt</div>
+            <div style="height:200px;border:1px solid var(--line);border-radius:12px;overflow:hidden;background:var(--surface-2)">
+              <image-slot id="receipt-preview" shape="rect" fit="contain" placeholder="Drop the receipt scan"></image-slot>
+            </div>
+          </div>
+
+          <div style="display:flex;flex-direction:column;gap:11px">
+            <div style="display:flex;justify-content:space-between;gap:12px"><span style="font:500 13px/1.4 var(--font-sans);color:var(--fg-3)">Condo</span><span style="font:600 13px/1.4 var(--font-sans);color:var(--fg);text-align:right">{{ expDetail.condoName }}</span></div>
+            <div style="display:flex;justify-content:space-between;gap:12px"><span style="font:500 13px/1.4 var(--font-sans);color:var(--fg-3)">Vendor</span><span style="font:600 13px/1.4 var(--font-sans);color:var(--fg);text-align:right">{{ expDetail.vendor }}</span></div>
+            <div style="display:flex;justify-content:space-between;gap:12px"><span style="font:500 13px/1.4 var(--font-sans);color:var(--fg-3)">Expense date</span><span style="font:600 13px/1.4 var(--font-sans);color:var(--fg)">{{ expDetail.dateLabel }}</span></div>
+            <div style="display:flex;justify-content:space-between;gap:12px"><span style="font:500 13px/1.4 var(--font-sans);color:var(--fg-3)">Payment method</span><span style="font:600 13px/1.4 var(--font-sans);color:var(--fg)">{{ expDetail.method }}</span></div>
+            <div style="display:flex;justify-content:space-between;gap:12px"><span style="font:500 13px/1.4 var(--font-sans);color:var(--fg-3)">Reference</span><span class="t-mono" style="font-size:12px">{{ expDetail.ref }}</span></div>
+            <div style="display:flex;justify-content:space-between;gap:12px;padding-top:11px;border-top:1px solid var(--line)"><span style="font:500 13px/1.4 var(--font-sans);color:var(--fg-3)">Created</span><span style="font:500 13px/1.4 var(--font-sans);color:var(--fg-2)">{{ expDetail.created }}</span></div>
+          </div>
+
+          <div style="padding:14px;background:var(--surface-2);border:1px solid var(--line);border-radius:12px">
+            <div class="t-caption">Notes</div>
+            <div style="font:400 13px/1.6 var(--font-sans);color:var(--fg-2);margin-top:6px">{{ expDetail.desc }}</div>
+          </div>
+        </div>
+
+        <div style="display:flex;gap:10px;padding:16px 24px;border-top:1px solid var(--line);background:var(--surface-2)">
+          <button class="btn btn-outline" style="flex:1;justify-content:center" onClick="{{ editExpFromDetail }}">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 20h9M16.5 3.5a2.1 2.1 0 0 1 3 3L7 19l-4 1 1-4z"></path></svg>
+            Edit
+          </button>
+          <button class="btn btn-outline" style="color:var(--danger);border-color:var(--danger-border);background:var(--danger-bg)" onClick="{{ deleteExpFromDetail }}">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 6h18M8 6V4h8v2M19 6l-1 14H6L5 6M10 11v6M14 11v6"></path></svg>
+            Delete
+          </button>
+        </div>
+      </div>
+    </div>
+  </sc-if>
+
+  <sc-if value="{{ condoDetailOpen }}" hint-placeholder-val="{{ false }}">
+    <div style="position:fixed;inset:0;z-index:82;display:flex;justify-content:flex-end">
+      <div style="position:absolute;inset:0;background:rgba(30,27,75,.4);backdrop-filter:blur(6px)" onClick="{{ closeCondoDetail }}"></div>
+      <div style="position:relative;width:440px;max-width:92vw;height:100%;background:var(--surface);box-shadow:var(--shadow-xl);display:flex;flex-direction:column;animation:lsSlide 280ms var(--ease-out) both">
+        <div style="display:flex;align-items:flex-start;justify-content:space-between;gap:12px;padding:22px 24px;border-bottom:1px solid var(--line)">
+          <div>
+            <span class="{{ condoDetail.pill }}"><span class="dot"></span>{{ condoDetail.statusLabel }}</span>
+            <div style="font:700 20px/1.25 var(--font-sans);color:var(--fg);letter-spacing:-.01em;margin-top:10px">{{ condoDetail.name }}</div>
+            <div class="t-small" style="margin-top:4px">{{ condoDetail.code }} · {{ condoDetail.spec }}</div>
+          </div>
+          <button class="modal-close" onClick="{{ closeCondoDetail }}">
+            <svg viewBox="0 0 24 24" width="17" height="17" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 6L6 18M6 6l12 12"></path></svg>
+          </button>
+        </div>
+
+        <div style="flex:1;overflow-y:auto;padding:22px 24px;display:flex;flex-direction:column;gap:18px">
+          <div style="border-radius:16px;padding:20px;background:var(--surface);box-shadow:var(--shadow-md)">
+            <div class="t-eyebrow" style="margin-bottom:14px">Financial summary · August</div>
+            <div style="display:flex;flex-direction:column;gap:11px">
+              <div style="display:flex;justify-content:space-between;align-items:baseline">
+                <span style="font:500 13px/1.4 var(--font-sans);color:var(--fg-3)">Total revenue</span>
+                <span style="font:600 15px/1.4 var(--font-sans);color:var(--fg)">{{ condoDetail.revenue }}</span>
+              </div>
+              <div style="display:flex;justify-content:space-between;align-items:baseline">
+                <span style="font:500 13px/1.4 var(--font-sans);color:var(--fg-3)">Total expenses</span>
+                <span style="font:600 15px/1.4 var(--font-sans);color:var(--warning)">−{{ condoDetail.expenses }}</span>
+              </div>
+              <div style="display:flex;justify-content:space-between;align-items:flex-end;padding-top:14px;border-top:1px solid var(--line)">
+                <span style="font:600 14px/1.4 var(--font-sans);color:var(--fg)">Net profit</span>
+                <span style="{{ condoDetail.netStyle }}">{{ condoDetail.net }}</span>
+              </div>
+            </div>
+          </div>
+
+          <div>
+            <div style="display:flex;justify-content:space-between;margin-bottom:8px">
+              <span class="t-caption">Occupancy</span>
+              <span style="font:700 13px/1 var(--font-sans);color:var(--brand-purple-700)">{{ condoDetail.occ }}</span>
+            </div>
+            <div style="{{ condoDetail.barStyle }}"></div>
+            <div style="display:flex;gap:12px;margin-top:14px">
+              <div style="flex:1;padding:14px;background:var(--surface-2);border:1px solid var(--line);border-radius:12px">
+                <div class="t-caption">Booked nights</div>
+                <div style="font:700 17px/1.2 var(--font-sans);color:var(--fg);margin-top:4px">{{ condoDetail.nights }}</div>
+              </div>
+              <div style="flex:1;padding:14px;background:var(--surface-2);border:1px solid var(--line);border-radius:12px">
+                <div class="t-caption">Available nights</div>
+                <div style="font:700 17px/1.2 var(--font-sans);color:var(--fg);margin-top:4px">{{ condoDetail.available }}</div>
+              </div>
+              <div style="flex:1;padding:14px;background:var(--surface-2);border:1px solid var(--line);border-radius:12px">
+                <div class="t-caption">Bookings</div>
+                <div style="font:700 17px/1.2 var(--font-sans);color:var(--fg);margin-top:4px">{{ condoDetail.bookings }}</div>
+              </div>
+            </div>
+          </div>
+
+          <div style="display:flex;flex-direction:column;gap:11px">
+            <div style="display:flex;justify-content:space-between"><span style="font:500 13px/1.4 var(--font-sans);color:var(--fg-3)">Rate per night</span><span style="font:600 13px/1.4 var(--font-sans);color:var(--fg)">{{ condoDetail.night }}</span></div>
+            <div style="display:flex;justify-content:space-between"><span style="font:500 13px/1.4 var(--font-sans);color:var(--fg-3)">Rate per month</span><span style="font:600 13px/1.4 var(--font-sans);color:var(--fg)">{{ condoDetail.month }}</span></div>
+            <div style="display:flex;justify-content:space-between"><span style="font:500 13px/1.4 var(--font-sans);color:var(--fg-3)">Security deposit</span><span style="font:600 13px/1.4 var(--font-sans);color:var(--fg)">{{ condoDetail.deposit }}</span></div>
+            <div style="display:flex;justify-content:space-between"><span style="font:500 13px/1.4 var(--font-sans);color:var(--fg-3)">Cleaning fee</span><span style="font:600 13px/1.4 var(--font-sans);color:var(--fg)">{{ condoDetail.cleaningFee }}</span></div>
+          </div>
+        </div>
+
+        <div style="display:flex;gap:10px;padding:16px 24px;border-top:1px solid var(--line);background:var(--surface-2)">
+          <button class="btn btn-outline" style="flex:1;justify-content:center" onClick="{{ condoDetailCalendar }}">Calendar</button>
+          <button class="btn btn-outline" style="flex:1;justify-content:center" onClick="{{ condoDetailExpenses }}">Expenses</button>
+        </div>
+      </div>
+    </div>
+  </sc-if>
+
+  <sc-if value="{{ addOpen }}" hint-placeholder-val="{{ false }}">
+    <div class="modal-bg">
+      <div class="modal" style="max-width:640px;animation:lsPop 280ms var(--ease-out) both">
+        <div class="modal-head">
+          <div>
+            <h2>{{ addTitle }}</h2>
+            <div class="t-caption" style="margin-top:4px">Everything except photos can be changed later.</div>
+          </div>
+          <button class="modal-close" onClick="{{ closeAdd }}">
+            <svg viewBox="0 0 24 24" width="17" height="17" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 6L6 18M6 6l12 12"></path></svg>
+          </button>
+        </div>
+        <div class="modal-body">
+          <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:14px">
+            <div class="field" style="grid-column:1/-1">
+              <label>Condo name</label>
+              <input value="{{ nc.name }}" onChange="{{ onNcName }}" placeholder="e.g. Ashton Asoke 1204">
+            </div>
+            <div class="field">
+              <label>Condo code</label>
+              <input value="{{ nc.code }}" onChange="{{ onNcCode }}" placeholder="A-1204" style="font-family:var(--font-mono)">
+              <small>Short label used on the calendar.</small>
+            </div>
+            <div class="field">
+              <label>Property type</label>
+              <select value="{{ nc.type }}" onChange="{{ onNcType }}">
+                <option value="Condominium">Condominium</option>
+                <option value="Serviced apartment">Serviced apartment</option>
+                <option value="Townhouse">Townhouse</option>
+              </select>
+            </div>
+            <div class="field">
+              <label>Bedrooms</label>
+              <select value="{{ nc.beds }}" onChange="{{ onNcBeds }}">
+                <option value="0">Studio</option>
+                <option value="1">1 bedroom</option>
+                <option value="2">2 bedrooms</option>
+                <option value="3">3 bedrooms</option>
+              </select>
+            </div>
+            <div class="field">
+              <label>Bathrooms</label>
+              <select value="{{ nc.baths }}" onChange="{{ onNcBaths }}">
+                <option value="1">1</option>
+                <option value="2">2</option>
+                <option value="3">3</option>
+              </select>
+            </div>
+            <div class="field">
+              <label>Night rate (฿)</label>
+              <input value="{{ nc.night }}" onChange="{{ onNcNight }}" placeholder="1500">
+            </div>
+            <div class="field">
+              <label>Monthly rate (฿)</label>
+              <input value="{{ nc.month }}" onChange="{{ onNcMonth }}" placeholder="28000">
+            </div>
+            <div class="field">
+              <label>Cleaning fee (฿)</label>
+              <input value="{{ nc.cleaning }}" onChange="{{ onNcCleaning }}" placeholder="500">
+            </div>
+            <div class="field">
+              <label>Security deposit (฿)</label>
+              <input value="{{ nc.deposit }}" onChange="{{ onNcDeposit }}" placeholder="5000">
+              <small>Held at check-in, refunded at check-out. Leave empty if you don't take one.</small>
+            </div>
+            <div class="field" style="grid-column:1/-1">
+              <label>Address</label>
+              <input value="{{ nc.address }}" onChange="{{ onNcAddress }}" placeholder="Sukhumvit 21, Watthana, Bangkok">
+            </div>
+            <div class="field" style="grid-column:1/-1">
+              <label>Description</label>
+              <textarea rows="2" value="{{ nc.desc }}" onChange="{{ onNcDesc }}" placeholder="High floor, BTS 4 minutes walk, pool on 42F."></textarea>
+            </div>
+            <div class="field" style="grid-column:1/-1">
+              <label>Photos</label>
+              <div style="display:flex;gap:10px">
+                <div style="flex:1;height:104px"><image-slot id="new-condo-1" shape="rounded" radius="10" placeholder="Drop cover photo"></image-slot></div>
+                <div style="flex:1;height:104px"><image-slot id="new-condo-2" shape="rounded" radius="10" placeholder="Drop photo"></image-slot></div>
+                <div style="flex:1;height:104px"><image-slot id="new-condo-3" shape="rounded" radius="10" placeholder="Drop photo"></image-slot></div>
+              </div>
+            </div>
+            <div class="field" style="grid-column:1/-1">
+              <label>Status</label>
+              <select value="{{ nc.status }}" onChange="{{ onNcStatus }}">
+                <option value="available">Available</option>
+                <option value="occupied">Occupied</option>
+                <option value="reserved">Reserved</option>
+                <option value="maintenance">Maintenance</option>
+              </select>
+            </div>
+          </div>
+        </div>
+        <div class="modal-foot">
+          <button class="btn btn-outline" onClick="{{ closeAdd }}">Cancel</button>
+          <button class="btn btn-primary" onClick="{{ saveCondo }}">{{ addSaveLabel }}</button>
+        </div>
+      </div>
+    </div>
+  </sc-if>
+
+  <sc-if value="{{ confirmOpen }}" hint-placeholder-val="{{ false }}">
+    <div class="modal-bg" style="z-index:120">
+      <div class="modal" style="max-width:420px;animation:lsPop 240ms var(--ease-out) both">
+        <div style="padding:26px 26px 20px;text-align:center">
+          <div style="width:48px;height:48px;border-radius:14px;background:var(--danger-bg);color:var(--danger);display:inline-flex;align-items:center;justify-content:center;margin-bottom:14px">
+            <svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 6h18M8 6V4h8v2M19 6l-1 14H6L5 6M10 11v6M14 11v6"></path></svg>
+          </div>
+          <div style="font:700 18px/1.3 var(--font-sans);color:var(--fg)">{{ confirmTitle }}</div>
+          <div class="t-small" style="margin:8px auto 0;max-width:300px">{{ confirmBody }}</div>
+        </div>
+        <div class="modal-foot" style="justify-content:center;background:var(--surface);border-top:0;padding-bottom:24px">
+          <button class="btn btn-outline" onClick="{{ closeConfirm }}">Keep it</button>
+          <button class="btn" style="background:var(--danger);color:#fff" onClick="{{ doConfirm }}">{{ confirmBtn }}</button>
+        </div>
+      </div>
+    </div>
+  </sc-if>
+
+  <div style="position:fixed;bottom:24px;right:24px;z-index:200;display:flex;flex-direction:column;gap:10px;align-items:flex-end;pointer-events:none">
+    <sc-for list="{{ toasts }}" as="t" hint-placeholder-count="0">
+      <div style="{{ t.style }}">
+        <div style="{{ t.iconStyle }}">
+          <svg viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="{{ t.icon }}"></path></svg>
+        </div>
+        <div>
+          <div style="font:600 13px/1.35 var(--font-sans);color:var(--fg)">{{ t.title }}</div>
+          <div style="font:400 12px/1.4 var(--font-sans);color:var(--fg-3);margin-top:2px">{{ t.body }}</div>
+        </div>
+      </div>
+    </sc-for>
+  </div>
+
+</div>
+
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props="{&quot;startScreen&quot;:{&quot;editor&quot;:&quot;enum&quot;,&quot;options&quot;:[&quot;dashboard&quot;,&quot;condos&quot;,&quot;bookings&quot;,&quot;calendar&quot;,&quot;income&quot;,&quot;expenses&quot;],&quot;default&quot;:&quot;dashboard&quot;,&quot;tsType&quot;:&quot;string&quot;,&quot;section&quot;:&quot;Prototype&quot;},&quot;demoState&quot;:{&quot;editor&quot;:&quot;enum&quot;,&quot;options&quot;:[&quot;live&quot;,&quot;loading&quot;,&quot;empty&quot;],&quot;default&quot;:&quot;live&quot;,&quot;tsType&quot;:&quot;string&quot;,&quot;section&quot;:&quot;Prototype&quot;},&quot;showActivity&quot;:{&quot;editor&quot;:&quot;boolean&quot;,&quot;default&quot;:true,&quot;tsType&quot;:&quot;boolean&quot;,&quot;section&quot;:&quot;Dashboard&quot;}}">
+class Component extends DCLogic {
+  T = 6;
+  DAYS = 31;
+  MSTART = '2026-08-01';
+  CATS = ['Electricity', 'Water', 'Internet', 'Cleaning', 'Maintenance', 'Repairs', 'Laundry', 'Supplies', 'Furniture', 'Appliances', 'Property Tax', 'Insurance', 'Commission', 'Marketing', 'Miscellaneous'];
+  METHODS = ['Cash', 'Bank Transfer', 'Credit Card', 'PromptPay', 'Other'];
+  CATTONE = {
+    Electricity: 'info', Water: 'info', Internet: 'info',
+    Cleaning: 'ok', Laundry: 'ok', Supplies: 'ok',
+    Maintenance: 'warn', Repairs: 'warn',
+    Furniture: 'brand', Appliances: 'brand',
+    'Property Tax': 'neutral', Insurance: 'neutral', Commission: 'neutral', Marketing: 'neutral', Miscellaneous: 'neutral'
+  };
+
+  state = {
+    screen: 'dashboard',
+    loading: false,
+    navOpen: false,
+    vw: typeof window !== 'undefined' ? window.innerWidth : 1440,
+    condoFilter: 'all',
+    calView: 'month', calCondo: 'all', calStatus: 'all', calSearch: '', topSearch: '',
+    hoverDay: null, drawerId: null, addOpen: false, editCode: null, confirmId: null,
+    monthOffset: 0,
+    toasts: [], toastSeq: 0,
+    nc: { name: '', code: '', type: 'Condominium', beds: '1', baths: '1', night: '', month: '', cleaning: '500', deposit: '5000', address: '', desc: '', status: 'available' },
+    form: { condo: 'A-0908', guest: '', phone: '', email: '', checkIn: '2026-08-15', checkOut: '2026-08-20', mode: 'nightly', nightRate: '1500', totalManual: '', discount: '0', cleaning: '500', other: '0', taxPct: '7', received: '3000', payStatus: 'partial', notes: '' },
+    condos: [
+      { code: 'A-1204', name: 'Ashton Asoke 1204', beds: 1, baths: 1, sqm: 42, night: 1800, month: 32000, cleaning: 500, deposit: 10000 },
+      { code: 'A-0908', name: 'Ashton Asoke 0908', beds: 0, baths: 1, sqm: 30, night: 1500, month: 28000, cleaning: 500, deposit: 8000 },
+      { code: 'R-1502', name: 'Rhythm Ekkamai 1502', beds: 1, baths: 1, sqm: 45, night: 2100, month: 38000, cleaning: 600, deposit: 12000 },
+      { code: 'R-0705', name: 'Rhythm Ekkamai 0705', beds: 1, baths: 1, sqm: 44, night: 1950, month: 35000, cleaning: 600, deposit: 12000 },
+      { code: 'N-2201', name: 'Noble Ploenchit 2201', beds: 2, baths: 2, sqm: 68, night: 3200, month: 55000, cleaning: 900, deposit: 20000 },
+      { code: 'I-0403', name: 'Ideo Q Chula 0403', beds: 0, baths: 1, sqm: 28, night: 1400, month: 26000, cleaning: 450, deposit: 7000 },
+      { code: 'I-0811', name: 'Ideo Q Chula 0811', beds: 1, baths: 1, sqm: 38, night: 1600, month: 29000, cleaning: 450, deposit: 9000 },
+      { code: 'L-1103', name: 'Life Asoke 1103', beds: 1, baths: 1, sqm: 40, night: 1750, month: 31000, cleaning: 500, deposit: 10000 },
+      { code: 'M-1808', name: 'Ideo Mobi 1808', beds: 1, baths: 1, sqm: 36, night: 1650, month: 30000, cleaning: 500, deposit: 9000 }
+    ],
+    bookings: [
+      { id: 1, condo: 'A-1204', guest: 'Sarah Chen', in: 1, out: 9, status: 'booked', amount: 14400, received: 14400, phone: '+66 81 224 8890', email: 'sarah.chen@gmail.com', notes: 'Repeat guest, late check-out approved.' },
+      { id: 2, condo: 'A-1204', guest: 'James Whitfield', in: 12, out: 19, status: 'booked', amount: 12600, received: 6000, phone: '+44 7700 900412', email: 'jwhitfield@outlook.com', notes: '' },
+      { id: 3, condo: 'A-0908', guest: 'Chloe Baptiste', in: 10, out: 14, status: 'booked', amount: 6000, received: 6000, phone: '+33 6 12 44 88 21', email: 'chloe.b@proton.me', notes: '' },
+      { id: 4, condo: 'A-0908', guest: 'Nok Phanit', in: 22, out: 28, status: 'pending', amount: 9000, received: 0, phone: '+66 92 771 3320', email: 'nok.phanit@gmail.com', notes: 'Holding until deposit clears Friday.' },
+      { id: 5, condo: 'R-1502', guest: 'Marco Fenn', in: 3, out: 14, status: 'booked', amount: 23100, received: 23100, phone: '+49 151 2233 991', email: 'm.fenn@web.de', notes: '' },
+      { id: 6, condo: 'R-1502', guest: 'Aiko Tanaka', in: 20, out: 27, status: 'pending', amount: 14700, received: 5000, phone: '+81 90 1234 5678', email: 'aiko.tanaka@icloud.com', notes: 'Moved from 18–25 Aug at guest request.' },
+      { id: 7, condo: 'R-0705', guest: 'Daniel Ortiz', in: 8, out: 11, status: 'booked', amount: 5850, received: 5850, phone: '+34 611 223 445', email: 'dortiz@gmail.com', notes: '' },
+      { id: 8, condo: 'R-0705', guest: 'Priya Nair', in: 16, out: 24, status: 'booked', amount: 15600, received: 8000, phone: '+91 98200 44112', email: 'priya.nair@gmail.com', notes: 'Extra bed requested.' },
+      { id: 9, condo: 'N-2201', guest: 'Beckett family', in: 1, out: 16, status: 'booked', amount: 48000, received: 48000, phone: '+61 412 887 300', email: 'r.beckett@bigpond.com', notes: 'Two children, cot provided.' },
+      { id: 10, condo: 'N-2201', guest: 'Lena Vogt', in: 24, out: 31, status: 'booked', amount: 22400, received: 10000, phone: '+43 664 112 8890', email: 'lena.vogt@gmx.at', notes: '' },
+      { id: 11, condo: 'I-0403', guest: 'Aircon replacement', in: 5, out: 12, status: 'maintenance', amount: 0, received: 0, phone: 'Somchai · maintenance', email: 'somchai.fix@line.me', notes: 'Both units replaced, unit unavailable to book.' },
+      { id: 12, condo: 'I-0811', guest: 'Tom Reilly', in: 6, out: 10, status: 'booked', amount: 6400, received: 6400, phone: '+353 87 224 1180', email: 'treilly@gmail.com', notes: '' },
+      { id: 13, condo: 'I-0811', guest: 'Yuki Mori', in: 18, out: 23, status: 'pending', amount: 8000, received: 0, phone: '+81 80 4422 9910', email: 'yuki.mori@gmail.com', notes: 'Awaiting flight confirmation.' },
+      { id: 14, condo: 'L-1103', guest: 'Grace Okafor', in: 2, out: 13, status: 'booked', amount: 19250, received: 19250, phone: '+234 803 221 4477', email: 'g.okafor@yahoo.com', notes: '' },
+      { id: 15, condo: 'L-1103', guest: 'Ravi Menon', in: 15, out: 21, status: 'booked', amount: 10500, received: 4000, phone: '+91 99400 22118', email: 'ravi.menon@gmail.com', notes: '' }
+    ],
+    expView: 'overview',
+    expSearch: '', expCondo: 'all', expCat: 'all', expStatus: 'all', expRange: 'month',
+    expDrawer: null, expDetail: null, condoDrawer: null,
+    dragging: false, uploading: false, uploadPct: 0, receiptName: '',
+    confirmKind: 'booking',
+    ex: { day: '2026-08-06', condo: 'A-1204', cat: 'Electricity', amount: '', method: 'PromptPay', vendor: '', ref: '', desc: '', status: 'paid' },
+    expenses: [
+      { id: 1, day: 6, condo: 'A-1204', cat: 'Electricity', amount: 2840, method: 'PromptPay', vendor: 'MEA', ref: 'EL-2608-1204', desc: 'July meter reading', status: 'paid', created: '6 Aug 2026, 09:12' },
+      { id: 2, day: 6, condo: 'R-1502', cat: 'Cleaning', amount: 800, method: 'Cash', vendor: 'Khun Malee', ref: '', desc: 'Turnover clean after Marco', status: 'paid', created: '6 Aug 2026, 11:40' },
+      { id: 3, day: 5, condo: 'N-2201', cat: 'Internet', amount: 1090, method: 'Bank Transfer', vendor: 'AIS Fibre', ref: 'AIS-88213', desc: 'Monthly 500/300 fibre', status: 'paid', created: '5 Aug 2026, 08:02' },
+      { id: 4, day: 4, condo: 'I-0403', cat: 'Repairs', amount: 18500, method: 'Bank Transfer', vendor: 'Chai Aircon', ref: 'INV-4471', desc: 'Two aircon units replaced', status: 'paid', created: '4 Aug 2026, 16:25' },
+      { id: 5, day: 3, condo: 'L-1103', cat: 'Water', amount: 420, method: 'PromptPay', vendor: 'MWA', ref: 'WA-0803', desc: 'July water bill', status: 'paid', created: '3 Aug 2026, 10:31' },
+      { id: 6, day: 2, condo: 'A-0908', cat: 'Supplies', amount: 1250, method: 'Credit Card', vendor: 'Big C', ref: '', desc: 'Towels, amenities, coffee pods', status: 'paid', created: '2 Aug 2026, 19:08' },
+      { id: 7, day: 1, condo: 'R-0705', cat: 'Laundry', amount: 640, method: 'Cash', vendor: 'Ekkamai Laundry', ref: '', desc: 'Linen service, 8 sets', status: 'paid', created: '1 Aug 2026, 14:55' },
+      { id: 8, day: 1, condo: 'N-2201', cat: 'Commission', amount: 4800, method: 'Bank Transfer', vendor: 'Agoda', ref: 'AGD-77120', desc: 'August channel commission', status: 'pending', created: '1 Aug 2026, 09:00' },
+      { id: 9, day: 8, condo: 'A-1204', cat: 'Cleaning', amount: 800, method: 'Cash', vendor: 'Khun Malee', ref: '', desc: 'Turnover clean after Sarah', status: 'paid', created: '8 Aug 2026, 12:20' },
+      { id: 10, day: 10, condo: 'M-1808', cat: 'Furniture', amount: 12400, method: 'Credit Card', vendor: 'Index Living Mall', ref: 'IDX-9910', desc: 'Sofa and four dining chairs', status: 'paid', created: '10 Aug 2026, 15:44' },
+      { id: 11, day: 12, condo: 'I-0811', cat: 'Maintenance', amount: 1500, method: 'Cash', vendor: 'Somchai', ref: '', desc: 'Water heater annual service', status: 'paid', created: '12 Aug 2026, 10:05' },
+      { id: 12, day: 14, condo: 'R-1502', cat: 'Electricity', amount: 3120, method: 'PromptPay', vendor: 'MEA', ref: 'EL-2608-1502', desc: 'July meter reading', status: 'paid', created: '14 Aug 2026, 09:18' },
+      { id: 13, day: 15, condo: 'L-1103', cat: 'Property Tax', amount: 6800, method: 'Bank Transfer', vendor: 'BMA', ref: 'TAX-2026-11', desc: 'Annual land and building tax', status: 'pending', created: '15 Aug 2026, 11:02' },
+      { id: 14, day: 16, condo: 'A-0908', cat: 'Insurance', amount: 3400, method: 'Credit Card', vendor: 'Muang Thai', ref: 'POL-33218', desc: 'Contents cover renewal', status: 'paid', created: '16 Aug 2026, 08:47' },
+      { id: 15, day: 18, condo: 'N-2201', cat: 'Marketing', amount: 2500, method: 'Credit Card', vendor: 'Meta', ref: 'FB-8821', desc: 'Boosted listing, 14 days', status: 'paid', created: '18 Aug 2026, 20:15' },
+      { id: 16, day: 20, condo: 'R-0705', cat: 'Appliances', amount: 8900, method: 'Bank Transfer', vendor: 'Power Buy', ref: 'PB-2210', desc: 'Replacement fridge, 8.6 cu ft', status: 'pending', created: '20 Aug 2026, 13:30' },
+      { id: 17, day: 21, condo: 'I-0403', cat: 'Cleaning', amount: 900, method: 'Cash', vendor: 'Khun Malee', ref: '', desc: 'Deep clean after aircon work', status: 'paid', created: '21 Aug 2026, 17:00' },
+      { id: 18, day: 22, condo: 'M-1808', cat: 'Internet', amount: 690, method: 'PromptPay', vendor: 'True Online', ref: 'TR-4410', desc: 'Monthly fibre', status: 'paid', created: '22 Aug 2026, 09:40' },
+      { id: 19, day: 24, condo: 'A-1204', cat: 'Miscellaneous', amount: 350, method: 'Cash', vendor: 'Local locksmith', ref: '', desc: 'Two key fob duplicates', status: 'paid', created: '24 Aug 2026, 16:12' },
+      { id: 20, day: 25, condo: 'L-1103', cat: 'Cleaning', amount: 800, method: 'Cash', vendor: 'Khun Malee', ref: '', desc: 'Turnover clean after Ravi', status: 'paid', created: '25 Aug 2026, 12:05' },
+      { id: 21, day: 26, condo: 'R-1502', cat: 'Repairs', amount: 2200, method: 'Cash', vendor: 'Building plumber', ref: '', desc: 'Bathroom leak — rebilled to juristic office', status: 'cancelled', created: '26 Aug 2026, 14:20' },
+      { id: 22, day: 28, condo: 'I-0811', cat: 'Supplies', amount: 980, method: 'Credit Card', vendor: 'Lotus', ref: '', desc: 'Kitchen restock and cleaning products', status: 'paid', created: '28 Aug 2026, 18:33' }
+    ],
+    activity: [
+      { title: 'Payment received', body: '฿14,400 from Sarah Chen · Ashton Asoke 1204', when: '2 hours ago', kind: 'green' },
+      { title: 'Booking added', body: 'James Whitfield · 12–19 Aug · Ashton Asoke 1204', when: '5 hours ago', kind: 'purple' },
+      { title: 'Booking updated', body: 'Aiko Tanaka moved to 20–27 Aug', when: 'Yesterday', kind: 'blue' },
+      { title: 'Maintenance scheduled', body: 'Ideo Q Chula 0403 · aircon replacement', when: '2 days ago', kind: 'red' },
+      { title: 'Condo added', body: 'Ideo Mobi 1808 · ฿1,650 per night', when: '4 days ago', kind: 'purple' }
+    ]
+  };
+
+  componentDidMount() {
+    const s = this.props.startScreen;
+    if (s && s !== this.state.screen) this.setState({ screen: s });
+    this._onResize = () => {
+      if (this._raf) return;
+      this._raf = requestAnimationFrame(() => {
+        this._raf = null;
+        if (Math.abs(window.innerWidth - this.state.vw) > 2) this.setState({ vw: window.innerWidth });
+      });
+    };
+    window.addEventListener('resize', this._onResize);
+  }
+  componentWillUnmount() { window.removeEventListener('resize', this._onResize); }
+
+  /* ---------- helpers ---------- */
+  money(n) { return '฿' + Math.round(Number(n) || 0).toLocaleString('en-US'); }
+  num(v) { const n = parseFloat(String(v).replace(/,/g, '')); return isNaN(n) ? 0 : n; }
+  dnum(iso) {
+    if (!iso) return 0;
+    const d = new Date(iso + 'T00:00:00');
+    if (isNaN(d)) return 0;
+    return Math.round((d - new Date(this.MSTART + 'T00:00:00')) / 86400000) + 1;
+  }
+  dayLabel(day) {
+    const d = new Date(2026, 7, day);
+    return d.toLocaleDateString('en-GB', { day: 'numeric', month: 'short' });
+  }
+  dow(day) { return ['S', 'M', 'T', 'W', 'T', 'F', 'S'][new Date(2026, 7, day).getDay()]; }
+  isWeekend(day) { const g = new Date(2026, 7, day).getDay(); return g === 0 || g === 6; }
+  condoBy(code) { return this.state.condos.find(c => c.code === code) || { name: '—', night: 0, code: code }; }
+  initials(name) { return name.split(' ').filter(Boolean).slice(0, 2).map(w => w[0].toUpperCase()).join(''); }
+
+  get empty() { return this.props.demoState === 'empty'; }
+  get isLoading() { return this.props.demoState === 'loading' || this.state.loading; }
+  get condoList() { return this.empty ? [] : this.state.condos; }
+  get bookingList() { return this.empty ? [] : this.state.bookings; }
+  get expenseList() { return this.empty ? [] : this.state.expenses; }
+  live(e) { return e.status !== 'cancelled'; }
+  expStatusMeta(s) {
+    return { paid: { label: 'Paid', pill: 'pill ok' }, pending: { label: 'Pending', pill: 'pill warn' }, cancelled: { label: 'Cancelled', pill: 'pill neutral' } }[s];
+  }
+  catPill(cat) { return 'pill ' + (this.CATTONE[cat] || 'neutral'); }
+  setEx(patch) { this.setState(s => ({ ex: { ...s.ex, ...patch } })); }
+  condoFin(code) {
+    const bs = this.bookingList.filter(b => b.condo === code && b.status !== 'maintenance');
+    const nights = bs.reduce((a, b) => a + (b.out - b.in), 0);
+    const revenue = bs.reduce((a, b) => a + b.amount, 0);
+    const expenses = this.expenseList.filter(e => e.condo === code && this.live(e)).reduce((a, e) => a + e.amount, 0);
+    return { bookings: bs.length, nights, available: this.DAYS - nights, revenue, expenses, net: revenue - expenses, occ: Math.round(nights / this.DAYS * 100) };
+  }
+  openExpNew() {
+    this.setState({
+      expDrawer: 'new', expDetail: null, uploading: false, uploadPct: 0, receiptName: '',
+      ex: { day: '2026-08-06', condo: this.state.condos[0].code, cat: 'Electricity', amount: '', method: 'PromptPay', vendor: '', ref: '', desc: '', status: 'paid' }
+    });
+  }
+  openExpEdit(e) {
+    this.setState({
+      expDrawer: e.id, expDetail: null, uploading: false, uploadPct: 100, receiptName: 'receipt-' + e.id + '.jpg',
+      ex: { day: '2026-08-' + String(e.day).padStart(2, '0'), condo: e.condo, cat: e.cat, amount: String(e.amount), method: e.method, vendor: e.vendor, ref: e.ref, desc: e.desc, status: e.status }
+    });
+  }
+  simulateUpload(name) {
+    this.setState({ uploading: true, uploadPct: 8, receiptName: name || 'receipt.jpg', dragging: false });
+    const tick = () => setTimeout(() => {
+      const p = this.state.uploadPct;
+      if (!this.state.uploading) return;
+      if (p >= 100) { this.setState({ uploading: false }); this.toast('Receipt attached', (name || 'receipt.jpg') + ' uploaded.'); return; }
+      this.setState({ uploadPct: Math.min(100, p + 18) }); tick();
+    }, 110);
+    tick();
+  }
+
+  unitStatus(code) {
+    const bs = this.bookingList.filter(b => b.condo === code);
+    const T = this.T;
+    if (bs.some(b => b.status === 'maintenance' && b.in <= T && b.out > T)) return 'maintenance';
+    if (bs.some(b => b.status !== 'maintenance' && b.in <= T && b.out > T)) return 'occupied';
+    if (bs.some(b => b.in > T)) return 'reserved';
+    return 'available';
+  }
+  statusMeta(s) {
+    return {
+      available: { label: 'Available', pill: 'pill ok', color: 'var(--success)' },
+      occupied: { label: 'Occupied', pill: 'pill info', color: 'var(--info)' },
+      reserved: { label: 'Reserved', pill: 'pill warn', color: 'var(--warning)' },
+      maintenance: { label: 'Maintenance', pill: 'pill dgr', color: 'var(--danger)' }
+    }[s];
+  }
+  barMeta(s) {
+    return {
+      booked: { bg: 'var(--info-bg)', bd: 'var(--info-border)', fg: 'var(--info)' },
+      pending: { bg: 'var(--warning-bg)', bd: 'var(--warning-border)', fg: 'var(--warning)' },
+      maintenance: { bg: 'var(--danger-bg)', bd: 'var(--danger-border)', fg: 'var(--danger)' }
+    }[s] || { bg: 'var(--bg-alt)', bd: 'var(--line)', fg: 'var(--fg-2)' };
+  }
+  payOf(b) {
+    if (b.status === 'maintenance') return { key: 'na', label: 'Blocked', pill: 'pill dgr' };
+    if (b.received >= b.amount) return { key: 'paid', label: 'Paid', pill: 'pill ok' };
+    if (b.received > 0) return { key: 'partial', label: 'Partial', pill: 'pill warn' };
+    return { key: 'pending', label: 'Pending', pill: 'pill neutral' };
+  }
+
+  /* ---------- actions ---------- */
+  go(screen) { this.setState({ screen, drawerId: null, navOpen: false }); }
+  toast(title, body, kind) {
+    const id = this.state.toastSeq + 1;
+    this.setState(s => ({ toastSeq: id, toasts: [...s.toasts, { id, title, body, kind: kind || 'success' }] }));
+    setTimeout(() => this.setState(s => ({ toasts: s.toasts.filter(t => t.id !== id) })), 3600);
+  }
+  refresh = () => {
+    this.setState({ loading: true });
+    setTimeout(() => { this.setState({ loading: false }); this.toast('Data refreshed', 'All bookings and payments are up to date.'); }, 900);
+  };
+  setF(patch) { this.setState(s => ({ form: { ...s.form, ...patch } })); }
+  setNc(patch) { this.setState(s => ({ nc: { ...s.nc, ...patch } })); }
+
+  /* ---------- booking math ---------- */
+  calc() {
+    const f = this.state.form;
+    const nights = Math.max(0, this.dnum(f.checkOut) - this.dnum(f.checkIn));
+    let rate, subtotal;
+    if (f.mode === 'nightly') { rate = this.num(f.nightRate); subtotal = rate * nights; }
+    else { subtotal = this.num(f.totalManual); rate = nights ? subtotal / nights : 0; }
+    const discount = this.num(f.discount), cleaning = this.num(f.cleaning), other = this.num(f.other);
+    const taxable = subtotal - discount + cleaning + other;
+    const tax = taxable * this.num(f.taxPct) / 100;
+    const total = taxable + tax;
+    const received = this.num(f.received);
+    return { nights, rate, subtotal, discount, cleaning, other, tax, total, received, balance: total - received };
+  }
+  conflictBooking() {
+    const f = this.state.form;
+    const a = this.dnum(f.checkIn), b = this.dnum(f.checkOut);
+    if (!a || !b || b <= a) return null;
+    return this.bookingList.find(x => x.condo === f.condo && x.id !== this.state.editingBooking && a < x.out && b > x.in) || null;
+  }
+
+  renderVals() {
+    const st = this.state, T = this.T, f = st.form;
+    const mob = st.vw <= 768;
+    const condos = this.condoList, bookings = this.bookingList;
+    const c = this.calc();
+    const conf = this.conflictBooking();
+
+    /* KPIs */
+    const occupied = condos.filter(x => this.unitStatus(x.code) === 'occupied');
+    const maint = condos.filter(x => this.unitStatus(x.code) === 'maintenance');
+    const vacantN = condos.length - occupied.length - maint.length;
+    const occPct = condos.length ? Math.round(occupied.length / condos.length * 100) : 0;
+    const todayRev = occupied.reduce((a, x) => a + x.night, 0);
+    const monthRev = bookings.reduce((a, b) => a + b.amount, 0);
+    const received = bookings.reduce((a, b) => a + b.received, 0);
+    const nightsTotal = bookings.filter(b => b.status !== 'maintenance').reduce((a, b) => a + (b.out - b.in), 0);
+
+    /* daily chart */
+    const daily = new Array(this.DAYS + 1).fill(0);
+    bookings.forEach(b => {
+      if (b.status === 'maintenance') return;
+      const per = b.amount / Math.max(1, b.out - b.in);
+      for (let d = b.in; d < b.out; d++) if (d >= 1 && d <= this.DAYS) daily[d] += per;
+    });
+    const maxDaily = Math.max(1, ...daily);
+    const weekRev = daily.slice(Math.max(1, T - 3), Math.min(this.DAYS, T + 4)).reduce((a, x) => a + x, 0);
+    const bestIdx = daily.indexOf(maxDaily);
+    const chartDays = [];
+    for (let d = 1; d <= this.DAYS; d++) {
+      const h = Math.max(2, Math.round(daily[d] / maxDaily * 100));
+      const isT = d === T, hov = st.hoverDay === d;
+      chartDays.push({
+        day: d, tick: d % 5 === 0 || d === 1 ? String(d) : '',
+        barStyle: 'height:' + h + '%;border-radius:5px 5px 3px 3px;transition:background 120ms,transform 120ms;background:' + (hov ? 'var(--brand-purple)' : isT ? 'var(--brand-purple-600)' : 'var(--brand-purple-200)') + ';' + (hov ? 'transform:scaleY(1.02);transform-origin:bottom;' : ''),
+        tickStyle: 'font:500 9px/1 var(--font-sans);text-align:center;color:' + (isT ? 'var(--brand-purple)' : 'var(--fg-4)'),
+        onEnter: () => this.setState({ hoverDay: d })
+      });
+    }
+    const hd = st.hoverDay || T;
+
+    /* upcoming */
+    const upcoming = bookings.filter(b => b.status !== 'maintenance' && b.in >= T).sort((a, b) => a.in - b.in).slice(0, 5).map(b => {
+      const cc = this.condoBy(b.condo), p = this.payOf(b);
+      return {
+        ...b, condoName: cc.name, initials: this.initials(b.guest),
+        avatarStyle: 'width:32px;height:32px;border-radius:999px;flex:none;display:flex;align-items:center;justify-content:center;font:700 12px/1 var(--font-sans);background:var(--brand-purple-100);color:var(--brand-purple-700)',
+        inLabel: this.dayLabel(b.in), outLabel: this.dayLabel(b.out),
+        nightsLabel: (b.out - b.in) + ' nights', amountLabel: this.money(b.amount),
+        payPill: p.pill, payLabel: p.label,
+        onOpen: () => this.setState({ screen: 'calendar', drawerId: b.id })
+      };
+    });
+
+    /* condo cards */
+    const filters = [['all', 'All'], ['available', 'Available'], ['occupied', 'Occupied'], ['reserved', 'Reserved'], ['maintenance', 'Maintenance']];
+    const condoFilters = filters.map(([k, label]) => {
+      const n = k === 'all' ? condos.length : condos.filter(x => this.unitStatus(x.code) === k).length;
+      const on = st.condoFilter === k;
+      return {
+        label, count: n, onClick: () => this.setState({ condoFilter: k }),
+        style: 'display:inline-flex;align-items:center;gap:8px;padding:8px 14px;border-radius:999px;cursor:pointer;font:600 13px/1 var(--font-sans);transition:all 120ms var(--ease-out);border:1px solid ' + (on ? 'var(--brand-purple)' : 'var(--line-strong)') + ';background:' + (on ? 'var(--brand-purple)' : 'var(--surface)') + ';color:' + (on ? '#fff' : 'var(--fg-2)'),
+        countStyle: 'padding:1px 6px;border-radius:999px;font:600 11px/1.5 var(--font-sans);background:' + (on ? 'rgba(255,255,255,.22)' : 'var(--bg-alt)') + ';color:' + (on ? '#fff' : 'var(--fg-3)')
+      };
+    });
+    const shown = condos.filter(x => st.condoFilter === 'all' || this.unitStatus(x.code) === st.condoFilter);
+    const condoCards = shown.map(x => {
+      const s = this.unitStatus(x.code), m = this.statusMeta(s);
+      return {
+        ...x, statusLabel: m.label, pillClass: m.pill,
+        slotId: 'condo-' + x.code.toLowerCase(), slotHint: 'Drop ' + x.name + ' photo',
+        spec: (x.beds === 0 ? 'Studio' : x.beds + ' bedroom') + ' · ' + x.baths + ' bath · ' + x.sqm + ' m²',
+        nightLabel: this.money(x.night), monthLabel: this.money(x.month),
+        feeLabel: 'Deposit ' + this.money(x.deposit || 0) + ' · Cleaning ' + this.money(x.cleaning || 0),
+        netLabel: this.money(this.condoFin(x.code).net) + ' net this month',
+        onOpen: () => this.setState({ condoDrawer: x.code }),
+        onCalendar: e => { e.stopPropagation(); this.setState({ screen: 'calendar', calCondo: x.code, navOpen: false }); },
+        onEdit: e => { e.stopPropagation(); this.setState({ addOpen: true, editCode: x.code, nc: { name: x.name, code: x.code, type: 'Condominium', beds: String(x.beds), baths: String(x.baths), night: String(x.night), month: String(x.month), cleaning: String(x.cleaning), deposit: String(x.deposit || ''), address: 'Bangkok', desc: '', status: s } }); }
+      };
+    });
+
+    /* calendar */
+    const wStart = st.calView === 'week' ? Math.max(1, T - 1) : 1;
+    const wCount = st.calView === 'week' ? 7 : this.DAYS;
+    const calDays = [];
+    for (let i = 0; i < wCount; i++) {
+      const d = wStart + i, isT = d === T && st.monthOffset === 0, we = this.isWeekend(d);
+      calDays.push({
+        num: d, dow: this.dow(d),
+        headStyle: 'padding:8px 2px;text-align:center;display:flex;flex-direction:column;align-items:center;gap:4px;border-left:1px solid ' + (we ? 'var(--line)' : 'transparent') + ';background:' + (isT ? 'var(--brand-purple-50)' : we ? 'var(--bg-alt)' : 'transparent'),
+        numStyle: isT ? 'width:20px;height:20px;border-radius:999px;background:var(--brand-purple);color:#fff;font:700 11px/20px var(--font-sans);text-align:center' : 'font:600 12px/1.6 var(--font-sans);color:var(--fg-2)',
+        cellStyle: 'border-left:1px solid ' + (we || isT ? 'var(--line)' : 'transparent') + ';background:' + (isT ? 'rgba(124,58,237,.05)' : we ? 'var(--surface-2)' : 'transparent')
+      });
+    }
+    const q = st.calSearch.trim().toLowerCase();
+    const calCondos = condos.filter(x => st.calCondo === 'all' || x.code === st.calCondo);
+    const calRows = calCondos.map(x => {
+      const m = this.statusMeta(this.unitStatus(x.code));
+      const bars = bookings.filter(b => b.condo === x.code)
+        .filter(b => st.calStatus === 'all' || b.status === st.calStatus)
+        .filter(b => !q || b.guest.toLowerCase().includes(q))
+        .map(b => {
+          const s0 = Math.max(b.in, wStart), e0 = Math.min(b.out, wStart + wCount);
+          if (e0 <= s0) return null;
+          const bm = this.barMeta(b.status);
+          const wide = (e0 - s0) >= 3;
+          return {
+            style: 'position:absolute;top:9px;bottom:9px;left:' + ((s0 - wStart) / wCount * 100) + '%;width:' + ((e0 - s0) / wCount * 100) + '%;display:flex;align-items:center;padding:0 10px;border-radius:8px;cursor:pointer;overflow:hidden;font:600 12px/1 var(--font-sans);transition:box-shadow 120ms,transform 120ms;background:' + bm.bg + ';border:1px solid ' + bm.bd + ';color:' + bm.fg,
+            label: wide ? b.guest + ' · ' + (b.out - b.in) + 'n' : this.initials(b.guest),
+            title: b.guest + ' · ' + this.dayLabel(b.in) + ' → ' + this.dayLabel(b.out),
+            onClick: () => this.setState({ drawerId: b.id })
+          };
+        }).filter(Boolean);
+      return { name: x.name, code: x.code, bars, dotStyle: 'width:8px;height:8px;border-radius:999px;flex:none;background:' + m.color };
+    }).filter(r => !(q || st.calStatus !== 'all') || r.bars.length);
+
+    /* drawer */
+    const db = bookings.find(b => b.id === st.drawerId);
+    let drawer = {};
+    if (db) {
+      const cc = this.condoBy(db.condo), p = this.payOf(db), n = db.out - db.in, bal = db.amount - db.received;
+      drawer = {
+        guest: db.guest, condoName: cc.name, code: db.condo, statusLabel: p.label, pill: p.pill,
+        inLabel: this.dayLabel(db.in), outLabel: this.dayLabel(db.out), nights: n,
+        rate: this.money(n ? db.amount / n : 0), amount: this.money(db.amount), received: this.money(db.received),
+        balance: this.money(bal), balanceStyle: 'font:700 15px/1.4 var(--font-sans);color:' + (bal > 0 ? 'var(--warning)' : 'var(--success)'),
+        phone: db.phone, email: db.email, notes: db.notes, hasNotes: !!db.notes
+      };
+    }
+
+    /* income */
+    const incomeRows = condos.map(x => {
+      const fin = this.condoFin(x.code);
+      const occ = fin.occ;
+      return {
+        name: x.name, code: x.code, bookings: fin.bookings, nights: fin.nights,
+        revenue: this.money(fin.revenue), expenses: this.money(fin.expenses), net: this.money(fin.net),
+        netStyle: 'font:700 14px/1.4 var(--font-sans);color:' + (fin.net >= 0 ? 'var(--success)' : 'var(--danger)'),
+        avgRate: this.money(fin.nights ? fin.revenue / fin.nights : 0), occ: occ + '%',
+        occPill: occ >= 70 ? 'pill ok' : occ >= 40 ? 'pill warn' : 'pill neutral'
+      };
+    });
+    const trendData = [['Mar', 148000], ['Apr', 162000], ['May', 139000], ['Jun', 171000], ['Jul', 194000], ['Aug', monthRev]];
+    const trendMax = Math.max(1, ...trendData.map(t => t[1]));
+    const trend = trendData.map(([month, v], i) => ({
+      month, label: '฿' + Math.round(v / 1000) + 'k',
+      barStyle: 'height:' + Math.max(4, Math.round(v / trendMax * 100)) + '%;border-radius:8px 8px 4px 4px;background:' + (i === trendData.length - 1 ? 'var(--brand-purple)' : 'var(--brand-purple-100)')
+    }));
+    const guestB = bookings.filter(b => b.status !== 'maintenance');
+    const paidN = guestB.filter(b => b.received >= b.amount).length;
+    const partialN = guestB.filter(b => b.received > 0 && b.received < b.amount).length;
+    const pendN = guestB.filter(b => b.received === 0).length;
+    const tot = Math.max(1, guestB.length);
+    const p1 = paidN / tot * 100, p2 = p1 + partialN / tot * 100;
+    const donutBase = 'position:absolute;inset:0;border-radius:999px;mask:radial-gradient(circle at center, transparent 58%, #000 59%);-webkit-mask:radial-gradient(circle at center, transparent 58%, #000 59%);background:conic-gradient(';
+    const occ1 = condos.length ? occupied.length / condos.length * 100 : 0;
+    const occ2 = occ1 + (condos.length ? vacantN / condos.length * 100 : 0);
+
+    /* ---------- expenses ---------- */
+    const expenses = this.expenseList;
+    const liveExp = expenses.filter(e => this.live(e));
+    const expMonth = liveExp.reduce((a, e) => a + e.amount, 0);
+    const expToday = liveExp.filter(e => e.day === T).reduce((a, e) => a + e.amount, 0);
+    const expPendingList = expenses.filter(e => e.status === 'pending');
+    const netProfit = monthRev - expMonth;
+    const margin = monthRev ? Math.round(netProfit / monthRev * 100) : 0;
+
+    const catTotals = {};
+    liveExp.forEach(e => { catTotals[e.cat] = (catTotals[e.cat] || 0) + e.amount; });
+    const catSorted = Object.keys(catTotals).map(k => ({ cat: k, v: catTotals[k] })).sort((a, b) => b.v - a.v);
+    const sliceColors = ['var(--brand-purple)', 'var(--info)', 'var(--success)', 'var(--warning)', 'var(--gold)', 'var(--fg-4)'];
+    const top = catSorted.slice(0, 5);
+    const otherV = catSorted.slice(5).reduce((a, x) => a + x.v, 0);
+    const slices = otherV > 0 ? [...top, { cat: 'Other', v: otherV }] : top;
+    let acc = 0;
+    const stops = slices.map((s, i) => {
+      const from = acc, to = acc + (expMonth ? s.v / expMonth * 100 : 0);
+      acc = to;
+      return sliceColors[i] + ' ' + from + '% ' + to + '%';
+    });
+    const catLegend = slices.map((s, i) => ({
+      cat: s.cat, amount: this.money(s.v),
+      pct: (expMonth ? Math.round(s.v / expMonth * 100) : 0) + '%',
+      dotStyle: 'width:9px;height:9px;border-radius:3px;flex:none;background:' + sliceColors[i]
+    }));
+
+    const expTrendData = [['Mar', 41200], ['Apr', 38600], ['May', 52400], ['Jun', 44100], ['Jul', 39800], ['Aug', expMonth]];
+    const revTrendData = [148000, 162000, 139000, 171000, 194000, monthRev];
+    const rvMax = Math.max(1, ...revTrendData, ...expTrendData.map(t => t[1]));
+    const expTrend = expTrendData.map(([month, v], i) => ({
+      month, label: '฿' + Math.round(v / 1000) + 'k',
+      barStyle: 'height:' + Math.max(4, Math.round(v / Math.max(1, ...expTrendData.map(t => t[1])) * 100)) + '%;border-radius:8px 8px 4px 4px;background:' + (i === 5 ? 'var(--warning)' : 'var(--warning-border)')
+    }));
+    const rvsE = expTrendData.map(([month, e], i) => {
+      const r = revTrendData[i], n = r - e;
+      return {
+        month, netLabel: '฿' + Math.round(n / 1000) + 'k',
+        revStyle: 'flex:1;height:' + Math.max(3, Math.round(r / rvMax * 100)) + '%;border-radius:6px 6px 3px 3px;background:' + (i === 5 ? 'var(--brand-purple)' : 'var(--brand-purple-200)'),
+        expStyle: 'flex:1;height:' + Math.max(3, Math.round(e / rvMax * 100)) + '%;border-radius:6px 6px 3px 3px;background:' + (i === 5 ? 'var(--warning)' : 'var(--warning-border)')
+      };
+    });
+
+    const decorate = e => {
+      const cc = this.condoBy(e.condo), m = this.expStatusMeta(e.status);
+      return {
+        ...e, condoName: cc.name, dateLabel: this.dayLabel(e.day),
+        amountLabel: this.money(e.amount), catPill: this.catPill(e.cat),
+        statusPill: m.pill, statusLabel: m.label,
+        amountStyle: 'text-align:right;font:600 14px/1.4 var(--font-sans);color:' + (e.status === 'cancelled' ? 'var(--fg-4)' : 'var(--fg)') + (e.status === 'cancelled' ? ';text-decoration:line-through' : ''),
+        onOpen: () => this.setState({ expDetail: e.id }),
+        onEdit: ev => { ev.stopPropagation(); this.openExpEdit(e); },
+        onDelete: ev => { ev.stopPropagation(); this.setState({ confirmKind: 'expense', confirmId: e.id }); }
+      };
+    };
+    const recentExp = [...liveExp].sort((a, b) => b.day - a.day).slice(0, 6).map(decorate);
+    const q2 = st.expSearch.trim().toLowerCase();
+    const rangeOk = e => st.expRange === 'month' ? true : st.expRange === '7d' ? e.day > T - 7 && e.day <= T : st.expRange === '30d' ? true : true;
+    const expRows = expenses
+      .filter(e => st.expCondo === 'all' || e.condo === st.expCondo)
+      .filter(e => st.expCat === 'all' || e.cat === st.expCat)
+      .filter(e => st.expStatus === 'all' || e.status === st.expStatus)
+      .filter(rangeOk)
+      .filter(e => !q2 || e.desc.toLowerCase().includes(q2) || e.vendor.toLowerCase().includes(q2) || e.cat.toLowerCase().includes(q2) || this.condoBy(e.condo).name.toLowerCase().includes(q2))
+      .sort((a, b) => b.day - a.day).map(decorate);
+    const expFiltered = st.expSearch.trim() || st.expCondo !== 'all' || st.expCat !== 'all' || st.expStatus !== 'all' || st.expRange !== 'month';
+
+    const de = expenses.find(e => e.id === st.expDetail);
+    const expDetail = de ? decorate(de) : {};
+    const cd = st.condoDrawer ? condos.find(x => x.code === st.condoDrawer) : null;
+    let condoDetail = {};
+    if (cd) {
+      const fin = this.condoFin(cd.code), m = this.statusMeta(this.unitStatus(cd.code));
+      condoDetail = {
+        name: cd.name, code: cd.code, statusLabel: m.label, pill: m.pill,
+        spec: (cd.beds === 0 ? 'Studio' : cd.beds + ' bedroom') + ' · ' + cd.baths + ' bath · ' + cd.sqm + ' m²',
+        night: this.money(cd.night), month: this.money(cd.month), deposit: this.money(cd.deposit || 0), cleaningFee: this.money(cd.cleaning || 0),
+        revenue: this.money(fin.revenue), expenses: this.money(fin.expenses), net: this.money(fin.net),
+        netStyle: 'font:700 24px/1.1 var(--font-sans);letter-spacing:-.02em;color:' + (fin.net >= 0 ? 'var(--success)' : 'var(--danger)'),
+        occ: fin.occ + '%', nights: fin.nights, available: fin.available, bookings: fin.bookings,
+        barStyle: 'height:8px;border-radius:999px;background:linear-gradient(90deg,var(--brand-purple) ' + fin.occ + '%,var(--muted) ' + fin.occ + '%)',
+        slotId: 'condo-' + cd.code.toLowerCase()
+      };
+    }
+
+    const inputBase = 'display:flex;align-items:center;gap:8px;padding:12px;border:1px solid var(--line-strong);border-radius:8px;';
+    const modeBase = 'display:flex;gap:12px;align-items:flex-start;padding:14px;border-radius:12px;cursor:pointer;transition:all 120ms var(--ease-out);border:1px solid ';
+    const radioBase = 'width:18px;height:18px;border-radius:999px;flex:none;margin-top:1px;box-sizing:border-box;transition:all 120ms;border:';
+    const nightly = f.mode === 'nightly';
+
+    return {
+      /* nav */
+      isDashboard: st.screen === 'dashboard', isCondos: st.screen === 'condos', isBookings: st.screen === 'bookings',
+      isCalendar: st.screen === 'calendar', isIncome: st.screen === 'income', isExpenses: st.screen === 'expenses',
+      navExpenses: 'sidebar-item' + (st.screen === 'expenses' ? ' active' : ''),
+      goExpenses: () => this.go('expenses'),
+      navDashboard: 'sidebar-item' + (st.screen === 'dashboard' ? ' active' : ''),
+      navCondos: 'sidebar-item' + (st.screen === 'condos' ? ' active' : ''),
+      navBookings: 'sidebar-item' + (st.screen === 'bookings' ? ' active' : ''),
+      navCalendar: 'sidebar-item' + (st.screen === 'calendar' ? ' active' : ''),
+      navIncome: 'sidebar-item' + (st.screen === 'income' ? ' active' : ''),
+      goDashboard: () => this.go('dashboard'), goCondos: () => this.go('condos'),
+      goBookings: () => this.go('bookings'), goCalendar: () => this.go('calendar'), goIncome: () => this.go('income'),
+
+      /* responsive */
+      isMobile: mob, isDesktop: !mob,
+      sidebarClass: 'sidebar' + (st.navOpen ? ' open' : ''),
+      navOpen: st.navOpen && mob,
+      toggleNav: () => this.setState(s => ({ navOpen: !s.navOpen })),
+      closeNav: () => this.setState({ navOpen: false }),
+      formColsStyle: 'display:flex;gap:20px;align-items:flex-start;' + (mob ? 'flex-direction:column' : 'flex-wrap:wrap'),
+      formFieldsStyle: 'flex:1 1 520px;min-width:0;width:100%;display:flex;flex-direction:column;gap:16px;' + (mob ? 'order:2' : ''),
+      formSummaryStyle: mob ? 'width:100%;order:1' : 'flex:1 1 320px;max-width:400px;min-width:0;position:sticky;top:20px',
+
+      loading: this.isLoading, ready: !this.isLoading,
+      skel7: [1, 2, 3, 4, 5, 6, 7], skel6: [1, 2, 3, 4, 5, 6],
+      showActivity: this.props.showActivity !== false,
+
+      topSearch: st.topSearch,
+      onTopSearch: e => this.setState({ topSearch: e.target.value }),
+      onTopSearchKey: e => { if (e.key === 'Enter' && st.topSearch.trim()) { this.setState({ screen: 'calendar', calSearch: st.topSearch.trim(), topSearch: '' }); this.toast('Searching bookings', 'Filtered the calendar by "' + st.topSearch.trim() + '".'); } },
+      refresh: this.refresh,
+      notify: () => this.toast('3 unread', 'Aiko Tanaka still owes ฿9,700 · deposit due Friday.', 'info'),
+      exportCsv: () => this.toast('Export queued', 'August income will land in your inbox as CSV.'),
+
+      /* KPIs */
+      kTotal: condos.length, kOccupied: occupied.length, kVacant: vacantN, kMaint: maint.length,
+      kOccPct: occPct + '%', kToday: this.money(todayRev), kMonth: this.money(monthRev), kWeek: this.money(weekRev),
+      kCheckins: bookings.filter(b => b.status !== 'maintenance' && b.in >= T && b.in <= T + 7).length,
+      kCheckouts: bookings.filter(b => b.status !== 'maintenance' && b.out > T && b.out <= T + 7).length,
+      outstanding: this.money(monthRev - received),
+      outstandingCount: (partialN + pendN) + ' bookings',
+      avgDay: this.money(monthRev / this.DAYS), bestDay: this.dayLabel(bestIdx > 0 ? bestIdx : 1),
+      totalNights: nightsTotal, totalBookings: guestB.length,
+      avgRateAll: this.money(nightsTotal ? monthRev / nightsTotal : 0),
+      occAll: (condos.length ? Math.round(nightsTotal / (this.DAYS * condos.length) * 100) : 0) + '%',
+      occNote: occPct >= 60 ? 'Strong month. Two units still open 14–20 Aug — worth a weekly rate.' : 'Three units sit open next week. Consider a 10% weekly discount.',
+      occDonut: donutBase + 'var(--info) 0 ' + occ1 + '%, var(--success) ' + occ1 + '% ' + occ2 + '%, var(--danger) ' + occ2 + '% 100%)',
+      chartDays, hoverAmount: this.money(daily[hd] || 0), hoverLabel: this.dayLabel(hd) + ' · accrued',
+      upcoming,
+      hasUpcoming: upcoming.length > 0 && !mob, upcomingCards: mob ? upcoming : [],
+      hasUpcomingCards: upcoming.length > 0 && mob, noUpcoming: upcoming.length === 0,
+      activity: (this.empty ? [] : st.activity).map(a => ({
+        ...a, dotStyle: 'width:9px;height:9px;border-radius:999px;margin-top:5px;flex:none;background:' + ({ green: 'var(--success)', purple: 'var(--brand-purple)', blue: 'var(--info)', red: 'var(--danger)' }[a.kind])
+      })),
+
+      /* condos */
+      condoSummary: condos.length ? condos.length + ' units · ' + occupied.length + ' occupied · ' + vacantN + ' vacant · ' + maint.length + ' in maintenance' : 'No units yet',
+      condoFilters, condoCards, hasCondos: condoCards.length > 0 && !this.isLoading,
+      noCondos: condoCards.length === 0 && !this.isLoading,
+      emptyCondoTitle: condos.length ? 'No ' + st.condoFilter + ' units' : 'No condos yet',
+      emptyCondoBody: condos.length ? 'Nothing in this state right now. Try another filter.' : 'Add your units once and every booking, calendar bar and income figure follows from them.',
+
+      /* booking form */
+      formTitle: st.editingBooking ? 'Edit booking' : 'New booking',
+      form: f, condoOptions: condos.map(x => ({ code: x.code, label: x.name + ' · ' + this.money(x.night) + '/night', short: x.name })),
+      onFormCondo: e => { const cc = this.condoBy(e.target.value); this.setF({ condo: e.target.value, nightRate: String(cc.night), cleaning: String(cc.cleaning || 500) }); },
+      onFormGuest: e => this.setF({ guest: e.target.value }),
+      onFormPhone: e => this.setF({ phone: e.target.value }),
+      onFormEmail: e => this.setF({ email: e.target.value }),
+      onFormIn: e => this.setF({ checkIn: e.target.value }),
+      onFormOut: e => this.setF({ checkOut: e.target.value }),
+      setModeNightly: () => this.setF({ mode: 'nightly' }),
+      setModeTotal: () => this.setF({ mode: 'total', totalManual: String(Math.round(c.subtotal)) }),
+      modeNightlyStyle: modeBase + (nightly ? 'var(--brand-purple);background:var(--brand-purple-50)' : 'var(--line-strong);background:var(--surface)'),
+      modeTotalStyle: modeBase + (!nightly ? 'var(--brand-purple);background:var(--brand-purple-50)' : 'var(--line-strong);background:var(--surface)'),
+      radioNightlyStyle: radioBase + (nightly ? '5px solid var(--brand-purple)' : '1.5px solid var(--line-strong)'),
+      radioTotalStyle: radioBase + (!nightly ? '5px solid var(--brand-purple)' : '1.5px solid var(--line-strong)'),
+      nightRateLabel: nightly ? 'Night rate' : 'Night rate (calculated)',
+      totalLabel: nightly ? 'Subtotal (calculated)' : 'Total amount',
+      nightWrapStyle: inputBase + 'background:' + (nightly ? 'var(--surface)' : 'var(--bg-alt)'),
+      totalWrapStyle: inputBase + 'background:' + (!nightly ? 'var(--surface)' : 'var(--bg-alt)'),
+      nightDisabled: !nightly, totalDisabled: nightly,
+      nightRateValue: nightly ? f.nightRate : String(Math.round(c.rate)),
+      totalValue: nightly ? String(Math.round(c.subtotal)) : f.totalManual,
+      onNightRate: e => this.setF({ nightRate: e.target.value }),
+      onTotalManual: e => this.setF({ totalManual: e.target.value }),
+      onDiscount: e => this.setF({ discount: e.target.value }),
+      onCleaning: e => this.setF({ cleaning: e.target.value }),
+      onOther: e => this.setF({ other: e.target.value }),
+      onTax: e => this.setF({ taxPct: e.target.value }),
+      onNotes: e => this.setF({ notes: e.target.value }),
+      onPayStatus: e => this.setF({ payStatus: e.target.value }),
+      onReceived: e => {
+        const v = e.target.value, r = this.num(v);
+        this.setF({ received: v, payStatus: r <= 0 ? 'pending' : r >= c.total ? 'paid' : 'partial' });
+      },
+      nights: c.nights,
+      rateLabel: this.money(c.rate), subtotalLabel: this.money(c.subtotal),
+      discountLabel: c.discount ? '−' + this.money(c.discount) : this.money(0),
+      discountStyle: 'font:600 14px/1.4 var(--font-sans);color:' + (c.discount ? 'var(--success)' : 'var(--fg-4)'),
+      cleaningLabel: '+' + this.money(c.cleaning), otherLabel: '+' + this.money(c.other),
+      taxLabel: '+' + this.money(c.tax), taxPctLabel: '(' + this.num(f.taxPct) + '%)',
+      totalAmountLabel: this.money(c.total), receivedLabel: this.money(c.received),
+      balanceLabel: this.money(c.balance),
+      balanceWrapStyle: 'display:flex;align-items:center;padding:12px;border-radius:8px;font:700 15px/1.2 var(--font-sans);border:1px solid ' + (c.balance > 0 ? 'var(--warning-border)' : 'var(--success-border)') + ';background:' + (c.balance > 0 ? 'var(--warning-bg)' : 'var(--success-bg)') + ';color:' + (c.balance > 0 ? 'var(--warning)' : 'var(--success)'),
+      balanceTextStyle: 'font:700 16px/1.2 var(--font-sans);color:' + (c.balance > 0 ? 'var(--warning)' : 'var(--success)'),
+      stayLabel: c.nights ? this.dayLabel(this.dnum(f.checkIn)) + ' → ' + this.dayLabel(this.dnum(f.checkOut)) + ' · ' + c.nights + ' nights · ' + this.condoBy(f.condo).name : 'Pick check-in and check-out dates',
+      summaryCondo: this.condoBy(f.condo).name,
+      summaryPill: 'pill ' + (f.payStatus === 'paid' ? 'ok' : f.payStatus === 'partial' ? 'warn' : 'neutral'),
+      summaryStatus: f.payStatus === 'paid' ? 'Paid' : f.payStatus === 'partial' ? 'Partial' : 'Pending',
+      conflict: !!conf, conflictMsg: conf ? this.condoBy(f.condo).name + ' is already booked ' + this.dayLabel(conf.in) + ' → ' + this.dayLabel(conf.out) + ' for ' + conf.guest + '. Pick other dates or another unit.' : '',
+      saveBtnClass: 'btn ' + (conf ? 'btn-outline' : 'btn-primary'),
+      saveLabel: conf ? 'Resolve conflict to save' : 'Save booking',
+      cancelForm: () => { this.setState({ screen: 'calendar' }); },
+      saveBooking: () => {
+        if (conf) { this.toast('Booking conflict', 'Those dates overlap ' + conf.guest + '.', 'error'); return; }
+        if (!f.guest.trim()) { this.toast('Guest name missing', 'Add who is staying before saving.', 'error'); return; }
+        if (!c.nights) { this.toast('Check dates', 'Check-out must be after check-in.', 'error'); return; }
+        const id = Math.max(0, ...st.bookings.map(b => b.id)) + 1;
+        const nb = { id, condo: f.condo, guest: f.guest.trim(), in: this.dnum(f.checkIn), out: this.dnum(f.checkOut), status: f.payStatus === 'pending' ? 'pending' : 'booked', amount: Math.round(c.total), received: Math.round(c.received), phone: f.phone || '—', email: f.email || '—', notes: f.notes };
+        this.setState(s => ({
+          bookings: [...s.bookings, nb], screen: 'calendar', drawerId: id,
+          activity: [{ title: 'Booking added', body: nb.guest + ' · ' + this.dayLabel(nb.in) + '–' + this.dayLabel(nb.out) + ' · ' + this.condoBy(nb.condo).name, when: 'Just now', kind: 'purple' }, ...s.activity].slice(0, 6),
+          form: { ...s.form, guest: '', phone: '', email: '', notes: '' }
+        }));
+        this.toast('Booking saved', nb.guest + ' · ' + c.nights + ' nights · ' + this.money(c.total));
+      },
+
+      /* calendar */
+      calSummary: st.calView === 'week' ? 'Week of ' + this.dayLabel(wStart) + ' · ' + calCondos.length + ' units' : 'August 2026 · ' + calCondos.length + ' units · ' + guestB.length + ' bookings',
+      monthLabel: ['June 2026', 'July 2026', 'August 2026', 'September 2026', 'October 2026'][2 + Math.max(-2, Math.min(2, st.monthOffset))],
+      viewMonthStyle: 'padding:8px 16px;border:0;cursor:pointer;font:600 13px/1 var(--font-sans);transition:all 120ms;background:' + (st.calView === 'month' ? 'var(--brand-purple)' : 'transparent') + ';color:' + (st.calView === 'month' ? '#fff' : 'var(--fg-2)'),
+      viewWeekStyle: 'padding:8px 16px;border:0;cursor:pointer;font:600 13px/1 var(--font-sans);transition:all 120ms;background:' + (st.calView === 'week' ? 'var(--brand-purple)' : 'transparent') + ';color:' + (st.calView === 'week' ? '#fff' : 'var(--fg-2)'),
+      setViewMonth: () => this.setState({ calView: 'month' }), setViewWeek: () => this.setState({ calView: 'week' }),
+      goToday: () => { this.setState({ calView: 'month', monthOffset: 0, calCondo: 'all', calStatus: 'all', calSearch: '' }); this.toast('Jumped to today', '6 August 2026.', 'info'); },
+      prevMonth: () => { this.setState(s => ({ monthOffset: s.monthOffset - 1 })); this.toast('Only August is loaded', 'This prototype ships one month of data.', 'info'); },
+      nextMonth: () => { this.setState(s => ({ monthOffset: s.monthOffset + 1 })); this.toast('Only August is loaded', 'This prototype ships one month of data.', 'info'); },
+      calCondo: st.calCondo, calStatus: st.calStatus, calSearch: st.calSearch,
+      onCalCondo: e => this.setState({ calCondo: e.target.value }),
+      onCalStatus: e => this.setState({ calStatus: e.target.value }),
+      onCalSearch: e => this.setState({ calSearch: e.target.value }),
+      calDays, calRows, noCalRows: calRows.length === 0,
+      dayGridStyle: 'display:grid;grid-template-columns:repeat(' + wCount + ',minmax(0,1fr));position:absolute;inset:0',
+      dayHeadGridStyle: 'flex:1;min-width:0;display:grid;grid-template-columns:repeat(' + wCount + ',minmax(0,1fr))',
+      calTrackStyle: 'display:flex;min-width:' + (196 + wCount * 34) + 'px;border-bottom:1px solid var(--line);background:var(--surface-2)',
+      calRowTrackStyle: 'display:flex;min-width:' + (196 + wCount * 34) + 'px;border-bottom:1px solid var(--line);min-height:56px',
+
+      /* drawer */
+      drawerOpen: !!db, drawer,
+      closeDrawer: () => this.setState({ drawerId: null }),
+      editFromDrawer: () => {
+        const cc = this.condoBy(db.condo), n = db.out - db.in;
+        this.setState({
+          screen: 'bookings', drawerId: null, editingBooking: db.id,
+          form: { condo: db.condo, guest: db.guest, phone: db.phone, email: db.email, checkIn: '2026-08-' + String(db.in).padStart(2, '0'), checkOut: '2026-08-' + String(db.out).padStart(2, '0'), mode: 'total', nightRate: String(Math.round(n ? db.amount / n : cc.night)), totalManual: String(db.amount), discount: '0', cleaning: '0', other: '0', taxPct: '0', received: String(db.received), payStatus: this.payOf(db).key, notes: db.notes }
+        });
+      },
+      askDelete: () => this.setState({ confirmKind: 'booking', confirmId: db.id }),
+
+      /* confirm */
+      confirmOpen: !!st.confirmId,
+      confirmTitle: st.confirmKind === 'expense' ? 'Delete this expense?' : 'Delete this booking?',
+      confirmBody: st.confirmKind === 'expense'
+        ? 'This permanently removes the expense and its receipt. Your net profit figures will update immediately.'
+        : 'This permanently removes the booking and its payment record. The dates open back up immediately.',
+      confirmBtn: st.confirmKind === 'expense' ? 'Delete expense' : 'Delete booking',
+      closeConfirm: () => this.setState({ confirmId: null }),
+      doConfirm: () => {
+        if (st.confirmKind === 'expense') {
+          const e = st.expenses.find(x => x.id === st.confirmId);
+          this.setState(s => ({ expenses: s.expenses.filter(x => x.id !== s.confirmId), confirmId: null, expDetail: null }));
+          this.toast('Expense deleted', (e ? e.cat + ' · ' + this.money(e.amount) : 'Expense') + ' removed.', 'error');
+          return;
+        }
+        const b = st.bookings.find(x => x.id === st.confirmId);
+        this.setState(s => ({ bookings: s.bookings.filter(x => x.id !== s.confirmId), confirmId: null, drawerId: null }));
+        this.toast('Booking deleted', (b ? b.guest : 'Booking') + ' removed · dates are open again.', 'error');
+      },
+
+      /* expenses */
+      expView: st.expView, expIsOverview: st.expView === 'overview', expIsList: st.expView === 'list',
+      expOverviewTabStyle: 'padding:8px 16px;border:0;cursor:pointer;font:600 13px/1 var(--font-sans);transition:all 120ms;background:' + (st.expView === 'overview' ? 'var(--brand-purple)' : 'transparent') + ';color:' + (st.expView === 'overview' ? '#fff' : 'var(--fg-2)'),
+      expListTabStyle: 'padding:8px 16px;border:0;cursor:pointer;font:600 13px/1 var(--font-sans);transition:all 120ms;background:' + (st.expView === 'list' ? 'var(--brand-purple)' : 'transparent') + ';color:' + (st.expView === 'list' ? '#fff' : 'var(--fg-2)'),
+      setExpOverview: () => this.setState({ expView: 'overview' }), setExpList: () => this.setState({ expView: 'list' }),
+      kExpToday: this.money(expToday), kExpMonth: this.money(expMonth),
+      kNetProfit: this.money(netProfit), kMargin: margin + '% margin',
+      kExpPending: this.money(expPendingList.reduce((a, e) => a + e.amount, 0)),
+      expPendingCount: expPendingList.length + (expPendingList.length === 1 ? ' invoice' : ' invoices'),
+      expCount: liveExp.length,
+      expDonut: donutBase + stops.join(', ') + ')',
+      expDonutTotal: '฿' + Math.round(expMonth / 1000) + 'k',
+      catLegend, expTrend, rvsE,
+      recentExp, hasRecentExp: recentExp.length > 0,
+      expRows: mob ? [] : expRows, expCards: mob ? expRows : [],
+      showExpTable: !mob && expRows.length > 0 && !this.isLoading,
+      showExpCards: mob && expRows.length > 0 && !this.isLoading,
+      expLoading: this.isLoading, noExpRows: expRows.length === 0 && !this.isLoading,
+      noExpTitle: expenses.length === 0 ? 'No expenses yet' : 'No expenses match those filters',
+      noExpBody: expenses.length === 0 ? 'Log your first bill — electricity, cleaning, commission — and net profit starts calculating itself.' : 'Try a wider date range, or clear the search.',
+      expFiltered, expShownCount: expRows.length + ' of ' + expenses.length,
+      expSearch: st.expSearch, expCondo: st.expCondo, expCat: st.expCat, expStatus: st.expStatus, expRange: st.expRange,
+      onExpSearch: e => this.setState({ expSearch: e.target.value }),
+      onExpCondo: e => this.setState({ expCondo: e.target.value }),
+      onExpCat: e => this.setState({ expCat: e.target.value }),
+      onExpStatus: e => this.setState({ expStatus: e.target.value }),
+      onExpRange: e => this.setState({ expRange: e.target.value }),
+      clearExpFilters: () => this.setState({ expSearch: '', expCondo: 'all', expCat: 'all', expStatus: 'all', expRange: 'month' }),
+      exportExp: () => this.toast('Export queued', 'August expenses with receipts will land in your inbox as CSV.'),
+      cats: this.CATS.map(c => ({ name: c })), methods: this.METHODS.map(m => ({ name: m })),
+
+      /* expense drawer */
+      ex: st.ex, expDrawerOpen: !!st.expDrawer,
+      expDrawerTitle: st.expDrawer === 'new' ? 'Add expense' : 'Edit expense',
+      expSaveLabel: st.expDrawer === 'new' ? 'Save expense' : 'Save changes',
+      openExpNew: () => this.openExpNew(),
+      closeExpDrawer: () => this.setState({ expDrawer: null, uploading: false }),
+      onExDay: e => this.setEx({ day: e.target.value }),
+      onExCondo: e => this.setEx({ condo: e.target.value }),
+      onExCat: e => this.setEx({ cat: e.target.value }),
+      onExAmount: e => this.setEx({ amount: e.target.value }),
+      onExMethod: e => this.setEx({ method: e.target.value }),
+      onExVendor: e => this.setEx({ vendor: e.target.value }),
+      onExRef: e => this.setEx({ ref: e.target.value }),
+      onExDesc: e => this.setEx({ desc: e.target.value }),
+      onExStatus: e => this.setEx({ status: e.target.value }),
+      exAmountPreview: this.money(this.num(st.ex.amount)),
+      exCatPill: this.catPill(st.ex.cat),
+      dropStyle: 'position:relative;border-radius:12px;border:1.5px dashed ' + (st.dragging ? 'var(--brand-purple)' : 'var(--line-strong)') + ';background:' + (st.dragging ? 'var(--brand-purple-50)' : 'var(--surface-2)') + ';padding:14px;transition:all 120ms var(--ease-out)',
+      onDragOverCapture: e => { e.preventDefault(); if (!st.dragging) this.setState({ dragging: true }); },
+      onDragLeaveCapture: () => this.setState({ dragging: false }),
+      onDropCapture: e => {
+        const f = e.dataTransfer && e.dataTransfer.files && e.dataTransfer.files[0];
+        this.simulateUpload(f ? f.name : 'receipt.jpg');
+      },
+      uploading: st.uploading, uploadDone: !st.uploading && st.uploadPct >= 100,
+      uploadPctLabel: st.uploadPct + '%',
+      uploadBarStyle: 'height:6px;border-radius:999px;width:' + st.uploadPct + '%;background:var(--brand-purple);transition:width 120ms linear',
+      receiptName: st.receiptName,
+      saveExpense: () => {
+        const e0 = st.ex;
+        if (!this.num(e0.amount)) { this.toast('Amount missing', 'Every expense needs an amount.', 'error'); return; }
+        if (!e0.desc.trim()) { this.toast('Description missing', 'Say what this expense was for.', 'error'); return; }
+        const day = this.dnum(e0.day) || T;
+        const rec = { condo: e0.condo, cat: e0.cat, amount: Math.round(this.num(e0.amount)), method: e0.method, vendor: e0.vendor.trim() || '—', ref: e0.ref.trim(), desc: e0.desc.trim(), status: e0.status, day, created: this.dayLabel(day) + ' 2026, just now' };
+        const editing = st.expDrawer !== 'new' ? st.expDrawer : null;
+        const id = editing || Math.max(0, ...st.expenses.map(x => x.id)) + 1;
+        this.setState(s => ({
+          expenses: editing ? s.expenses.map(x => x.id === editing ? { ...x, ...rec } : x) : [...s.expenses, { id, ...rec }],
+          expDrawer: null, expView: 'list',
+          activity: [{ title: editing ? 'Expense updated' : 'Expense added', body: rec.cat + ' · ' + this.money(rec.amount) + ' · ' + this.condoBy(rec.condo).name, when: 'Just now', kind: 'red' }, ...s.activity].slice(0, 6)
+        }));
+        this.toast(editing ? 'Expense updated' : 'Expense saved', rec.cat + ' · ' + this.money(rec.amount) + ' · ' + this.condoBy(rec.condo).name);
+      },
+
+      /* expense detail */
+      expDetailOpen: !!de, expDetail,
+      closeExpDetail: () => this.setState({ expDetail: null }),
+      editExpFromDetail: () => this.openExpEdit(de),
+      deleteExpFromDetail: () => this.setState({ confirmKind: 'expense', confirmId: de.id }),
+
+      /* condo financial drawer */
+      condoDetailOpen: !!cd, condoDetail,
+      closeCondoDetail: () => this.setState({ condoDrawer: null }),
+      condoDetailCalendar: () => this.setState({ screen: 'calendar', calCondo: st.condoDrawer, condoDrawer: null }),
+      condoDetailExpenses: () => this.setState({ screen: 'expenses', expView: 'list', expCondo: st.condoDrawer, condoDrawer: null }),
+
+      /* income module */
+      kExpensesMonth: this.money(expMonth), kNet: this.money(netProfit),
+      netStyle: 'font:700 26px/1.1 var(--font-sans);letter-spacing:-.015em;color:' + (netProfit >= 0 ? 'var(--success)' : 'var(--danger)'),
+
+      /* add condo */
+      addOpen: st.addOpen, nc: st.nc,
+      addTitle: st.editCode ? 'Edit condo' : 'Add condo',
+      addSaveLabel: st.editCode ? 'Save changes' : 'Save condo',
+      openAdd: () => this.setState({ addOpen: true, editCode: null, nc: { name: '', code: '', type: 'Condominium', beds: '1', baths: '1', night: '', month: '', cleaning: '500', deposit: '5000', address: '', desc: '', status: 'available' } }),
+      closeAdd: () => this.setState({ addOpen: false, editCode: null }),
+      onNcName: e => this.setNc({ name: e.target.value }),
+      onNcCode: e => this.setNc({ code: e.target.value }),
+      onNcType: e => this.setNc({ type: e.target.value }),
+      onNcBeds: e => this.setNc({ beds: e.target.value }),
+      onNcBaths: e => this.setNc({ baths: e.target.value }),
+      onNcNight: e => this.setNc({ night: e.target.value }),
+      onNcMonth: e => this.setNc({ month: e.target.value }),
+      onNcCleaning: e => this.setNc({ cleaning: e.target.value }),
+      onNcDeposit: e => this.setNc({ deposit: e.target.value }),
+      onNcAddress: e => this.setNc({ address: e.target.value }),
+      onNcDesc: e => this.setNc({ desc: e.target.value }),
+      onNcStatus: e => this.setNc({ status: e.target.value }),
+      saveCondo: () => {
+        const n = st.nc;
+        if (!n.name.trim() || !n.code.trim()) { this.toast('Missing details', 'A condo needs at least a name and a code.', 'error'); return; }
+        const rec = { code: n.code.trim(), name: n.name.trim(), beds: parseInt(n.beds) || 0, baths: parseInt(n.baths) || 1, sqm: 38, night: this.num(n.night) || 1500, month: this.num(n.month) || 28000, cleaning: this.num(n.cleaning) || 500, deposit: this.num(n.deposit) || 0 };
+        this.setState(s => ({
+          condos: s.editCode ? s.condos.map(x => x.code === s.editCode ? { ...x, ...rec } : x) : [...s.condos, rec],
+          addOpen: false, editCode: null, screen: 'condos',
+          activity: [{ title: s.editCode ? 'Condo updated' : 'Condo added', body: rec.name + ' · ' + this.money(rec.night) + ' per night', when: 'Just now', kind: 'purple' }, ...s.activity].slice(0, 6)
+        }));
+        this.toast(st.editCode ? 'Condo updated' : 'Condo added', rec.name + ' is ready to book.');
+      },
+
+      /* income */
+      incomeRows: mob ? [] : incomeRows, incomeCards: mob ? incomeRows : [],
+      showIncomeTable: !mob, showIncomeCards: mob, trend,
+      payDonut: donutBase + 'var(--success) 0 ' + p1 + '%, var(--warning) ' + p1 + '% ' + p2 + '%, var(--fg-4) ' + p2 + '% 100%)',
+      payTotal: guestB.length, payPaid: paidN, payPartial: partialN, payPending: pendN,
+
+      /* toasts */
+      toasts: st.toasts.map(t => ({
+        ...t,
+        style: 'display:flex;gap:11px;align-items:flex-start;padding:13px 16px;min-width:280px;max-width:360px;background:var(--surface);border:1px solid var(--line);border-radius:14px;box-shadow:var(--shadow-lg);pointer-events:auto;animation:lsToast 240ms var(--ease-out) both',
+        iconStyle: 'width:22px;height:22px;border-radius:999px;flex:none;display:flex;align-items:center;justify-content:center;margin-top:1px;background:' + ({ success: 'var(--success-bg)', error: 'var(--danger-bg)', info: 'var(--info-bg)' }[t.kind]) + ';color:' + ({ success: 'var(--success)', error: 'var(--danger)', info: 'var(--info)' }[t.kind]),
+        icon: t.kind === 'success' ? 'M20 6L9 17l-5-5' : t.kind === 'error' ? 'M18 6L6 18M6 6l12 12' : 'M12 8h.01M11 12h1v5h1'
+      }))
+    };
+  }
+}
+
+</script>
+</body>
+</html>
