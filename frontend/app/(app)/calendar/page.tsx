@@ -1,15 +1,14 @@
 import type { Metadata } from "next";
+import { Suspense } from "react";
 
-import { ComingSoon } from "@/components/ds/ComingSoon";
+import { CalendarScreen } from "@/features/calendar/CalendarScreen";
 
 export const metadata: Metadata = { title: "Calendar" };
 
 export default function CalendarPage() {
   return (
-    <ComingSoon
-      title="Calendar"
-      phase="Phase 2"
-      description="The resource timeline with month and week views, filters, guest search, and drag to move or resize a stay."
-    />
+    <Suspense fallback={null}>
+      <CalendarScreen />
+    </Suspense>
   );
 }

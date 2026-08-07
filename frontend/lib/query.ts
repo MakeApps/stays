@@ -18,6 +18,15 @@ export const qk = {
     list: (filters: Record<string, unknown>) => [...qk.condos.all, "list", filters] as const,
     detail: (id: string) => [...qk.condos.all, "detail", id] as const,
   },
+  bookings: {
+    all: ["bookings"] as const,
+    list: (filters: Record<string, unknown>) => [...qk.bookings.all, "list", filters] as const,
+    detail: (id: string) => [...qk.bookings.all, "detail", id] as const,
+    calendar: (window: Record<string, unknown>) =>
+      [...qk.bookings.all, "calendar", window] as const,
+    conflict: (query: Record<string, unknown>) =>
+      [...qk.bookings.all, "conflict", query] as const,
+  },
   activity: {
     all: ["activity"] as const,
     recent: (limit: number) => [...qk.activity.all, "recent", limit] as const,

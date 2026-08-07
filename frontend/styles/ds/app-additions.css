@@ -84,3 +84,45 @@ input, select, textarea, button { font-family: var(--font-sans); }
     scroll-behavior: auto !important;
   }
 }
+
+/* --- toasts (design lines 1801–1813) ---
+   sonner renders unstyled; these supply the approved look. Without them the
+   toasts are present in the DOM but invisible, so every success and error
+   message silently disappears. */
+.ls-toast {
+  display: flex;
+  gap: 11px;
+  align-items: flex-start;
+  padding: 13px 16px;
+  min-width: 280px;
+  max-width: 360px;
+  background: var(--surface);
+  border: 1px solid var(--line);
+  border-radius: 14px;
+  box-shadow: var(--shadow-lg);
+  pointer-events: auto;
+  animation: lsToast 240ms var(--ease-out) both;
+}
+.ls-toast-title {
+  font: 600 13px/1.35 var(--font-sans);
+  color: var(--fg);
+}
+.ls-toast-body {
+  font: 400 12px/1.4 var(--font-sans);
+  color: var(--fg-3);
+  margin-top: 2px;
+}
+.ls-toast-icon {
+  width: 22px;
+  height: 22px;
+  border-radius: 999px;
+  flex: none;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin-top: 1px;
+}
+.ls-toast[data-type="success"] .ls-toast-icon { background: var(--success-bg); color: var(--success); }
+.ls-toast[data-type="error"]   .ls-toast-icon { background: var(--danger-bg);  color: var(--danger); }
+.ls-toast[data-type="info"]    .ls-toast-icon { background: var(--info-bg);    color: var(--info); }
+.ls-toast[data-type="warning"] .ls-toast-icon { background: var(--warning-bg); color: var(--warning); }

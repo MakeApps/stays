@@ -87,3 +87,105 @@ export interface ApiErrorBody {
     request_id?: string;
   };
 }
+
+// ---------------------------------------------------------------- bookings
+
+export type BookingStatus = "booked" | "pending" | "maintenance" | "cancelled";
+export type PaymentStatus = "paid" | "partial" | "pending" | "blocked";
+export type PricingMode = "nightly" | "total";
+
+export interface Booking {
+  id: string;
+  condo_id: string;
+  condo_name: string;
+  condo_code: string;
+
+  guest_name: string;
+  guest_phone: string | null;
+  guest_email: string | null;
+
+  /** `YYYY-MM-DD`. Half-open: the guest occupies check_in but not check_out. */
+  check_in: string;
+  check_out: string;
+  nights: number;
+
+  status: BookingStatus;
+  payment_status: PaymentStatus;
+  pricing_mode: PricingMode;
+
+  /** Decimal strings in baht. The API stores satang. */
+  night_rate: string;
+  subtotal: string;
+  discount: string;
+  cleaning_fee: string;
+  other_charges: string;
+  tax_pct: string;
+  tax: string;
+  total: string;
+  received: string;
+  balance: string;
+
+  notes: string | null;
+
+  total_label: string;
+  balance_label: string;
+  night_rate_label: string;
+}
+
+export interface BookingListResponse {
+  items: Booking[];
+  meta: PageMeta;
+}
+
+export interface QuoteResponse {
+  nights: number;
+  night_rate: string;
+  subtotal: string;
+  discount: string;
+  cleaning_fee: string;
+  other_charges: string;
+  tax_pct: string;
+  tax: string;
+  total: string;
+  received: string;
+  balance: string;
+  payment_status: PaymentStatus;
+  total_label: string;
+  balance_label: string;
+  night_rate_label: string;
+}
+
+export interface BookingConflict {
+  booking_id: string;
+  guest_name: string;
+  check_in: string;
+  check_out: string;
+}
+
+export interface AvailabilityResponse {
+  available: boolean;
+  conflict: BookingConflict | null;
+}
+
+export interface CalendarResource {
+  id: string;
+  code: string;
+  name: string;
+}
+
+export interface CalendarEvent {
+  id: string;
+  condo_id: string;
+  guest_name: string;
+  check_in: string;
+  check_out: string;
+  nights: number;
+  status: BookingStatus;
+  payment_status: PaymentStatus;
+}
+
+export interface CalendarResponse {
+  range: { start: string; end: string };
+  resources: CalendarResource[];
+  events: CalendarEvent[];
+}

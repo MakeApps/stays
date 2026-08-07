@@ -39,12 +39,23 @@ export function Providers({
     <SessionContext.Provider value={value}>
       <QueryClientProvider client={queryClient}>
         {children}
+        {/* Design lines 1801–1813: bottom-right stack, 280–360px, 14px radius,
+            large soft shadow, 3600ms — matching the prototype's toast timing.
+            `unstyled` removes sonner's own look; the DS classes replace it. */}
         <Toaster
           position="bottom-right"
           duration={3600}
           gap={10}
           offset={24}
-          toastOptions={{ unstyled: true }}
+          toastOptions={{
+            unstyled: true,
+            classNames: {
+              toast: "ls-toast",
+              title: "ls-toast-title",
+              description: "ls-toast-body",
+              icon: "ls-toast-icon",
+            },
+          }}
         />
       </QueryClientProvider>
     </SessionContext.Provider>

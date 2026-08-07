@@ -24,3 +24,14 @@ Hydration matters: Next streams the shell before the client bundle attaches,
 and clicking too early triggers a native form submit instead of the React
 handler. `ui.mjs` has a `hydrated()` helper for this — use it after every
 navigation that is followed by interaction.
+
+- `bookings.mjs` — the booking form's live totals and dual pricing mode, the
+  conflict banner (including that a same-day turnover is *not* flagged), the
+  booking list and its mobile card fallback, and the calendar timeline with a
+  real pointer drag that moves a booking three days.
+
+`bookings.mjs` also writes real rows. Purge before re-running after a crash,
+or a leftover booking will trigger a conflict and the save button will read
+"Resolve conflict to save" instead:
+
+    DELETE FROM booking_nights; DELETE FROM bookings;

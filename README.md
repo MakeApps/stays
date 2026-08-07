@@ -9,13 +9,22 @@ pixel contract — open it in a browser to compare any screen side by side.
 | Phase | Scope | State |
 | --- | --- | --- |
 | 1 | Foundation, auth, condos end-to-end | **Done** |
-| 2 | Bookings + calendar timeline | Not started |
+| 2 | Bookings + calendar timeline | **Done** |
 | 3 | Expenses, income, profit | Not started |
 | 4 | Dashboard, global search, reports + CSV | Not started |
 | 5 | Hardening, Docker, CI | Not started |
 
 Nav items for unbuilt modules render an honest placeholder rather than a mock
 with invented numbers.
+
+The calendar is a custom-built resource timeline, not FullCalendar. This is a
+single-axis occupancy strip — one row per condo, one column per day — so
+FullCalendar's expensive machinery (timezones, recurrence, event stacking)
+would be entirely unused, stacking especially, since the overlap rule
+guarantees bookings never collide within a condo. Building it also avoids a
+recurring licence and keeps the screen pixel-identical to the approved design.
+Drag-to-move, edge-resize and keyboard nudging are additions the design does
+not have.
 
 ## Running it
 
@@ -83,6 +92,17 @@ that unit's bookings. Only an explicit maintenance flag is persisted.
 **Booking overlap is half-open**: `newIn < existing.out && newOut > existing.in`.
 A checkout and a checkin on the same day do *not* collide — that is a normal
 turnover day, and it has its own test.
+
+**Double-booking is prevented by the database**, not by application logic.
+`booking_nights` holds one row per occupied night keyed on
+`(condo_id, night_date)`, so a conflicting insert violates the primary key.
+There is no window in which two concurrent requests both pass an availability
+check; a threaded test asserts exactly one 201 and one 409.
+
+**Pricing lives server-side.** `backend/app/services/pricing.py` is the
+authority; `frontend/lib/booking-math.ts` mirrors it purely for live preview
+while typing. If you change one, change both — a figure that shifts between the
+form and the confirmation destroys trust in a money screen faster than a bug.
 
 **Condo code uniqueness is enforced in the service, not by a UNIQUE index.**
 MySQL has no partial index, so a hard constraint would make a code permanently
