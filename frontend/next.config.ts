@@ -14,7 +14,7 @@ const nextConfig: NextConfig = {
     ],
   },
   env: { API_ORIGIN },
-  experimental: { typedRoutes: true },
+  typedRoutes: true,
 };
 
 export default nextConfig;
