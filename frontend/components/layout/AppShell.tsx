@@ -46,7 +46,7 @@ const QUICK_ADD: {
   label: string;
   capability: Capability;
 }[] = [
-  { href: { pathname: "/expenses" }, label: "New expense", capability: "expense:write" },
+  { href: { pathname: "/expenses", query: { new: "1" } }, label: "New expense", capability: "expense:write" },
   { href: { pathname: "/condos", query: { new: "1" } }, label: "New condo", capability: "condo:write" },
   { href: { pathname: "/bookings/new" }, label: "New booking", capability: "booking:write" },
 ];

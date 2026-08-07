@@ -10,7 +10,7 @@ pixel contract — open it in a browser to compare any screen side by side.
 | --- | --- | --- |
 | 1 | Foundation, auth, condos end-to-end | **Done** |
 | 2 | Bookings + calendar timeline | **Done** |
-| 3 | Expenses, income, profit | Not started |
+| 3 | Expenses, income, profit | **Done** |
 | 4 | Dashboard, global search, reports + CSV | Not started |
 | 5 | Hardening, Docker, CI | Not started |
 
@@ -98,6 +98,18 @@ turnover day, and it has its own test.
 `(condo_id, night_date)`, so a conflicting insert violates the primary key.
 There is no window in which two concurrent requests both pass an availability
 check; a threaded test asserts exactly one 201 and one 409.
+
+**Revenue is accrual.** Each booking night carries its share of the total, so a
+stay from 28 Aug to 4 Sep contributes to both months in proportion and the two
+halves sum back exactly. That is what `booking_nights.revenue_share` is for.
+
+**Cancelled expenses stay on the record but out of every total** — a cancelled
+bill is still part of the audit trail. Maintenance blocks hold their dates but
+count as neither revenue nor occupancy.
+
+**Donuts are CSS, not a charting library.** The design draws them with
+`conic-gradient` plus a hard mask edge that SVG arcs cannot reproduce, and
+Recharts would add ~95 KB to render something CSS already does exactly.
 
 **Pricing lives server-side.** `backend/app/services/pricing.py` is the
 authority; `frontend/lib/booking-math.ts` mirrors it purely for live preview

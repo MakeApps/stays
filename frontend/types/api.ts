@@ -189,3 +189,105 @@ export interface CalendarResponse {
   resources: CalendarResource[];
   events: CalendarEvent[];
 }
+
+// ---------------------------------------------------------------- expenses
+
+export type ExpenseStatus = "paid" | "pending" | "cancelled";
+
+export interface Expense {
+  id: string;
+  condo_id: string;
+  condo_name: string;
+  condo_code: string;
+  category_id: string;
+  category: string;
+  /** DS pill modifier from the design's CATTONE map. */
+  category_tone: string;
+  method_id: string;
+  method: string;
+  spent_on: string;
+  amount: string;
+  amount_label: string;
+  vendor: string | null;
+  reference: string | null;
+  description: string;
+  status: ExpenseStatus;
+  notes: string | null;
+  receipt_url: string | null;
+  receipt_filename: string | null;
+  receipt_content_type: string | null;
+  created_at: string;
+}
+
+export interface ExpenseListResponse {
+  items: Expense[];
+  meta: PageMeta;
+}
+
+export interface Lookups {
+  categories: { id: string; name: string; tone: string }[];
+  methods: { id: string; name: string }[];
+}
+
+export interface CategorySlice {
+  category: string;
+  tone: string;
+  amount: string;
+  label: string;
+  pct: number;
+}
+
+export interface TrendPoint {
+  month: string;
+  revenue: string;
+  expenses: string;
+  net: string;
+}
+
+export interface ExpenseSummary {
+  period: { start: string; end: string };
+  today: { amount: string; label: string };
+  month: {
+    expenses: string;
+    expenses_label: string;
+    revenue: string;
+    revenue_label: string;
+    net: string;
+    net_label: string;
+    margin_pct: number;
+  };
+  pending: { amount: string; label: string; count: number };
+  by_category: CategorySlice[];
+  trend: (TrendPoint & { start: string })[];
+}
+
+export interface CondoProfitRow {
+  condo_id: string;
+  name: string;
+  code: string;
+  bookings: number;
+  nights: number;
+  revenue: string;
+  revenue_label: string;
+  expenses: string;
+  expenses_label: string;
+  net: string;
+  net_label: string;
+  occupancy_pct: number;
+}
+
+export interface IncomeSummary {
+  period: { start: string; end: string };
+  kpis: {
+    today: string;
+    week: string;
+    month: string;
+    expenses: string;
+    net: string;
+    margin_pct: number;
+    outstanding: string;
+    outstanding_count: number;
+  };
+  by_condo: CondoProfitRow[];
+  trend: TrendPoint[];
+}

@@ -35,3 +35,17 @@ or a leftover booking will trigger a conflict and the save button will read
 "Resolve conflict to save" instead:
 
     DELETE FROM booking_nights; DELETE FROM bookings;
+
+- `money.mjs` — the income and expenses screens against the seeded demo data.
+  Because that data comes from the design, the assertions are exact figures
+  rather than "renders something": revenue ฿215,800, expenses ฿73,480 with the
+  cancelled bill excluded, net ฿142,320. It also checks the donut is a
+  `conic-gradient` div rather than an SVG chart, that a cancelled expense is
+  struck through, and that a created expense round-trips 1234.50 baht through
+  satang.
+
+**If an endpoint 404s that should exist, the Flask process is stale.** A dev
+server started before a blueprint was added keeps serving the old route map.
+Kill and restart it:
+
+    powershell -Command "Get-CimInstance Win32_Process -Filter \"Name='python.exe'\" | Where-Object { $_.CommandLine -like '*wsgi*' } | ForEach-Object { Stop-Process -Id $_.ProcessId -Force }"

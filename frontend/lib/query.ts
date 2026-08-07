@@ -27,6 +27,16 @@ export const qk = {
     conflict: (query: Record<string, unknown>) =>
       [...qk.bookings.all, "conflict", query] as const,
   },
+  expenses: {
+    all: ["expenses"] as const,
+    lookups: ["expenses", "lookups"] as const,
+    list: (filters: Record<string, unknown>) => [...qk.expenses.all, "list", filters] as const,
+    summary: (month: string | null) => [...qk.expenses.all, "summary", month] as const,
+  },
+  income: {
+    all: ["income"] as const,
+    summary: (month: string | null) => [...qk.income.all, "summary", month] as const,
+  },
   activity: {
     all: ["activity"] as const,
     recent: (limit: number) => [...qk.activity.all, "recent", limit] as const,
