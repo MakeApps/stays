@@ -77,6 +77,7 @@ def register_cli(app: Flask) -> None:
     def seed_demo(force: bool) -> None:
         """Load the nine condos from the approved design."""
         from app.seeds.demo import seed_condos
+        from app.seeds.demo_activity import seed_activity
         from app.seeds.lookups import seed_lookups
 
         seed_lookups()
@@ -85,6 +86,12 @@ def register_cli(app: Flask) -> None:
             click.echo("Condos already present — pass --force to seed anyway.")
         else:
             click.echo(f"Seeded {created} condos.")
+
+        bookings, expenses = seed_activity(force=force)
+        if bookings < 0:
+            click.echo("Bookings/expenses already present — pass --force to seed anyway.")
+        else:
+            click.echo(f"Seeded {bookings} bookings and {expenses} expenses.")
 
     @app.cli.command("purge-tokens")
     def purge_tokens() -> None:

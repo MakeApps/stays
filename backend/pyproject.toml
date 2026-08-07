@@ -76,6 +76,9 @@ ignore = [
 [tool.ruff.lint.per-file-ignores]
 "tests/*" = ["S105", "S106"]
 "migrations/*" = ["E501", "N999"]
+# Seed data is a table: one row per record reads far better than wrapped
+# tuples, and the rows are data rather than logic.
+"app/seeds/*" = ["E501"]
 
 [tool.mypy]
 python_version = "3.12"
