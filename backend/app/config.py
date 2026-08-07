@@ -69,6 +69,10 @@ class Settings(BaseSettings):
     RATELIMIT_STORAGE_URI: str = "memory://"
     RATELIMIT_DEFAULT: str = "600 per hour"
     RATELIMIT_LOGIN: str = "10 per minute"
+    # Writes are cheap to make and expensive to undo; this is a runaway-script
+    # guard, set well above anything a person can do by hand.
+    RATELIMIT_WRITE: str = "120 per minute"
+    RATELIMIT_UPLOAD: str = "30 per minute"
 
     # ---------- seeded admin ----------
     # `flask create-admin` reads these. No public signup exists.
@@ -156,6 +160,16 @@ class Settings(BaseSettings):
             problems.append("S3_BUCKET is required when STORAGE_BACKEND=s3")
         if "*" in self.cors_origin_list:
             problems.append("CORS_ORIGINS must not be '*' when cookies carry credentials")
+        # A placeholder that ships to production is how the first breach happens.
+        weak = {"changeme", "password", "admin", "secret", "letmein"}
+        lowered = self.ADMIN_PASSWORD.strip().lower()
+        if self.ADMIN_PASSWORD and (
+            len(self.ADMIN_PASSWORD) < 12 or any(w in lowered for w in weak)
+        ):
+            problems.append(
+                "ADMIN_PASSWORD looks like a placeholder — use at least 12 characters "
+                "with no obvious word, or leave it blank and let create-admin generate one"
+            )
 
         if problems:
             raise RuntimeError(

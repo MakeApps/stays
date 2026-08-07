@@ -12,7 +12,7 @@ pixel contract — open it in a browser to compare any screen side by side.
 | 2 | Bookings + calendar timeline | **Done** |
 | 3 | Expenses, income, profit | **Done** |
 | 4 | Dashboard, global search, CSV export | **Done** |
-| 5 | Hardening, Docker, CI | Not started |
+| 5 | Hardening, Docker, CI | **Partly done** |
 
 The calendar is a custom-built resource timeline, not FullCalendar. This is a
 single-axis occupancy strip — one row per condo, one column per day — so
@@ -70,11 +70,23 @@ is wrong.
 ## Testing
 
 ```bash
-cd backend  && pytest             # 116 tests, needs a reachable database
+cd backend  && pytest             # 198 tests, needs a reachable database
 cd frontend && npm run typecheck
 cd frontend && npm run verify:ds  # fails if the vendored DS drifts from _ds/
-cd frontend && npm run e2e        # browser checks; needs both servers running
+cd frontend && E2E_PASSWORD=... npm run e2e   # browser checks; needs both servers running
 ```
+
+## Deployment
+
+`docker/` and `.github/workflows/ci.yml` are **authored but unverified** —
+Docker is not installed on the machine this was built on, so nothing there has
+been built or run. `docker/README.md` lists what to expect to fix first.
+Shipping compose files as production-ready without running them is how a deploy
+fails at the worst moment, so they say so on the tin.
+
+The app **refuses to boot in production** with a generated signing key, DEBUG
+on, wildcard CORS, or a placeholder-looking admin password. Those failures are
+silent in development and expensive later, so they are a startup error instead.
 
 ## Things worth knowing
 

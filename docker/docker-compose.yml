@@ -1,0 +1,65 @@
+# UNVERIFIED: never run. Docker is not installed on the development machine.
+# See README.md in this directory before relying on any of it.
+
+services:
+  db:
+    # Production targets MySQL 8.0; local development uses XAMPP's MariaDB. The
+    # schema stays inside the common subset of both, and CI runs against each.
+    image: mysql:8.0
+    environment:
+      MYSQL_DATABASE: localshouts_stays
+      MYSQL_ROOT_PASSWORD: ${DB_ROOT_PASSWORD:?set DB_ROOT_PASSWORD}
+    command: --character-set-server=utf8mb4 --collation-server=utf8mb4_unicode_ci
+    volumes:
+      - db_data:/var/lib/mysql
+    healthcheck:
+      test: ["CMD", "mysqladmin", "ping", "-h", "127.0.0.1"]
+      interval: 5s
+      timeout: 5s
+      retries: 20
+
+  minio:
+    # S3-compatible storage for receipts and condo photos. Pin to a digest
+    # before production; `latest` is fine only for local work.
+    image: minio/minio:latest
+    command: server /data --console-address ":9001"
+    environment:
+      MINIO_ROOT_USER: ${S3_ACCESS_KEY_ID:-minioadmin}
+      MINIO_ROOT_PASSWORD: ${S3_SECRET_ACCESS_KEY:-minioadmin}
+    volumes:
+      - minio_data:/data
+    ports:
+      - "9000:9000"
+      - "9001:9001"
+
+  # One-shot, so N replicas cannot race each other on DDL at startup.
+  migrate:
+    build:
+      context: ..
+      dockerfile: docker/Dockerfile
+    command: ["alembic", "upgrade", "head"]
+    env_file:
+      - ../backend/.env.docker
+    depends_on:
+      db:
+        condition: service_healthy
+    restart: "no"
+
+  api:
+    build:
+      context: ..
+      dockerfile: docker/Dockerfile
+    env_file:
+      - ../backend/.env.docker
+    ports:
+      - "8000:8000"
+    depends_on:
+      db:
+        condition: service_healthy
+      migrate:
+        condition: service_completed_successfully
+    restart: unless-stopped
+
+volumes:
+  db_data:
+  minio_data:

@@ -9,6 +9,7 @@ from flask import Flask
 from werkzeug.middleware.proxy_fix import ProxyFix
 
 from app.common.errors import register_error_handlers
+from app.common.security import register_security_headers
 from app.config import Settings, get_settings
 from app.extensions import cors, db, limiter
 from app.observability.logging_config import configure_logging
@@ -63,6 +64,7 @@ def create_app(settings: Settings | None = None) -> Flask:
     app.extensions["storage"] = build_storage(s)
 
     register_request_context(app)
+    register_security_headers(app)
     register_error_handlers(app)
     _register_blueprints(app, s)
     _register_cli(app)

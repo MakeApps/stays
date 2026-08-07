@@ -1,6 +1,15 @@
 import { chromium } from "playwright";
 
 const BASE = "http://localhost:3000";
+const EMAIL = process.env.E2E_EMAIL ?? "admin@localshouts.co.th";
+// Read from the environment so rotating the admin password does not break the
+// suite. Set E2E_PASSWORD to match backend/.env.local.
+const PASSWORD = process.env.E2E_PASSWORD ?? "";
+if (!PASSWORD) {
+  console.error("Set E2E_PASSWORD (see backend/.env.local ADMIN_PASSWORD).");
+  process.exit(2);
+}
+
 const errors = [];
 const results = [];
 const ok = (c, l, x = "") => results.push(`${c ? "PASS" : "FAIL"}  ${l}${x ? " — " + x : ""}`);
@@ -18,8 +27,8 @@ async function fresh(url) {
 
 // sign in
 await fresh(`${BASE}/login`);
-await page.fill("#email", "admin@localshouts.co.th");
-await page.fill("#password", "ChangeMe!2026");
+await page.fill("#email", EMAIL);
+await page.fill("#password", PASSWORD);
 await page.click('button[type="submit"]');
 await page.waitForURL((u) => !u.pathname.includes("/login"), { timeout: 20000 });
 
