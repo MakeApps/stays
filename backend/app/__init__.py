@@ -79,6 +79,7 @@ def create_app(settings: Settings | None = None) -> Flask:
 
 def _register_blueprints(app: Flask, s: Settings) -> None:
     from app.routes.auth import bp as auth_bp
+    from app.routes.bookings import bp as bookings_bp
     from app.routes.condos import bp as condos_bp
     from app.routes.files import bp as files_bp
     from app.routes.health import bp as health_bp
@@ -90,6 +91,7 @@ def _register_blueprints(app: Flask, s: Settings) -> None:
 
     app.register_blueprint(auth_bp, url_prefix=f"{s.API_PREFIX}/auth")
     app.register_blueprint(condos_bp, url_prefix=f"{s.API_PREFIX}/condos")
+    app.register_blueprint(bookings_bp, url_prefix=f"{s.API_PREFIX}/bookings")
     app.register_blueprint(files_bp, url_prefix=s.API_PREFIX)
 
 

@@ -65,7 +65,10 @@ ignore = [
     # clearly alongside `from __future__ import annotations`.
     "UP046",
     "UP047",
-    # Prose in docstrings and comments uses en dashes deliberately.
+    # En dashes are deliberate throughout: the design renders date spans as
+    # "1–9 Aug", and user-facing copy uses them in prose. RUF001 covers string
+    # literals, RUF002 docstrings, RUF003 comments.
+    "RUF001",
     "RUF002",
     "RUF003",
 ]
