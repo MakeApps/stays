@@ -64,12 +64,22 @@ def register_cli(app: Flask) -> None:
             click.echo("  Store it now — it is not recoverable.")
             click.echo("")
 
+    @app.cli.command("seed-lookups")
+    def seed_lookups_cmd() -> None:
+        """Load the design's expense categories and payment methods."""
+        from app.seeds.lookups import seed_lookups
+
+        categories, methods = seed_lookups()
+        click.echo(f"Seeded {categories} categories and {methods} payment methods.")
+
     @app.cli.command("seed-demo")
     @click.option("--force", is_flag=True, help="Seed even if condos already exist.")
     def seed_demo(force: bool) -> None:
         """Load the nine condos from the approved design."""
         from app.seeds.demo import seed_condos
+        from app.seeds.lookups import seed_lookups
 
+        seed_lookups()
         created = seed_condos(force=force)
         if created < 0:
             click.echo("Condos already present — pass --force to seed anyway.")

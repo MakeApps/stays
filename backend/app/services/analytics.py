@@ -1,0 +1,243 @@
+"""Revenue, expenses, occupancy and profit.
+
+Every figure here is computed in SQL, not by loading rows and summing in
+Python. The prototype could afford the latter with 9 units; at several hundred
+it would be a multi-megabyte payload and a frozen request.
+
+Revenue is **accrual**: a booking's amount is spread across its nights via
+``booking_nights.revenue_share``, so a stay from 28 Aug to 4 Sep contributes to
+both months in the right proportion. That is the whole reason those rows carry
+a share rather than the calendar just being derived on the fly.
+"""
+
+from __future__ import annotations
+
+import uuid
+from calendar import monthrange
+from dataclasses import dataclass
+from datetime import date, timedelta
+
+from sqlalchemy import Select, func, select
+from sqlalchemy.orm import Session
+
+from app.models.booking import Booking, BookingNight, BookingStatus
+from app.models.condo import Condo
+from app.models.expense import Expense, ExpenseCategory, ExpenseStatus
+
+# Statuses whose nights represent sellable occupancy. A maintenance block holds
+# the dates but is not revenue, and is excluded from occupancy percentages so a
+# unit under repair does not read as "fully booked".
+REVENUE_STATUSES = (BookingStatus.BOOKED, BookingStatus.PENDING)
+
+
+def month_bounds(anchor: date) -> tuple[date, date]:
+    """First day of the month, and the first day of the next — half-open."""
+    start = anchor.replace(day=1)
+    _, days = monthrange(anchor.year, anchor.month)
+    return start, start + timedelta(days=days)
+
+
+def previous_months(anchor: date, count: int) -> list[tuple[date, date]]:
+    """The last `count` month windows ending with the anchor's month."""
+    windows: list[tuple[date, date]] = []
+    cursor = anchor.replace(day=1)
+    for _ in range(count):
+        windows.append(month_bounds(cursor))
+        cursor = (cursor - timedelta(days=1)).replace(day=1)
+    return list(reversed(windows))
+
+
+@dataclass(frozen=True, slots=True)
+class CondoFinance:
+    condo_id: uuid.UUID
+    bookings: int
+    nights: int
+    available_nights: int
+    revenue: int
+    expenses: int
+
+    @property
+    def net(self) -> int:
+        return self.revenue - self.expenses
+
+    @property
+    def occupancy_pct(self) -> int:
+        total = self.nights + self.available_nights
+        return round(self.nights / total * 100) if total else 0
+
+
+class AnalyticsService:
+    def __init__(self, session: Session) -> None:
+        self.session = session
+
+    # ---------- building blocks ----------
+    def _live_expenses(self) -> Select[tuple[Expense]]:
+        return select(Expense).where(
+            Expense.deleted_at.is_(None), Expense.status != ExpenseStatus.CANCELLED
+        )
+
+    def revenue_between(self, start: date, end: date, *, condo_id: uuid.UUID | None = None) -> int:
+        """Accrued revenue for nights falling inside [start, end)."""
+        stmt = (
+            select(func.coalesce(func.sum(BookingNight.revenue_share), 0))
+            .join(Booking, Booking.id == BookingNight.booking_id)
+            .where(
+                BookingNight.night_date >= start,
+                BookingNight.night_date < end,
+                Booking.deleted_at.is_(None),
+                Booking.status.in_(REVENUE_STATUSES),
+            )
+        )
+        if condo_id is not None:
+            stmt = stmt.where(BookingNight.condo_id == condo_id)
+        return int(self.session.scalar(stmt) or 0)
+
+    def expenses_between(self, start: date, end: date, *, condo_id: uuid.UUID | None = None) -> int:
+        stmt = select(func.coalesce(func.sum(Expense.amount), 0)).where(
+            Expense.spent_on >= start,
+            Expense.spent_on < end,
+            Expense.deleted_at.is_(None),
+            Expense.status != ExpenseStatus.CANCELLED,
+        )
+        if condo_id is not None:
+            stmt = stmt.where(Expense.condo_id == condo_id)
+        return int(self.session.scalar(stmt) or 0)
+
+    def nights_between(self, start: date, end: date, *, condo_id: uuid.UUID | None = None) -> int:
+        stmt = (
+            select(func.count())
+            .select_from(BookingNight)
+            .join(Booking, Booking.id == BookingNight.booking_id)
+            .where(
+                BookingNight.night_date >= start,
+                BookingNight.night_date < end,
+                Booking.deleted_at.is_(None),
+                Booking.status.in_(REVENUE_STATUSES),
+            )
+        )
+        if condo_id is not None:
+            stmt = stmt.where(BookingNight.condo_id == condo_id)
+        return int(self.session.scalar(stmt) or 0)
+
+    def outstanding(self) -> tuple[int, int]:
+        """Unpaid balance across live bookings, and how many owe something."""
+        row = self.session.execute(
+            select(
+                func.coalesce(func.sum(Booking.total - Booking.received), 0),
+                func.count(),
+            ).where(
+                Booking.deleted_at.is_(None),
+                Booking.status.in_(REVENUE_STATUSES),
+                Booking.received < Booking.total,
+            )
+        ).one()
+        return int(row[0] or 0), int(row[1] or 0)
+
+    # ---------- rollups ----------
+    def per_condo(self, start: date, end: date) -> dict[uuid.UUID, CondoFinance]:
+        """One row per condo for the window — three queries, not three per unit."""
+        span_nights = (end - start).days
+
+        revenue_rows = self.session.execute(
+            select(
+                BookingNight.condo_id,
+                func.coalesce(func.sum(BookingNight.revenue_share), 0),
+                func.count(),
+            )
+            .join(Booking, Booking.id == BookingNight.booking_id)
+            .where(
+                BookingNight.night_date >= start,
+                BookingNight.night_date < end,
+                Booking.deleted_at.is_(None),
+                Booking.status.in_(REVENUE_STATUSES),
+            )
+            .group_by(BookingNight.condo_id)
+        ).all()
+
+        booking_rows = self.session.execute(
+            select(Booking.condo_id, func.count(func.distinct(Booking.id)))
+            .where(
+                Booking.deleted_at.is_(None),
+                Booking.status.in_(REVENUE_STATUSES),
+                Booking.check_in < end,
+                Booking.check_out > start,
+            )
+            .group_by(Booking.condo_id)
+        ).all()
+
+        expense_rows = self.session.execute(
+            select(Expense.condo_id, func.coalesce(func.sum(Expense.amount), 0))
+            .where(
+                Expense.spent_on >= start,
+                Expense.spent_on < end,
+                Expense.deleted_at.is_(None),
+                Expense.status != ExpenseStatus.CANCELLED,
+            )
+            .group_by(Expense.condo_id)
+        ).all()
+
+        revenue = {r[0]: (int(r[1]), int(r[2])) for r in revenue_rows}
+        counts = {r[0]: int(r[1]) for r in booking_rows}
+        spend = {r[0]: int(r[1]) for r in expense_rows}
+
+        condo_ids = list(
+            self.session.scalars(select(Condo.id).where(Condo.deleted_at.is_(None)))
+        )
+
+        result: dict[uuid.UUID, CondoFinance] = {}
+        for condo_id in condo_ids:
+            earned, nights = revenue.get(condo_id, (0, 0))
+            result[condo_id] = CondoFinance(
+                condo_id=condo_id,
+                bookings=counts.get(condo_id, 0),
+                nights=nights,
+                available_nights=max(0, span_nights - nights),
+                revenue=earned,
+                expenses=spend.get(condo_id, 0),
+            )
+        return result
+
+    def expenses_by_category(self, start: date, end: date) -> list[tuple[str, str, int]]:
+        """(category name, tone, total) ordered by spend, for the donut."""
+        rows = self.session.execute(
+            select(
+                ExpenseCategory.name,
+                ExpenseCategory.tone,
+                func.coalesce(func.sum(Expense.amount), 0).label("total"),
+            )
+            .join(Expense, Expense.category_id == ExpenseCategory.id)
+            .where(
+                Expense.spent_on >= start,
+                Expense.spent_on < end,
+                Expense.deleted_at.is_(None),
+                Expense.status != ExpenseStatus.CANCELLED,
+            )
+            .group_by(ExpenseCategory.id, ExpenseCategory.name, ExpenseCategory.tone)
+            .order_by(func.sum(Expense.amount).desc())
+        ).all()
+        return [(r[0], r[1], int(r[2])) for r in rows]
+
+    def daily_revenue(self, start: date, end: date) -> dict[date, int]:
+        """Accrued revenue per night — the dashboard's income-by-day chart."""
+        rows = self.session.execute(
+            select(
+                BookingNight.night_date,
+                func.coalesce(func.sum(BookingNight.revenue_share), 0),
+            )
+            .join(Booking, Booking.id == BookingNight.booking_id)
+            .where(
+                BookingNight.night_date >= start,
+                BookingNight.night_date < end,
+                Booking.deleted_at.is_(None),
+                Booking.status.in_(REVENUE_STATUSES),
+            )
+            .group_by(BookingNight.night_date)
+        ).all()
+        return {r[0]: int(r[1]) for r in rows}
+
+    def monthly_series(self, months: list[tuple[date, date]]) -> list[tuple[int, int]]:
+        """(revenue, expenses) per month window, for the trend charts."""
+        return [
+            (self.revenue_between(start, end), self.expenses_between(start, end))
+            for start, end in months
+        ]

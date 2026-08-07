@@ -18,6 +18,12 @@ from app.models.base import (
 )
 from app.models.booking import Booking, BookingNight, BookingStatus, PricingModeColumn
 from app.models.condo import Condo, CondoImage, PropertyType
+from app.models.expense import (
+    Expense,
+    ExpenseCategory,
+    ExpenseStatus,
+    PaymentMethod,
+)
 from app.models.user import RefreshToken, Role, User
 
 __all__ = [
@@ -32,6 +38,10 @@ __all__ = [
     "BookingStatus",
     "Condo",
     "CondoImage",
+    "Expense",
+    "ExpenseCategory",
+    "ExpenseStatus",
+    "PaymentMethod",
     "PricingModeColumn",
     "PropertyType",
     "RefreshToken",
