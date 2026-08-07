@@ -37,6 +37,11 @@ export const qk = {
     all: ["income"] as const,
     summary: (month: string | null) => [...qk.income.all, "summary", month] as const,
   },
+  dashboard: {
+    all: ["dashboard"] as const,
+    summary: (month: string | null) => ["dashboard", "summary", month] as const,
+  },
+  search: (term: string) => ["search", term] as const,
   activity: {
     all: ["activity"] as const,
     recent: (limit: number) => [...qk.activity.all, "recent", limit] as const,

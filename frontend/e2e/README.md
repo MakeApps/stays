@@ -49,3 +49,8 @@ server started before a blueprint was added keeps serving the old route map.
 Kill and restart it:
 
     powershell -Command "Get-CimInstance Win32_Process -Filter \"Name='python.exe'\" | Where-Object { $_.CommandLine -like '*wsgi*' } | ForEach-Object { Stop-Process -Id $_.ProcessId -Force }"
+
+- `dashboard.mjs` — the dashboard's KPIs and income-by-day chart (including
+  that hovering a bar updates the header readout, as the design does), global
+  search across all three entity types with navigation, and a real CSV download
+  checked for its UTF-8 BOM and row count.

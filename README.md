@@ -11,11 +11,8 @@ pixel contract — open it in a browser to compare any screen side by side.
 | 1 | Foundation, auth, condos end-to-end | **Done** |
 | 2 | Bookings + calendar timeline | **Done** |
 | 3 | Expenses, income, profit | **Done** |
-| 4 | Dashboard, global search, reports + CSV | Not started |
+| 4 | Dashboard, global search, CSV export | **Done** |
 | 5 | Hardening, Docker, CI | Not started |
-
-Nav items for unbuilt modules render an honest placeholder rather than a mock
-with invented numbers.
 
 The calendar is a custom-built resource timeline, not FullCalendar. This is a
 single-axis occupancy strip — one row per condo, one column per day — so
@@ -106,6 +103,9 @@ halves sum back exactly. That is what `booking_nights.revenue_share` is for.
 **Cancelled expenses stay on the record but out of every total** — a cancelled
 bill is still part of the audit trail. Maintenance blocks hold their dates but
 count as neither revenue nor occupancy.
+
+**CSV exports carry a UTF-8 BOM.** Without it Excel reads the file as the
+system codepage and Thai vendor names and the baht sign arrive as mojibake.
 
 **Donuts are CSS, not a charting library.** The design draws them with
 `conic-gradient` plus a hard mask edge that SVG arcs cannot reproduce, and

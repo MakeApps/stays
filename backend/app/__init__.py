@@ -81,6 +81,7 @@ def _register_blueprints(app: Flask, s: Settings) -> None:
     from app.routes.auth import bp as auth_bp
     from app.routes.bookings import bp as bookings_bp
     from app.routes.condos import bp as condos_bp
+    from app.routes.dashboard import bp as dashboard_bp
     from app.routes.expenses import bp as expenses_bp
     from app.routes.expenses import income_bp
     from app.routes.files import bp as files_bp
@@ -96,6 +97,7 @@ def _register_blueprints(app: Flask, s: Settings) -> None:
     app.register_blueprint(bookings_bp, url_prefix=f"{s.API_PREFIX}/bookings")
     app.register_blueprint(expenses_bp, url_prefix=f"{s.API_PREFIX}/expenses")
     app.register_blueprint(income_bp, url_prefix=f"{s.API_PREFIX}/income")
+    app.register_blueprint(dashboard_bp, url_prefix=f"{s.API_PREFIX}/dashboard")
     app.register_blueprint(files_bp, url_prefix=s.API_PREFIX)
 
 

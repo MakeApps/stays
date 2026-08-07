@@ -52,6 +52,11 @@ export function IncomeScreen() {
             {period} · accrued by night, so a stay crossing a month splits between the two
           </div>
         </div>
+        <div className="actions">
+          <a className="btn btn-outline" href="/api/v1/dashboard/export?kind=income" download>
+            Export CSV
+          </a>
+        </div>
       </div>
 
       <div style={{ ...GRID_STATS, marginBottom: 24 }}>

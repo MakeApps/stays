@@ -18,8 +18,8 @@ import {
   MenuIcon,
   PlusIcon,
   RefreshIcon,
-  SearchIcon,
 } from "@/components/layout/icons";
+import { GlobalSearch } from "@/components/layout/GlobalSearch";
 import { useSession } from "@/components/providers/Providers";
 import { cn } from "@/lib/cn";
 import { api } from "@/services/http";
@@ -184,15 +184,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
             flexWrap: "wrap",
           }}
         >
-          <div className="search-box" style={{ flex: 1, maxWidth: 420 }}>
-            <SearchIcon />
-            <input
-              placeholder="Search guests, condos, booking codes…"
-              aria-label="Search"
-              disabled
-              title="Global search arrives in Phase 4"
-            />
-          </div>
+          <GlobalSearch />
           <div style={{ flex: 1 }} />
           <button
             className="icon-btn"

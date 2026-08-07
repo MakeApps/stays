@@ -142,6 +142,9 @@ export function ExpensesScreen() {
               </button>
             ))}
           </div>
+          <a className="btn btn-outline" href="/api/v1/dashboard/export?kind=expenses" download>
+            Export
+          </a>
           {can("expense:write") ? (
             <button className="btn btn-primary" onClick={() => setParam({ new: "1" })}>
               <PlusIcon size={17} />

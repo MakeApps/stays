@@ -291,3 +291,79 @@ export interface IncomeSummary {
   by_condo: CondoProfitRow[];
   trend: TrendPoint[];
 }
+
+// ---------------------------------------------------------------- dashboard
+
+export interface DashboardKpis {
+  total_condos: number;
+  occupied: number;
+  vacant: number;
+  maintenance: number;
+  occupancy_pct: number;
+  revenue_today: string;
+  revenue_month: string;
+  expenses_month: string;
+  net_month: string;
+  check_ins_7d: number;
+  check_outs_7d: number;
+  outstanding: string;
+  outstanding_count: number;
+  booked_nights: number;
+  avg_per_day: string;
+  best_day: string | null;
+  best_day_label: string;
+}
+
+export interface DayPoint {
+  date: string;
+  amount: string;
+  label: string;
+  is_today: boolean;
+}
+
+export interface UpcomingBooking {
+  id: string;
+  guest_name: string;
+  condo_name: string;
+  condo_code: string;
+  check_in: string;
+  check_out: string;
+  nights: number;
+  total_label: string;
+  payment_status: PaymentStatus;
+}
+
+export interface ActivityEntry {
+  id: string;
+  title: string;
+  body: string;
+  when: string;
+  kind: string;
+  actor: string | null;
+  entity_type: string;
+  entity_id: string | null;
+}
+
+export interface DashboardResponse {
+  period: { start: string; end: string };
+  today: string;
+  kpis: DashboardKpis;
+  occupancy: { occupied: number; vacant: number; maintenance: number };
+  income_by_day: DayPoint[];
+  upcoming: UpcomingBooking[];
+  activity: ActivityEntry[];
+}
+
+export interface SearchHit {
+  id: string;
+  title: string;
+  subtitle: string;
+  href: string;
+}
+
+export interface SearchResponse {
+  query: string;
+  condos: SearchHit[];
+  bookings: SearchHit[];
+  expenses: SearchHit[];
+}
