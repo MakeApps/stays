@@ -54,3 +54,22 @@ Kill and restart it:
   that hovering a bar updates the header readout, as the design does), global
   search across all three entity types with navigation, and a real CSV download
   checked for its UTF-8 BOM and row count.
+
+## Two mutually exclusive fixtures
+
+`npm run e2e` asserts **exact figures from the seeded demo data** and needs it
+loaded:
+
+    cd backend && flask --app wsgi seed-demo --force
+
+`npm run e2e:empty` asserts the opposite - that every screen survives a
+**completely empty** database - and needs it cleared:
+
+    cd backend && flask --app wsgi reset-data --yes
+
+They cannot both pass at once, by design. Empty states are written early and
+then almost never exercised, because development happens against seeded data,
+and that is exactly where divide-by-zero and stray `undefined` reach a money
+screen. `empty.mjs` walks all eight screens and fails on any of `NaN`,
+`undefined`, `null`, `[object Object]` or `Infinity` appearing in the rendered
+text.

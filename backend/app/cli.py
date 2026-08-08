@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import secrets
+from contextlib import suppress
 
 import click
 from flask import Flask
@@ -92,6 +93,98 @@ def register_cli(app: Flask) -> None:
             click.echo("Bookings/expenses already present — pass --force to seed anyway.")
         else:
             click.echo(f"Seeded {bookings} bookings and {expenses} expenses.")
+
+    @app.cli.command("reset-data")
+    @click.option("--yes", is_flag=True, help="Skip the confirmation prompt.")
+    def reset_data(yes: bool) -> None:
+        """Delete all condos, bookings, expenses and activity.
+
+        Keeps user accounts and the expense category / payment method lookups.
+        Those are not demo data: the lookups are reference data the expense form
+        depends on, and deleting the users would lock you out of the app.
+        """
+        from sqlalchemy import func, select
+
+        from app.models.activity_log import ActivityLog
+        from app.models.booking import Booking, BookingNight
+        from app.models.condo import Condo, CondoImage
+        from app.models.expense import Expense
+
+        counts = {
+            "condos": db.session.scalar(select(func.count()).select_from(Condo)) or 0,
+            "bookings": db.session.scalar(select(func.count()).select_from(Booking)) or 0,
+            "expenses": db.session.scalar(select(func.count()).select_from(Expense)) or 0,
+        }
+        settings = app.config["SETTINGS"]
+        local_root = settings.STORAGE_LOCAL_DIR
+        stray_files = (
+            sum(1 for p in local_root.rglob("*") if p.is_file())
+            if settings.STORAGE_BACKEND == "local" and local_root.exists()
+            else 0
+        )
+
+        # Files are counted separately: rows removed outside the app leave
+        # orphans behind, and "the database is empty" must not mean "there is
+        # nothing to clean up".
+        if not any(counts.values()) and not stray_files:
+            click.echo("Nothing to remove - already clean.")
+            return
+
+        parts = [f"{n} {label}" for label, n in counts.items() if n]
+        if stray_files:
+            parts.append(f"{stray_files} uploaded files")
+        summary = ", ".join(parts) or "nothing"
+        if not yes and not click.confirm(f"Permanently delete {summary}?"):
+            click.echo("Cancelled.")
+            return
+
+        storage = app.extensions["storage"]
+        keys = [
+            k
+            for k in (
+                *db.session.scalars(select(CondoImage.storage_key)),
+                *db.session.scalars(
+                    select(Expense.receipt_key).where(Expense.receipt_key.isnot(None))
+                ),
+            )
+            if k
+        ]
+
+        # Children first: booking_nights and images have FKs into what follows.
+        db.session.query(BookingNight).delete()
+        db.session.query(Booking).delete()
+        db.session.query(Expense).delete()
+        db.session.query(CondoImage).delete()
+        db.session.query(Condo).delete()
+        db.session.query(ActivityLog).delete()
+        db.session.commit()
+
+        # Only after the rows are gone: an orphaned file costs pennies, a
+        # missing one breaks a page that still references it.
+        removed_files = 0
+        for key in keys:
+            with suppress(Exception):
+                # A file that is already gone is not a failure; the row it
+                # belonged to has been deleted either way.
+                storage.delete(key)
+                removed_files += 1
+
+        # After this command nothing in the database can reference a stored
+        # file, so anything left on disk is an orphan - typically from rows
+        # removed outside the app. Sweeping is only safe *because* every
+        # referencing row has just been deleted.
+        if settings.STORAGE_BACKEND == "local" and local_root.exists():
+            for path in sorted(local_root.rglob("*"), reverse=True):
+                if path.is_file():
+                    with suppress(OSError):
+                        path.unlink()
+                        removed_files += 1
+                elif path.is_dir():
+                    with suppress(OSError):
+                        path.rmdir()
+
+        click.echo(f"Removed {summary}.")
+        click.echo("Kept: user accounts, expense categories, payment methods.")
 
     @app.cli.command("purge-tokens")
     def purge_tokens() -> None:
