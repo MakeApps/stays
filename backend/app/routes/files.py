@@ -10,6 +10,7 @@ directly against the bucket.
 
 from __future__ import annotations
 
+import mimetypes
 from typing import Any
 
 from flask import Blueprint, Response, current_app, request, send_file
@@ -40,8 +41,15 @@ def serve_file(key: str) -> Any:
         raise NotFoundError("That link has expired.")
 
     handle = storage.open(key)
+    # Passed explicitly, and taken from the *key*, which the signature covers.
+    # Without it send_file cannot detect a type from an open handle and raises,
+    # which is why photos (no download_name) 500'd while receipts did not. It
+    # must not come from `filename` either: that parameter is unsigned, so a
+    # crafted link could relabel a stored image as text/html.
+    mimetype = mimetypes.guess_type(key)[0] or "application/octet-stream"
     response: Response = send_file(
         handle,
+        mimetype=mimetype,
         download_name=request.args.get("filename"),
         max_age=current_app.config["SETTINGS"].STORAGE_URL_TTL_SEC,
     )

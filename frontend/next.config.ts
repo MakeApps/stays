@@ -15,6 +15,10 @@ const nextConfig: NextConfig = {
   },
   env: { API_ORIGIN },
   typedRoutes: true,
+  // Dev-only badge, but it defaults to bottom-left — directly over the
+  // sidebar's sign-out button, which it makes unclickable in the collapsed
+  // rail. Production is unaffected; this is so local testing matches it.
+  devIndicators: { position: "bottom-right" },
 };
 
 export default nextConfig;

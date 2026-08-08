@@ -97,6 +97,21 @@ export const CloseIcon = ({ size, className }: IconProps) => (
   </svg>
 );
 
+/** Sidebar rail toggle: a panel with the edge the click will move. */
+export const PanelCollapseIcon = ({ size, className }: IconProps) => (
+  <svg {...base} width={size} height={size} className={className}>
+    <rect x="3" y="4" width="18" height="16" rx="2" />
+    <path d="M10 4v16M16.5 9.5L14 12l2.5 2.5" />
+  </svg>
+);
+
+export const PanelExpandIcon = ({ size, className }: IconProps) => (
+  <svg {...base} width={size} height={size} className={className}>
+    <rect x="3" y="4" width="18" height="16" rx="2" />
+    <path d="M10 4v16M14 9.5l2.5 2.5L14 14.5" />
+  </svg>
+);
+
 export const EditIcon = ({ size, className }: IconProps) => (
   <svg {...base} width={size} height={size} className={className}>
     <path d="M12 20h9M16.5 3.5a2.1 2.1 0 0 1 3 3L7 19l-4 1 1-4z" />

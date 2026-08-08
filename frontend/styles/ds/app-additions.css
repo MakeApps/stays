@@ -126,3 +126,54 @@ input, select, textarea, button { font-family: var(--font-sans); }
 .ls-toast[data-type="error"]   .ls-toast-icon { background: var(--danger-bg);  color: var(--danger); }
 .ls-toast[data-type="info"]    .ls-toast-icon { background: var(--info-bg);    color: var(--info); }
 .ls-toast[data-type="warning"] .ls-toast-icon { background: var(--warning-bg); color: var(--warning); }
+
+/* ---------- Collapsible sidebar rail ----------
+ * The DS already carried --sidebar-w-collapsed (colors_and_type.css:135); it
+ * defined the width for this mode without anything ever using it.
+ *
+ * Desktop only. Below 768px the sidebar is already an off-canvas drawer, and a
+ * 64px rail there would be a second, conflicting navigation mode. */
+@media (min-width: 769px) {
+  .sidebar { transition: width 200ms var(--ease-out); }
+
+  .sidebar.collapsed { width: var(--sidebar-w-collapsed); }
+  .sidebar.collapsed .sidebar-nav { padding: 14px 8px; }
+  .sidebar.collapsed .sidebar-brand,
+  .sidebar.collapsed .sidebar-bottom { padding-inline: 8px; }
+
+  /* Hidden, not merely transparent: a label reachable by keyboard or screen
+   * reader inside a 64px rail is a focus trap you cannot see. */
+  .sidebar.collapsed .nav-label,
+  .sidebar.collapsed .sidebar-group,
+  .sidebar.collapsed .user-meta { display: none; }
+
+  .sidebar.collapsed .sidebar-item,
+  .sidebar.collapsed .user-pill,
+  .sidebar.collapsed .sidebar-brand > * { justify-content: center; }
+  .sidebar.collapsed .sidebar-item { padding: 9px 0; gap: 0; }
+  .sidebar.collapsed .user-pill { padding: 8px 0; }
+}
+
+.nav-toggle {
+  width: 28px;
+  height: 28px;
+  border: 0;
+  border-radius: 8px;
+  background: transparent;
+  color: var(--fg-3);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  flex: none;
+  transition: background 120ms, color 120ms;
+}
+.nav-toggle:hover { background: var(--bg-alt); color: var(--fg); }
+.nav-toggle:focus-visible { outline: 2px solid var(--brand-purple); outline-offset: 2px; }
+
+/* The rail is a desktop affordance; on mobile the hamburger owns navigation. */
+@media (max-width: 768px) { .nav-toggle { display: none; } }
+
+@media (prefers-reduced-motion: reduce) {
+  .sidebar { transition: none; }
+}
