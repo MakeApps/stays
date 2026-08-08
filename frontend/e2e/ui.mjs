@@ -69,10 +69,30 @@ await page.screenshot({ path: "/tmp/shots/02-condos.png", fullPage: true });
 await page.getByRole("button", { name: /^Maintenance/ }).click();
 await page.waitForFunction(() => location.search.includes("status=maintenance"), { timeout: 8000 });
 await page.waitForTimeout(1200);
-check("maintenance filter shows the empty state",
-  (await page.locator("text=Nothing matches those filters").count()) > 0);
+// Status is derived from bookings, so with the demo data seeded the
+// maintenance filter legitimately returns the unit whose maintenance block
+// spans today. This used to assert an empty state, which only held while
+// bookings did not exist yet.
+const maintenanceCards = await page.locator('[role="button"][aria-label*="Maintenance"]').count();
+const allCards = await page.locator('[role="button"][aria-label]').count();
+check(
+  "maintenance filter narrows to units actually under maintenance",
+  maintenanceCards > 0 && maintenanceCards === allCards,
+  `${maintenanceCards} of ${allCards} cards`,
+);
+
+// The empty state still needs covering — reach it with a search that cannot
+// match anything rather than relying on a status having no units.
 await page.goto(`${BASE}/condos`, { waitUntil: "networkidle" });
 await hydrated(page);
+await page.locator('input[aria-label="Search condos"]').fill("zzz-no-such-unit");
+await page.waitForTimeout(1500);
+check(
+  "a search with no matches shows the empty state",
+  (await page.locator("text=Nothing matches those filters").count()) > 0,
+);
+await page.locator('input[aria-label="Search condos"]').fill("");
+await page.waitForTimeout(1200);
 
 // 5. detail drawer via URL
 await page.waitForSelector("text=Ashton Asoke 1204", { timeout: 20000 });

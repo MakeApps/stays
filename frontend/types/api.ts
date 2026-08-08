@@ -367,3 +367,33 @@ export interface SearchResponse {
   bookings: SearchHit[];
   expenses: SearchHit[];
 }
+
+export interface CondoFinance {
+  period: { start: string; end: string };
+  revenue: string;
+  expenses: string;
+  net: string;
+  net_is_negative: boolean;
+  occupancy_pct: number;
+  booked_nights: number;
+  available_nights: number;
+  bookings: number;
+  upcoming: {
+    id: string;
+    guest_name: string;
+    check_in: string;
+    check_out: string;
+    nights: number;
+    total_label: string;
+    payment_status: PaymentStatus;
+  }[];
+  recent_expenses: {
+    id: string;
+    description: string;
+    category: string;
+    tone: string;
+    spent_on: string;
+    amount_label: string;
+    amount: string;
+  }[];
+}

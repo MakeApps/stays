@@ -24,6 +24,7 @@ from app.schemas.condo import (
     apply_money_fields,
 )
 from app.services.availability import derive_unit_status
+from app.services.condo_status import spans_for, status_map
 from app.services.uploads import validate_upload
 
 MAX_IMAGES_PER_CONDO = 12
@@ -35,17 +36,27 @@ class CondoService:
 
     # ---------- reads ----------
     def status_of(self, condo: Condo, *, today: date | None = None) -> UnitStatus:
-        # Booking spans arrive in Phase 2; the flag is all that can fire today.
+        """Single-condo status. Prefer `statuses_for` when rendering a list."""
+        when = today or date.today()
+        spans = spans_for(self.repo.session, [condo.id], today=when)
         return derive_unit_status(  # type: ignore[return-value]
             is_maintenance_flagged=condo.is_maintenance,
-            spans=[],
-            today=today or date.today(),
+            spans=spans.get(condo.id, []),
+            today=when,
         )
 
-    def serialise(self, condo: Condo) -> CondoOut:
+    def statuses_for(self, condos: list[Condo]) -> dict[uuid.UUID, UnitStatus]:
+        """One query for the whole page rather than one per card."""
+        return status_map(  # type: ignore[return-value]
+            self.repo.session, [(c.id, c.is_maintenance) for c in condos]
+        )
+
+    def serialise(self, condo: Condo, status: UnitStatus | None = None) -> CondoOut:
         storage = current_app.extensions["storage"]
         return CondoOut.from_model(
-            condo, status=self.status_of(condo), image_url=storage.url_for
+            condo,
+            status=status or self.status_of(condo),
+            image_url=storage.url_for,
         )
 
     def list(self, params: CondoListQuery) -> tuple[Page[Condo], dict[str, Any]]:
@@ -54,18 +65,39 @@ class CondoService:
         )
         stmt = self.repo.search(page_params, q=params.q)
 
-        if params.status != "all":
-            # Only the maintenance filter is meaningful before bookings exist;
-            # the others resolve to "available" for every live unit.
-            if params.status == "maintenance":
-                stmt = stmt.where(Condo.is_maintenance.is_(True))
-            elif params.status == "available":
-                stmt = stmt.where(Condo.is_maintenance.is_(False))
-            else:
-                stmt = stmt.where(Condo.id.is_(None))  # occupied/reserved: none yet
+        if params.status == "all":
+            # Fast path: no derived predicate, so the database paginates.
+            return paginate(self.repo.session, stmt, page_params), self.counts_by_status()
 
-        page = paginate(self.repo.session, stmt, page_params)
-        return page, self.repo.counts_by_status()
+        # Status is derived from bookings, so it cannot be a SQL predicate
+        # without duplicating the rule. Filter first, then slice — filtering
+        # *after* pagination would leave `total` describing a different set
+        # than `items`, and short pages in the middle of the list. A portfolio
+        # is at most a few hundred rows, so loading the candidates is cheap.
+        candidates = list(self.repo.session.scalars(stmt).unique())
+        statuses = self.statuses_for(candidates)
+        matching = [c for c in candidates if statuses.get(c.id) == params.status]
+
+        start = page_params.offset
+        return (
+            Page(
+                items=matching[start : start + page_params.per_page],
+                total=len(matching),
+                page=page_params.page,
+                per_page=page_params.per_page,
+            ),
+            self.counts_by_status(),
+        )
+
+    def counts_by_status(self) -> dict[str, int]:
+        """Filter-pill counts, derived across every live unit."""
+        condos = self.repo.list_all()
+        statuses = self.statuses_for(condos)
+        counts = {"available": 0, "occupied": 0, "reserved": 0, "maintenance": 0}
+        for status in statuses.values():
+            counts[status] = counts.get(status, 0) + 1
+        counts["all"] = len(condos)
+        return counts
 
     def get(self, condo_id: uuid.UUID) -> Condo:
         condo = self.repo.get(condo_id)

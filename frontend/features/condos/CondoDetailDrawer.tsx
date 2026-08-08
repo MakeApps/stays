@@ -5,15 +5,15 @@ import Link from "next/link";
 
 import { CloseIcon, EditIcon, TrashIcon } from "@/components/layout/icons";
 import { useCan } from "@/components/providers/Providers";
+import { useCondoFinance } from "@/features/condos/api";
 import { STATUS_META, groupBaht, specLine } from "@/features/condos/display";
 import type { Condo } from "@/types/api";
 
 /**
  * Quick-view drawer — design lines 1611–1681.
  *
- * The financial summary the design shows (revenue, expenses, net, occupancy)
- * needs bookings and expenses, so it arrives in Phase 3. Showing zeros here
- * would read as "this condo earned nothing" rather than "not measured yet".
+ * The financial summary is fetched separately so opening the drawer does not
+ * make the condo grid pay for a rollup it never displays.
  */
 export function CondoDetailDrawer({
   condo,
@@ -28,6 +28,7 @@ export function CondoDetailDrawer({
 }) {
   const can = useCan();
   const meta = condo ? STATUS_META[condo.status] : null;
+  const { data: finance } = useCondoFinance(condo?.id ?? null);
 
   return (
     <Dialog.Root open={Boolean(condo)} onOpenChange={(open) => !open && onClose()}>
@@ -161,24 +162,69 @@ export function CondoDetailDrawer({
                   </div>
                 ) : null}
 
+                {/* Design lines 1627–1665: financial summary and occupancy. */}
                 <div
                   style={{
-                    padding: "12px 14px",
-                    background: "var(--brand-purple-50)",
-                    borderRadius: 12,
+                    borderRadius: 16,
+                    padding: 20,
+                    background: "var(--surface)",
+                    boxShadow: "var(--shadow-md)",
                   }}
                 >
-                  <div className="t-caption" style={{ color: "var(--brand-purple-700)" }}>
-                    Financials
+                  <div className="t-eyebrow" style={{ marginBottom: 14 }}>
+                    Financial summary · this month
+                  </div>
+                  <div style={{ display: "flex", flexDirection: "column", gap: 11 }}>
+                    <Row label="Total revenue" value={finance?.revenue ?? "—"} />
+                    <Row
+                      label="Total expenses"
+                      value={finance ? `−${finance.expenses}` : "—"}
+                    />
+                    <div
+                      style={{
+                        display: "flex",
+                        justifyContent: "space-between",
+                        alignItems: "flex-end",
+                        paddingTop: 14,
+                        borderTop: "1px solid var(--line)",
+                      }}
+                    >
+                      <span style={{ font: "600 14px/1.4 var(--font-sans)", color: "var(--fg)" }}>
+                        Net profit
+                      </span>
+                      <span
+                        style={{
+                          font: "700 24px/1.1 var(--font-sans)",
+                          letterSpacing: "-.02em",
+                          color: finance?.net_is_negative ? "var(--danger)" : "var(--success)",
+                        }}
+                      >
+                        {finance?.net ?? "—"}
+                      </span>
+                    </div>
+                  </div>
+                </div>
+
+                <div>
+                  <div style={{ display: "flex", justifyContent: "space-between", marginBottom: 8 }}>
+                    <span className="t-caption">Occupancy</span>
+                    <span
+                      style={{ font: "700 13px/1 var(--font-sans)", color: "var(--brand-purple-700)" }}
+                    >
+                      {finance?.occupancy_pct ?? 0}%
+                    </span>
                   </div>
                   <div
                     style={{
-                      font: "500 13px/1.5 var(--font-sans)",
-                      color: "var(--fg-2)",
-                      marginTop: 4,
+                      height: 8,
+                      borderRadius: 999,
+                      background: `linear-gradient(90deg, var(--brand-purple) ${finance?.occupancy_pct ?? 0}%, var(--muted) ${finance?.occupancy_pct ?? 0}%)`,
                     }}
-                  >
-                    Revenue, expenses and occupancy appear once bookings and expenses exist.
+                  />
+                  <div style={{ display: "flex", gap: 12, marginTop: 14 }}>
+                    <MiniStat label="Booked nights" value={finance?.booked_nights ?? 0} />
+                    <MiniStat label="Available nights" value={finance?.available_nights ?? 0} />
+                    <MiniStat label="Bookings" value={finance?.bookings ?? 0} />
                   </div>
                 </div>
               </div>
@@ -227,6 +273,25 @@ export function CondoDetailDrawer({
         </Dialog.Content>
       </Dialog.Portal>
     </Dialog.Root>
+  );
+}
+
+function MiniStat({ label, value }: { label: string; value: number }) {
+  return (
+    <div
+      style={{
+        flex: 1,
+        padding: 14,
+        background: "var(--surface-2)",
+        border: "1px solid var(--line)",
+        borderRadius: 12,
+      }}
+    >
+      <div className="t-caption">{label}</div>
+      <div style={{ font: "700 17px/1.2 var(--font-sans)", color: "var(--fg)", marginTop: 4 }}>
+        {value}
+      </div>
+    </div>
   );
 }
 

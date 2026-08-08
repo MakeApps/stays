@@ -78,13 +78,25 @@ def _clamp(day: int, anchor: date) -> date:
 
 
 def seed_activity(*, force: bool = False) -> tuple[int, int]:
-    """Load the design's bookings and expenses. Returns (bookings, expenses)."""
-    existing = db.session.scalar(select(func.count()).select_from(Expense)) or 0
-    from app.models.booking import Booking
+    """Load the design's bookings and expenses. Returns (bookings, expenses).
 
-    existing += db.session.scalar(select(func.count()).select_from(Booking)) or 0
-    if existing and not force:
-        return (-1, -1)
+    ``force`` means *reset*, not *append*. Adding on top would duplicate every
+    expense and make every booking collide with the copy already occupying its
+    nights, which is exactly what happened the first time this ran twice.
+    """
+    from app.models.booking import Booking, BookingNight
+
+    existing = (db.session.scalar(select(func.count()).select_from(Expense)) or 0) + (
+        db.session.scalar(select(func.count()).select_from(Booking)) or 0
+    )
+    if existing:
+        if not force:
+            return (-1, -1)
+        # Hard delete: this is demo data, not a record worth soft-deleting.
+        db.session.query(BookingNight).delete()
+        db.session.query(Booking).delete()
+        db.session.query(Expense).delete()
+        db.session.commit()
 
     anchor = date.today()
     condos = {c.code: c for c in db.session.scalars(select(Condo).where(Condo.deleted_at.is_(None)))}

@@ -2,7 +2,7 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 
 import { qk } from "@/lib/query";
 import { api, apiFetch, qs } from "@/services/http";
-import type { Condo, CondoListResponse, UnitStatus } from "@/types/api";
+import type { Condo, CondoFinance, CondoListResponse, UnitStatus } from "@/types/api";
 
 export interface CondoFilters {
   q?: string;
@@ -37,6 +37,16 @@ export function useCondos(filters: CondoFilters) {
     // blanking — the production equivalent of the prototype's instant local
     // filtering.
     placeholderData: (previous) => previous,
+  });
+}
+
+/** This unit's money for the current month, plus its upcoming stays and
+ *  recent bills — one round trip for both condo detail surfaces. */
+export function useCondoFinance(id: string | null) {
+  return useQuery({
+    queryKey: [...qk.condos.detail(id ?? ""), "finance"] as const,
+    queryFn: () => api.get<CondoFinance>(`/condos/${id}/finance`),
+    enabled: Boolean(id),
   });
 }
 

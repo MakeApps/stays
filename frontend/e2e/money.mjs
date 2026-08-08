@@ -1,5 +1,7 @@
 import { chromium } from "playwright";
 
+import { cleanupTestData } from "./cleanup.mjs";
+
 const BASE = "http://localhost:3000";
 const EMAIL = process.env.E2E_EMAIL ?? "admin@localshouts.co.th";
 // Read from the environment so rotating the admin password does not break the
@@ -30,6 +32,8 @@ await page.fill("#email", EMAIL);
 await page.fill("#password", PASSWORD);
 await page.click('button[type="submit"]');
 await page.waitForURL((u) => !u.pathname.includes("/login"), { timeout: 20000 });
+
+await cleanupTestData(page);
 
 // ---------------- income ----------------
 await fresh(`${BASE}/income`);
@@ -94,6 +98,11 @@ await fresh(`${BASE}/expenses?tab=list`);
 const afterText = await page.locator("main").innerText();
 ok(afterText.includes("Playwright test bill"), "created expense appears in the list");
 ok(afterText.includes("฿1,235"), "1234.50 baht round-tripped through satang", afterText.match(/฿1,23\d/)?.[0] ?? "");
+
+await cleanupTestData(page);
+await fresh(`${BASE}/expenses?tab=list`);
+const cleaned = await page.locator("main").innerText();
+ok(!cleaned.includes("Playwright test bill"), "suite cleans up the expense it created");
 
 // ---------------- mobile ----------------
 const mobile = await browser.newContext({ viewport: { width: 390, height: 844 }, storageState: await ctx.storageState() });

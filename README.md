@@ -23,7 +23,20 @@ recurring licence and keeps the screen pixel-identical to the approved design.
 Drag-to-move, edge-resize and keyboard nudging are additions the design does
 not have.
 
-## Running it
+## Quick start
+
+```powershell
+.\dev.ps1              # start the API and web app
+.\dev.ps1 -Reset       # wipe and reload the demo data first
+.\dev.ps1 -Stop        # stop everything
+```
+
+It prints the URL and the admin credentials from `backend/.env.local` when both
+servers answer. It always restarts rather than reusing what is running: a Flask
+process started before a route was added keeps serving the old route map, which
+shows up as a 404 on an endpoint that demonstrably exists.
+
+## Running it manually
 
 Prerequisites: Node 20+, Python 3.12+, and a MySQL-compatible server. Local
 development targets XAMPP's MariaDB; production targets MySQL 8.0, so the
@@ -73,7 +86,7 @@ is wrong.
 cd backend  && pytest             # 198 tests, needs a reachable database
 cd frontend && npm run typecheck
 cd frontend && npm run verify:ds  # fails if the vendored DS drifts from _ds/
-cd frontend && E2E_PASSWORD=... npm run e2e   # browser checks; needs both servers running
+cd frontend && E2E_PASSWORD=... npm run e2e   # 95 browser checks; needs both servers running
 ```
 
 ## Deployment

@@ -1,4 +1,6 @@
 import { chromium } from "playwright";
+
+import { cleanupTestData } from "./cleanup.mjs";
 const BASE = "http://localhost:3000";
 const EMAIL = process.env.E2E_EMAIL ?? "admin@localshouts.co.th";
 // Read from the environment so rotating the admin password does not break the
@@ -14,7 +16,13 @@ const ctx = await b.newContext({ viewport: { width: 1440, height: 980 } });
 const p = await ctx.newPage();
 const errs = [];
 p.on("pageerror", e => errs.push(String(e)));
-const ok = (c, l, x = "") => console.log(`${c ? "PASS" : "FAIL"}  ${l}${x ? " — " + x : ""}`);
+let passed = 0;
+let total = 0;
+const ok = (c, l, x = "") => {
+  total += 1;
+  if (c) passed += 1;
+  console.log(`${c ? "PASS" : "FAIL"}  ${l}${x ? " — " + x : ""}`);
+};
 
 async function fresh(url) {
   await p.goto(url, { waitUntil: "networkidle" });
@@ -26,6 +34,11 @@ await p.fill("#email", EMAIL);
 await p.fill("#password", PASSWORD);
 await p.click('button[type="submit"]');
 await p.waitForURL(u => !u.pathname.includes("/login"), { timeout: 20000 });
+
+// Start from a known state: a previous run that died midway would otherwise
+// still hold the PW-0707 code and this suite could never create its own.
+await fresh(`${BASE}/condos`);
+await cleanupTestData(p);
 
 // ---- CREATE ----
 await fresh(`${BASE}/condos?new=1`);
@@ -94,5 +107,18 @@ await p.click('button[type="submit"]');
 await p.waitForTimeout(2500);
 ok((await p.locator("text=Reuse Check").count()) > 0, "code is reusable after soft delete");
 
+// ---- CLEAN UP ----
+// Leaving these behind keeps the PW-0707 code taken, so the next run cannot
+// create its own, and every screen reports 10 units instead of the seeded 9.
+await cleanupTestData(p);
+await p.waitForTimeout(800);
+await fresh(`${BASE}/condos`);
+ok(
+  !/Playwright|Reuse Check/.test(await p.locator("main").innerText()),
+  "suite cleans up the condos it created",
+);
+
 console.log("\npage errors: " + (errs.length ? errs.join("; ") : "none"));
+console.log(`\n${passed}/${total} passed`);
 await b.close();
+if (passed !== total || errs.length) process.exit(1);

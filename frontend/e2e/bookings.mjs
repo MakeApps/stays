@@ -1,5 +1,7 @@
 import { chromium } from "playwright";
 
+import { cleanupTestData } from "./cleanup.mjs";
+
 const BASE = "http://localhost:3000";
 const EMAIL = process.env.E2E_EMAIL ?? "admin@localshouts.co.th";
 // Read from the environment so rotating the admin password does not break the
@@ -31,6 +33,8 @@ await page.fill("#email", EMAIL);
 await page.fill("#password", PASSWORD);
 await page.click('button[type="submit"]');
 await page.waitForURL((u) => !u.pathname.includes("/login"), { timeout: 20000 });
+
+await cleanupTestData(page);
 
 // ---------------- booking form: live totals ----------------
 await fresh(`${BASE}/bookings/new`);
@@ -131,6 +135,8 @@ if (bars > 0) {
     ok(before !== after, "drag moved the booking", `${before} -> ${after}`);
   }
 }
+
+await cleanupTestData(page);
 
 // ---------------- mobile ----------------
 const mobile = await browser.newContext({ viewport: { width: 390, height: 844 }, storageState: await ctx.storageState() });
