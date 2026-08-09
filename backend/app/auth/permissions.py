@@ -62,6 +62,15 @@ ALL_CAPABILITIES: Final[frozenset[str]] = frozenset(
     }
 )
 
+# What the Users screen creates. Everything except administering accounts:
+# nobody hits a permission wall doing the job, and the one power that can lock
+# the owner out of their own system stays with the admin.
+#
+# Deliberately not _STAFF, which excludes condo deletion and income export and
+# still allows listing users — a different intent, kept intact rather than
+# quietly redefined under a role that already had a documented meaning.
+_MANAGER: Final[frozenset[str]] = frozenset(ALL_CAPABILITIES - {USER_READ, USER_WRITE})
+
 # A cleaner needs to know which unit to turn over and when — and nothing about
 # money. That exclusion is enforced server-side, not merely hidden in the nav.
 _CLEANER: Final[frozenset[str]] = frozenset(
@@ -89,6 +98,7 @@ _STAFF: Final[frozenset[str]] = frozenset(
 
 MATRIX: Final[dict[Role, frozenset[str]]] = {
     Role.ADMIN: ALL_CAPABILITIES,
+    Role.MANAGER: _MANAGER,
     Role.STAFF: _STAFF,
     Role.ACCOUNTANT: _ACCOUNTANT,
     Role.CLEANER: _CLEANER,

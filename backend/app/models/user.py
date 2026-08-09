@@ -19,6 +19,11 @@ from app.models.base import GUID, AuditMixin, Base, SoftDeleteMixin, UUIDPrimary
 
 class Role(str, enum.Enum):
     ADMIN = "admin"
+    #: Everything an admin can do except administer accounts. This is what the
+    #: Users screen creates; no role is chosen there, because the product does
+    #: not expose roles yet. Stored as VARCHAR(20), so adding it needed no
+    #: migration.
+    MANAGER = "manager"
     STAFF = "staff"
     CLEANER = "cleaner"
     ACCOUNTANT = "accountant"

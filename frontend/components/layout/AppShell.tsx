@@ -20,6 +20,7 @@ import {
   PanelExpandIcon,
   PlusIcon,
   RefreshIcon,
+  UsersIcon,
 } from "@/components/layout/icons";
 import { BottomTabs } from "@/components/layout/BottomTabs";
 import { Fab } from "@/components/layout/Fab";
@@ -44,6 +45,8 @@ const NAV: {
   { href: "/calendar", label: "Calendar", icon: CalendarIcon, capability: "calendar:read" },
   { href: "/income", label: "Income", icon: IncomeIcon, capability: "income:read" },
   { href: "/expenses", label: "Expenses", icon: ExpenseIcon, capability: "expense:read" },
+  // Admin only: `user:read` is not in any other role's capability set.
+  { href: "/users", label: "Users", icon: UsersIcon, capability: "user:read" },
 ];
 
 const QUICK_ADD: {
@@ -200,18 +203,19 @@ export function AppShell({
                 {user?.role}
               </div>
             </div>
+            {/* Inside the pill, where it belongs when expanded. In the rail
+                there is no room beside a 32px avatar, so CSS wraps it onto
+                its own line rather than the shell rendering two buttons. */}
+            <button
+              className="icon-btn sign-out"
+              onClick={signOut}
+              disabled={signingOut}
+              title="Sign out"
+              aria-label="Sign out"
+            >
+              <LogoutIcon size={15} />
+            </button>
           </div>
-          {/* One button. In the rail there is no room beside the avatar, so
-              CSS moves it below rather than the shell rendering two. */}
-          <button
-            className="icon-btn sign-out"
-            onClick={signOut}
-            disabled={signingOut}
-            title="Sign out"
-            aria-label="Sign out"
-          >
-            <LogoutIcon size={15} />
-          </button>
         </div>
       </aside>
 

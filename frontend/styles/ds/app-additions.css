@@ -149,7 +149,10 @@ input, select, textarea, button { font-family: var(--font-sans); }
   .sidebar.collapsed .brand-word,
   .sidebar.collapsed .brand-spacer,
   .sidebar.collapsed .quick-add { display: none; }
-  .sidebar.collapsed .sign-out { width: 100%; margin-top: 8px; }
+  /* The pill wraps so the button drops under the avatar; it stays one
+     node in one parent, which is what keeps the expanded layout intact. */
+  .sidebar.collapsed .user-pill { flex-wrap: wrap; }
+  .sidebar.collapsed .sign-out { width: 100%; margin-top: 6px; }
   .sidebar.collapsed .sidebar-nav { padding: 14px 8px; }
   .sidebar.collapsed .sidebar-brand,
   .sidebar.collapsed .sidebar-bottom { padding-inline: 8px; }

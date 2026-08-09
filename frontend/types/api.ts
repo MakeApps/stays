@@ -1,7 +1,9 @@
 /** Shapes returned by the Flask API. Kept hand-written until Phase 4 adds an
  *  OpenAPI snapshot to generate from. */
 
-export type Role = "admin" | "staff" | "cleaner" | "accountant";
+/** `manager` is what the Users screen creates: everything except this screen.
+ *  No role is ever chosen in the UI — the product does not expose roles yet. */
+export type Role = "admin" | "manager" | "staff" | "cleaner" | "accountant";
 
 export type Capability =
   | "condo:read" | "condo:write" | "condo:delete"
@@ -499,4 +501,22 @@ export interface DepositLedger {
   outstanding: string;
   outstanding_label: string;
   movements: DepositMovement[];
+}
+
+// ------------------------------------------------------------------- users
+
+export interface TeamMember {
+  id: string;
+  email: string;
+  full_name: string;
+  /** The owner account. It cannot be suspended or removed. */
+  is_admin: boolean;
+  is_active: boolean;
+  last_login_at: string | null;
+  created_at: string;
+}
+
+export interface TeamListResponse {
+  items: TeamMember[];
+  meta: PageMeta;
 }

@@ -113,9 +113,11 @@ ok(
 const railVisible = await p
   .locator(".sidebar .sidebar-item")
   .evaluateAll((els) => els.filter((el) => el.offsetParent !== null).length);
+// Seven for an admin: the six shared screens plus Users, which only the
+// admin's capability set unlocks.
 ok(
-  railVisible === 6,
-  "the rail shows exactly the six nav destinations",
+  railVisible === 7,
+  "the rail shows every nav destination the signed-in role has",
   `${railVisible} visible items`,
 );
 

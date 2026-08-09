@@ -42,6 +42,10 @@ export const qk = {
     summary: (month: string | null) => ["dashboard", "summary", month] as const,
   },
   search: (term: string) => ["search", term] as const,
+  users: {
+    all: ["users"] as const,
+    list: (q: string | null) => [...qk.users.all, "list", q] as const,
+  },
   activity: {
     all: ["activity"] as const,
     recent: (limit: number) => [...qk.activity.all, "recent", limit] as const,
