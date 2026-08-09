@@ -460,8 +460,12 @@ input, select, textarea, button { font-family: var(--font-sans); }
   .hamburger,
   .icon-btn { min-width: 44px; min-height: 44px; }
   .sidebar-item { padding-block: 12px; }
-  .btn { min-height: 44px; }
-  .btn-sm { min-height: 38px; }
+  /* 44px in BOTH directions. btn-sm is what every mobile card row uses for
+     its actions, including delete — the one place a near-miss is expensive.
+     min-width matters for the icon-only ones: a 44px-tall delete button 39px
+     wide is still a 39px target, and height is the easy half to get right. */
+  .btn,
+  .btn-sm { min-height: 44px; min-width: 44px; }
 
   /* Actions wrap under the title instead of forcing the header wider than the
      screen — the cause of the sideways scroll on Expenses. */

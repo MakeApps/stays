@@ -285,6 +285,36 @@ ok(
   "and selects the day that was tapped",
 );
 
+// ----------------------------------------------------- expense card actions ---
+// The desktop table has had Edit and Delete since this screen shipped; the
+// mobile cards never did, so an expense could be read on a phone but neither
+// corrected nor removed.
+await fresh("/expenses?tab=list");
+const expCard = p.locator(".mobile-only > div").first();
+if ((await expCard.count()) > 0 && (await p.locator(".empty").count()) === 0) {
+  const editBtn = expCard.locator('button:has-text("Edit")');
+  const delBtn = expCard.locator('button[aria-label^="Delete"]');
+  ok((await editBtn.count()) > 0, "expense cards offer Edit on a phone");
+  ok((await delBtn.count()) > 0, "expense cards offer Delete on a phone");
+
+  for (const [name, loc] of [["edit", editBtn], ["delete", delBtn]]) {
+    const box = await loc.first().boundingBox();
+    ok(
+      (box?.width ?? 0) >= 44 && (box?.height ?? 0) >= 44,
+      `the ${name} action clears 44px in both directions`,
+      `${Math.round(box?.width ?? 0)}x${Math.round(box?.height ?? 0)}`,
+    );
+  }
+
+  await editBtn.first().tap();
+  await p.waitForTimeout(1800);
+  ok((await p.locator('[role="dialog"]').count()) > 0, "Edit opens the expense drawer");
+  await p.keyboard.press("Escape");
+  await p.waitForTimeout(500);
+} else {
+  console.log("SKIP  no expenses recorded to act on");
+}
+
 // ------------------------------------------------------------- touch input ---
 await fresh("/condos?new=1");
 await p.waitForSelector("text=Condo code", { timeout: 15000 });

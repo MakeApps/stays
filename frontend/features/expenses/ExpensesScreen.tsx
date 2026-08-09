@@ -5,7 +5,7 @@ import { useCallback, useMemo, useState } from "react";
 import { toast } from "sonner";
 
 import { Donut, PairedBars } from "@/components/ds/Donut";
-import { ExpenseIcon, PlusIcon, TrashIcon } from "@/components/layout/icons";
+import { EditIcon, ExpenseIcon, PlusIcon, TrashIcon } from "@/components/layout/icons";
 import { useCan } from "@/components/providers/Providers";
 import { ExpenseDrawer } from "@/features/expenses/ExpenseDrawer";
 import {
@@ -479,7 +479,11 @@ export function ExpensesScreen() {
                             {e.description}
                           </div>
                           <div className="t-caption" style={{ marginTop: 3 }}>
-                            {dayLabel(e.spent_on)} · {e.condo_name} · {e.vendor}
+                            {/* Joined, not interpolated: vendor is optional and
+                                a bare template left a trailing separator. */}
+                            {[dayLabel(e.spent_on), e.condo_name, e.vendor]
+                              .filter(Boolean)
+                              .join(" · ")}
                           </div>
                         </div>
                         <div style={{ font: "600 14px/1.4 var(--font-sans)", color: "var(--fg)" }}>
@@ -501,6 +505,45 @@ export function ExpensesScreen() {
                         <span className={STATUS_PILL[e.status]}>{e.status}</span>
                         <span className="t-caption">{e.method}</span>
                       </div>
+
+                      {/* The desktop table has had Edit and Delete since this
+                          screen shipped; the card fallback never did, so an
+                          expense could be read on a phone but not corrected or
+                          removed. Buttons rather than a tap target on the card
+                          itself: delete needs its own affordance, and a card
+                          that silently opens an editor is a trap next to one. */}
+                      {can("expense:write") || can("expense:delete") ? (
+                        <div
+                          style={{
+                            display: "flex",
+                            gap: 8,
+                            marginTop: 10,
+                            paddingTop: 10,
+                            borderTop: "1px solid var(--line)",
+                          }}
+                        >
+                          {can("expense:write") ? (
+                            <button
+                              className="btn btn-outline btn-sm"
+                              style={{ flex: 1, justifyContent: "center" }}
+                              onClick={() => setParam({ edit: e.id })}
+                            >
+                              <EditIcon size={14} />
+                              Edit
+                            </button>
+                          ) : null}
+                          {can("expense:delete") ? (
+                            <button
+                              className="btn btn-outline btn-sm"
+                              style={{ justifyContent: "center", color: "var(--danger)" }}
+                              aria-label={`Delete ${e.description}`}
+                              onClick={() => onDelete(e)}
+                            >
+                              <TrashIcon size={14} />
+                            </button>
+                          ) : null}
+                        </div>
+                      ) : null}
                     </div>
                   ))}
                 </div>
