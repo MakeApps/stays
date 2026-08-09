@@ -18,7 +18,7 @@ export function IncomeScreen() {
             <h1>Income</h1>
           </div>
         </div>
-        <div style={GRID_STATS}>
+        <div className="ls-kpis" style={GRID_STATS}>
           {Array.from({ length: 6 }, (_, i) => (
             <div key={i} className="card ls-shimmer" style={{ height: 118 }} />
           ))}
@@ -61,7 +61,7 @@ export function IncomeScreen() {
         </div>
       </div>
 
-      <div style={{ ...GRID_STATS, marginBottom: 24 }}>
+      <div className="ls-kpis" style={{ ...GRID_STATS, marginBottom: 24 }}>
         <Stat tone="purple" label="Today's income" value={k.today} />
         <Stat tone="blue" label="This week" value={k.week} />
         <Stat tone="green" label="This month" value={k.month} />
@@ -294,16 +294,22 @@ export function IncomeScreen() {
                     </div>
                     <span className={occupancyPill(r.occupancy_pct)}>{r.occupancy_pct}%</span>
                   </div>
+                  {/* Four figures wrap onto two rows rather than being
+                      squeezed into one — the desktop table gained a Lease
+                      column and this fallback has to reconcile with it, or
+                      the two views disagree about how profit was reached. */}
                   <div
                     style={{
-                      display: "flex",
-                      gap: 14,
+                      display: "grid",
+                      gridTemplateColumns: "repeat(2, minmax(0, 1fr))",
+                      gap: 12,
                       marginTop: 12,
                       paddingTop: 10,
                       borderTop: "1px solid var(--line)",
                     }}
                   >
                     <Cell label="Revenue" value={r.revenue_label} />
+                    <Cell label="Lease" value={r.lease_cost_label} tone="warning" />
                     <Cell label="Expenses" value={r.expenses_label} tone="warning" />
                     <Cell
                       label="Net profit"
@@ -311,6 +317,11 @@ export function IncomeScreen() {
                       tone={Number(r.net) >= 0 ? "success" : "danger"}
                     />
                   </div>
+                  {r.deposit_status !== "none" ? (
+                    <div className="t-caption" style={{ marginTop: 10 }}>
+                      {r.deposit_outstanding_label} deposit held · not counted above
+                    </div>
+                  ) : null}
                 </div>
               ))}
             </div>
@@ -321,11 +332,7 @@ export function IncomeScreen() {
   );
 }
 
-const GRID_STATS: React.CSSProperties = {
-  display: "grid",
-  gridTemplateColumns: "repeat(auto-fit,minmax(190px,1fr))",
-  gap: 16,
-};
+const GRID_STATS: React.CSSProperties = { gap: 16 };
 
 const TOTAL_CELL: React.CSSProperties = {
   textAlign: "right",

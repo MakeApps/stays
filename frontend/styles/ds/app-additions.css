@@ -177,3 +177,193 @@ input, select, textarea, button { font-family: var(--font-sans); }
 @media (prefers-reduced-motion: reduce) {
   .sidebar { transition: none; }
 }
+
+/* ---------- Mobile calendar ----------
+ * The desktop timeline needs horizontal room a phone does not have, so mobile
+ * gets a month grid instead. Both are rendered and CSS picks one — branching on
+ * window.innerWidth would be a hydration mismatch and a layout flash. */
+.cal-grid-card {
+  background: var(--surface);
+  border: 1px solid var(--line);
+  border-radius: 16px;
+  box-shadow: var(--shadow-xs);
+  padding: 12px;
+}
+.cal-weekdays,
+.cal-grid { display: grid; grid-template-columns: repeat(7, 1fr); }
+.cal-weekdays { gap: 0; margin-bottom: 4px; }
+.cal-weekday {
+  text-align: center;
+  font: 600 11px/1 var(--font-sans);
+  letter-spacing: .06em;
+  color: var(--fg-4);
+  padding-bottom: 8px;
+}
+.cal-grid { gap: 2px; }
+
+.cal-day {
+  position: relative;
+  /* Comfortably past the 44px touch target; a 31-cell grid is a lot of small
+     targets and near-misses are the difference between an app and a website. */
+  min-height: 46px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 4px;
+  padding: 4px 0;
+  border: 1px solid transparent;
+  border-radius: 10px;
+  background: transparent;
+  cursor: pointer;
+  font: inherit;
+  -webkit-tap-highlight-color: transparent;
+  transition: background 120ms, border-color 120ms;
+}
+.cal-day.is-pad { pointer-events: none; }
+.cal-day:active { background: var(--bg-alt); }
+.cal-day-num { font: 500 14px/1 var(--font-sans); color: var(--fg-2); }
+.cal-day.is-today .cal-day-num {
+  width: 24px; height: 24px;
+  display: inline-flex; align-items: center; justify-content: center;
+  border-radius: 999px;
+  background: var(--brand-purple);
+  color: #fff;
+  font-weight: 700;
+}
+.cal-day.is-selected {
+  background: var(--brand-purple-50);
+  border-color: var(--brand-purple-200);
+}
+.cal-day.is-selected .cal-day-num { color: var(--brand-purple-700); font-weight: 700; }
+.cal-day.is-selected.is-today .cal-day-num { color: #fff; }
+
+.cal-dots { display: flex; align-items: center; gap: 3px; min-height: 6px; }
+.cal-dot { width: 5px; height: 5px; border-radius: 999px; }
+.cal-more { font: 600 9px/1 var(--font-sans); color: var(--fg-4); }
+
+.cal-agenda {
+  margin-top: 12px;
+  background: var(--surface);
+  border: 1px solid var(--line);
+  border-radius: 16px;
+  box-shadow: var(--shadow-xs);
+  padding: 16px;
+}
+.cal-agenda-head {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 10px;
+  margin-bottom: 12px;
+}
+.cal-agenda-row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  width: 100%;
+  min-height: 56px;
+  padding: 10px 12px;
+  border: 1px solid var(--line);
+  border-radius: 12px;
+  background: var(--surface-2);
+  text-align: left;
+  font: inherit;
+  cursor: pointer;
+  -webkit-tap-highlight-color: transparent;
+}
+.cal-agenda-row:active { background: var(--bg-alt); }
+.cal-agenda-bar { width: 3px; align-self: stretch; border-radius: 999px; flex: none; }
+.cal-agenda-name {
+  display: block;
+  font: 600 14px/1.3 var(--font-sans);
+  color: var(--fg);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.cal-agenda-sub {
+  display: block;
+  font: 400 12px/1.4 var(--font-sans);
+  color: var(--fg-3);
+  margin-top: 2px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+/* ---------- Mobile-first behaviour ---------- */
+@media (max-width: 768px) {
+  /* iOS Safari zooms the whole page when a focused control is under 16px.
+     The DS sets 14px, so every tap into a field jerked the layout and left it
+     zoomed. 16px is the threshold, not a preference. */
+  .field input,
+  .field select,
+  .field textarea,
+  .search-box input,
+  .filter-sel {
+    font-size: 16px;
+  }
+
+  /* Touch targets. 36px is a comfortable mouse target and a frustrating
+     thumb one; 44px is the platform guidance on both iOS and Android. */
+  .hamburger,
+  .icon-btn { min-width: 44px; min-height: 44px; }
+  .sidebar-item { padding-block: 12px; }
+  .btn { min-height: 44px; }
+  .btn-sm { min-height: 38px; }
+
+  /* Actions wrap under the title instead of forcing the header wider than the
+     screen — the cause of the sideways scroll on Expenses. */
+  .page-header { align-items: flex-start; }
+  .page-header .actions { width: 100%; flex-wrap: wrap; }
+
+  /* A search box with a 280px floor cannot fit a 390px screen once it shares
+     a row with anything else. */
+  .search-box { min-width: 0; width: 100%; }
+
+  /* Wide content scrolls inside its own container; the page never does.
+     Without this a single unbreakable table drags the whole layout sideways. */
+  .main { overflow-x: hidden; }
+  .table-card { overflow-x: auto; -webkit-overflow-scrolling: touch; }
+
+  /* Stops the rubber-band on a scrolled-to-end drawer from dragging the page
+     behind it, which is the clearest "this is a web page" tell. */
+  .sidebar { overscroll-behavior: contain; }
+}
+
+.cal-monthnav { display: flex; align-items: center; gap: 4px; margin-left: 4px; }
+@media (max-width: 768px) {
+  /* The month stepper is the primary control on a phone: full width, arrows
+     at the edges where thumbs already are. */
+  .cal-monthnav { width: 100%; margin-left: 0; order: -1; gap: 8px; }
+  .cal-monthnav .icon-btn { font-size: 20px; }
+}
+
+@media (max-width: 768px) {
+  /* Two filters, one row, equal halves — rather than one select stretching
+     full width and stranding the other on a line of its own. */
+  .cal-filter { flex: 1 1 0; min-width: 0; }
+}
+
+/* ---------- KPI grids ----------
+ * Columns live here rather than in an inline style so a media query can reach
+ * them; inline beats any stylesheet rule short of !important, which the
+ * cascade layers exist to avoid needing. */
+.ls-kpis {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(186px, 1fr));
+}
+@media (max-width: 768px) {
+  /* Two up. The DS drops to one column below 540px, which is right for a
+     dense stat block but wrong for eight of them — one per row meant ~800px
+     of scrolling before the first chart. Halving that is the difference
+     between reading a dashboard and hunting through one. */
+  .ls-kpis { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 10px !important; }
+  .ls-kpis .stat { padding: 14px; }
+  .ls-kpis .stat-value { font-size: 20px; }
+  .ls-kpis .stat-label { font-size: 11px; }
+  /* The delta wraps under the label at this width instead of fighting it for
+     room and pushing the value out of the card. */
+  .ls-kpis .stat-delta { font-size: 10px; }
+}

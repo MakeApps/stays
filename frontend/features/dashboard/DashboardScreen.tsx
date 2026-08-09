@@ -71,7 +71,7 @@ export function DashboardScreen() {
             <h1>Dashboard</h1>
           </div>
         </div>
-        <div style={{ ...GRID, marginBottom: 24 }}>
+        <div className="ls-kpis" style={{ ...GRID, marginBottom: 24 }}>
           {Array.from({ length: 7 }, (_, i) => (
             <div key={i} className="card ls-shimmer" style={{ height: 118 }} />
           ))}
@@ -118,7 +118,7 @@ export function DashboardScreen() {
         </div>
       </div>
 
-      <div style={{ ...GRID, marginBottom: 24 }}>
+      <div className="ls-kpis" style={{ ...GRID, marginBottom: 24 }}>
         <Stat tone="purple" icon={<CondoIcon size={17} />} value={String(k.total_condos)} label="Total condos" delta="all units" />
         <Stat tone="blue" icon={<BookingIcon size={17} />} value={String(k.occupied)} label="Occupied today" delta={`${k.occupancy_pct}%`} />
         <Stat tone="green" icon={<CondoIcon size={17} />} value={String(k.vacant)} label="Vacant today" link={{ href: "/condos", label: "Fill them" }} />
@@ -531,11 +531,7 @@ export function DashboardScreen() {
   );
 }
 
-const GRID: React.CSSProperties = {
-  display: "grid",
-  gridTemplateColumns: "repeat(auto-fit,minmax(186px,1fr))",
-  gap: 16,
-};
+const GRID: React.CSSProperties = { gap: 16 };
 
 function Stat({
   tone,

@@ -156,14 +156,14 @@ export function ExpensesScreen() {
 
       {tab === "overview" ? (
         loadingSummary || !summary ? (
-          <div style={GRID_STATS}>
+          <div className="ls-kpis" style={GRID_STATS}>
             {Array.from({ length: 5 }, (_, i) => (
               <div key={i} className="card ls-shimmer" style={{ height: 118 }} />
             ))}
           </div>
         ) : (
           <>
-            <div style={{ ...GRID_STATS, marginBottom: 16 }}>
+            <div className="ls-kpis" style={{ ...GRID_STATS, marginBottom: 16 }}>
               <Stat tone="amber" label="Today's expenses" value={summary.today.label} />
               <Stat
                 tone="red"
@@ -519,11 +519,7 @@ export function ExpensesScreen() {
   );
 }
 
-const GRID_STATS: React.CSSProperties = {
-  display: "grid",
-  gridTemplateColumns: "repeat(auto-fit,minmax(200px,1fr))",
-  gap: 16,
-};
+const GRID_STATS: React.CSSProperties = { gap: 16 };
 
 function Stat({
   tone,

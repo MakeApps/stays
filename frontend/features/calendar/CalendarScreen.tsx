@@ -9,11 +9,16 @@ import { PlusIcon } from "@/components/layout/icons";
 import { useCan } from "@/components/providers/Providers";
 import { BookingDetailDrawer } from "@/features/bookings/BookingDetailDrawer";
 import { useBooking, useCalendar, useMoveBooking } from "@/features/bookings/api";
+import { MonthGrid } from "@/features/calendar/MonthGrid";
 import { Timeline, type DragChange } from "@/features/calendar/Timeline";
 import { useCondos } from "@/features/condos/api";
 import { addDays, nightsBetween, todayISO } from "@/lib/booking-math";
 import { qk } from "@/lib/query";
 import { ApiError } from "@/services/http";
+
+function plural(n: number, word: string): string {
+  return `${n} ${word}${n === 1 ? "" : "s"}`;
+}
 
 function monthStart(iso: string): string {
   return `${iso.slice(0, 7)}-01`;
@@ -44,6 +49,7 @@ export function CalendarScreen() {
   const [view, setView] = useState<"month" | "week">("month");
   const [status, setStatus] = useState("all");
   const [search, setSearch] = useState("");
+  const [picked, setPicked] = useState<string | null>(null);
 
   const condoCode = params.get("condo");
   const detailId = params.get("booking");
@@ -57,6 +63,14 @@ export function CalendarScreen() {
   const start = view === "week" ? addDays(today, -1) : anchor;
   const days = view === "week" ? 7 : nightsBetween(anchor, shiftMonth(anchor, 1));
   const end = addDays(start, days);
+
+  // Reset per month rather than storing a day that is no longer on screen.
+  const selectedDay =
+    picked && picked.slice(0, 7) === anchor.slice(0, 7)
+      ? picked
+      : today.slice(0, 7) === anchor.slice(0, 7)
+        ? today
+        : anchor;
 
   const { data, isLoading } = useCalendar(start, end, selectedCondo?.id);
   const calendarKey = qk.bookings.calendar({
@@ -120,8 +134,11 @@ export function CalendarScreen() {
           <h1>Calendar</h1>
           <div className="t-small" style={{ marginTop: 6 }}>
             {view === "week"
-              ? `Week of ${start} · ${resources.length} units`
-              : `${monthLabel(anchor)} · ${resources.length} units · ${events.length} bookings`}
+              ? `Week of ${start} · ${plural(resources.length, "unit")}`
+              : `${monthLabel(anchor)} · ${plural(resources.length, "unit")} · ${plural(
+                  events.length,
+                  "booking",
+                )}`}
           </div>
         </div>
         {can("booking:write") ? (
@@ -144,7 +161,11 @@ export function CalendarScreen() {
           marginBottom: 16,
         }}
       >
+        {/* Month vs week is a timeline distinction. The mobile view is always a
+            month grid, so offering the choice there would be a control that
+            changes nothing you can see. */}
         <div
+          className="desktop-only"
           style={{
             display: "flex",
             background: "var(--surface)",
@@ -185,7 +206,7 @@ export function CalendarScreen() {
           Today
         </button>
 
-        <div style={{ display: "flex", alignItems: "center", gap: 4, marginLeft: 4 }}>
+        <div className="cal-monthnav">
           <button
             className="icon-btn"
             aria-label="Previous month"
@@ -199,6 +220,7 @@ export function CalendarScreen() {
               color: "var(--fg)",
               minWidth: 132,
               textAlign: "center",
+              flex: 1,
             }}
           >
             {monthLabel(anchor)}
@@ -215,7 +237,7 @@ export function CalendarScreen() {
         <div style={{ flex: 1 }} />
 
         <select
-          className="filter-sel"
+          className="filter-sel cal-filter"
           value={condoCode ?? "all"}
           onChange={(e) => setParam({ condo: e.target.value === "all" ? null : e.target.value })}
           aria-label="Filter by condo"
@@ -229,7 +251,7 @@ export function CalendarScreen() {
         </select>
 
         <select
-          className="filter-sel"
+          className="filter-sel cal-filter"
           value={status}
           onChange={(e) => setStatus(e.target.value)}
           aria-label="Filter by status"
@@ -259,16 +281,31 @@ export function CalendarScreen() {
           </div>
         </div>
       ) : (
-        <Timeline
-          resources={resources}
-          events={events}
-          start={start}
-          days={days}
-          today={today}
-          onOpen={(id) => setParam({ booking: id })}
-          onChange={onChange}
-          pendingId={move.isPending ? (move.variables?.id ?? null) : null}
-        />
+        <>
+          {/* Both render; CSS picks one. Never window.innerWidth — that is a
+              hydration mismatch and a visible reflow on first paint. */}
+          <div className="desktop-only">
+            <Timeline
+              resources={resources}
+              events={events}
+              start={start}
+              days={days}
+              today={today}
+              onOpen={(id) => setParam({ booking: id })}
+              onChange={onChange}
+              pendingId={move.isPending ? (move.variables?.id ?? null) : null}
+            />
+          </div>
+          <MonthGrid
+            anchor={view === "week" ? monthStart(start) : anchor}
+            events={events}
+            resources={resources}
+            today={today}
+            selected={selectedDay}
+            onSelect={setPicked}
+            onOpen={(id) => setParam({ booking: id })}
+          />
+        </>
       )}
 
       {/* Legend — design lines 835–843 */}
@@ -291,9 +328,10 @@ export function CalendarScreen() {
         <Swatch bg="var(--warning-bg)" bd="var(--warning-border)" label="Pending" />
         <Swatch bg="var(--danger-bg)" bd="var(--danger-border)" label="Maintenance" />
         <div style={{ flex: 1 }} />
-        <span className="t-caption">
+        <span className="t-caption desktop-only">
           Click a bar to open it · drag to move · drag an edge to resize
         </span>
+        <span className="t-caption mobile-only">Tap a day to see its stays</span>
       </div>
 
       <BookingDetailDrawer
