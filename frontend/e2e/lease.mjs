@@ -1,10 +1,10 @@
 import { chromium } from "playwright";
 
 const BASE = "http://localhost:3000";
-const EMAIL = process.env.E2E_EMAIL ?? "admin@localshouts.co.th";
+const EMAIL = process.env.E2E_EMAIL ?? "info@localshouts.com";
 const PASSWORD = process.env.E2E_PASSWORD ?? "";
 if (!PASSWORD) {
-  console.error("Set E2E_PASSWORD (see backend/.env.local ADMIN_PASSWORD).");
+  console.error("Set E2E_PASSWORD to the admin password (stored in the database, not in .env).");
   process.exit(2);
 }
 

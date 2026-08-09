@@ -99,14 +99,32 @@ while ((Get-Date) -lt $deadline -and -not ($apiUp -and $webUp)) {
 
 Write-Host ""
 if ($apiUp -and $webUp) {
-    $email = (Select-String -Path (Join-Path $backend ".env.local") -Pattern '^ADMIN_EMAIL=(.*)$').Matches.Groups[1].Value
-    $pass = (Select-String -Path (Join-Path $backend ".env.local") -Pattern '^ADMIN_PASSWORD=(.*)$').Matches.Groups[1].Value
+    # Read from the database, which is where the credential actually lives.
+    # This used to echo ADMIN_EMAIL/ADMIN_PASSWORD out of .env.local, which
+    # printed whatever the file said whether or not it matched the account you
+    # could sign in with. The password is deliberately not shown: it is stored
+    # only as an Argon2 hash and nothing can recover it.
+    $email = ""
+    try {
+        $email = & (Join-Path $backend ".venv\Scripts\python.exe") -c @"
+from app import create_app
+from app.extensions import db
+from sqlalchemy import text
+app = create_app()
+with app.app_context():
+    row = db.session.execute(text(
+        'select email from users where deleted_at is null and role = :r order by created_at limit 1'
+    ), {'r': 'admin'}).first()
+    print(row[0] if row else '')
+"@ 2>$null | Select-Object -Last 1
+    } catch {}
+    if (-not $email) { $email = "(no admin account - run: flask --app wsgi create-admin)" }
 
     Write-Host "  Ready." -ForegroundColor Green
     Write-Host ""
     Write-Host "    http://localhost:3000"
     Write-Host "    $email"
-    Write-Host "    $pass"
+    Write-Host "    (password as set in the app - Users > Edit to change it)" -ForegroundColor DarkGray
     Write-Host ""
     Write-Host "  Stop with:  .\dev.ps1 -Stop" -ForegroundColor DarkGray
 } else {

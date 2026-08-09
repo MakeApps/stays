@@ -76,7 +76,7 @@ class Settings(BaseSettings):
 
     # ---------- seeded admin ----------
     # `flask create-admin` reads these. No public signup exists.
-    ADMIN_EMAIL: str = "admin@localshouts.co.th"
+    ADMIN_EMAIL: str = "info@localshouts.com"
     ADMIN_PASSWORD: str = ""
     ADMIN_NAME: str = "Pim Suwannarat"
 
