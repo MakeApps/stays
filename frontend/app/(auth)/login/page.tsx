@@ -10,7 +10,7 @@ export const metadata: Metadata = { title: "Sign in" };
 /**
  * The approved design has no login screen, so this one is built from the
  * design system's own vocabulary — .card, .field, .btn, the DS tokens and the
- * same "Baan." lockup as the sidebar — rather than inventing a second visual
+ * same LocalShouts lockup as the sidebar — rather than inventing a second visual
  * language.
  */
 export default async function LoginPage({

@@ -41,7 +41,14 @@ await page.goto(`${BASE}/condos`, { waitUntil: "networkidle" });
 await hydrated(page);
 check("signed out -> redirected to /login", page.url().includes("/login"));
 check("login: next param preserved", page.url().includes("next=%2Fcondos"));
-check("login: brand rendered", (await page.locator("text=Baan").count()) > 0);
+// The wordmark is an image, not text — "LocalShouts" is set in a grotesque
+// the app does not load, so it ships as the real asset. Only "Stays" is type.
+check(
+  "login: LocalShouts wordmark rendered",
+  (await page.locator('img[alt="LocalShouts"]').count()) > 0 &&
+    (await page.locator('img[alt="LocalShouts"]').first().evaluate((i) => i.naturalWidth)) > 0,
+);
+check("login: product name rendered", (await page.locator("text=Stays").count()) > 0);
 const btnBg = await page.locator("button.btn-primary").evaluate((el) => getComputedStyle(el).backgroundColor);
 check("login: .btn-primary keeps DS purple (Preflight not applied)", btnBg === "rgb(124, 58, 237)", btnBg);
 await page.screenshot({ path: "/tmp/shots/01-login.png", fullPage: true });

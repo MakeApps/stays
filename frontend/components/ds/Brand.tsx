@@ -1,9 +1,26 @@
+import Image from "next/image";
+
 /**
- * The "Baan." wordmark and building glyph.
+ * LocalShouts Stays branding.
  *
- * Lifted from the approved design (Condo Manager.dc.html lines 34–38 for the
- * sidebar, 103–110 for the mobile topbar) — same 9px-radius purple tile, same
- * -0.02em tracking, same purple full stop.
+ * The wordmark is the real asset, not a text recreation. Its two colours are
+ * already the design system's — `#1E1B4B` and `#7C3AED` are `--brand-navy`
+ * and `--brand-purple` exactly — but the letterforms are a grotesque, not
+ * Inter: the double-storey `a` and the closed `S` apertures give it away.
+ * Setting "LocalShouts" in the app's own font would land close enough to look
+ * like a mistake rather than a decision.
+ *
+ * "Stays" is text, deliberately at a different size, weight and colour. That
+ * reads as the product name following the company mark, so the typeface
+ * difference is a level change rather than a mismatch.
+ */
+
+/** Intrinsic size of public/brand/localshouts.png. */
+const LOGO = { width: 324, height: 47 } as const;
+
+/**
+ * The compact mark, for anywhere the wordmark cannot fit — the collapsed
+ * sidebar rail is 64px wide, where the wordmark would be nine pixels tall.
  */
 export function BrandGlyph({ size = 28 }: { size?: number }) {
   const icon = Math.round(size * 0.54);
@@ -38,17 +55,39 @@ export function BrandGlyph({ size = 28 }: { size?: number }) {
   );
 }
 
+/**
+ * The LocalShouts wordmark, followed by the product name.
+ *
+ * `size` is the wordmark's rendered height; the width follows from the
+ * asset's own ratio so it can never be stretched.
+ */
 export function BrandWordmark({ size = 17 }: { size?: number }) {
+  const height = Math.round(size * 1.05);
+  const width = Math.round((height * LOGO.width) / LOGO.height);
+
   return (
-    <div
-      style={{
-        font: `700 ${size}px/1 var(--font-sans)`,
-        letterSpacing: "-.02em",
-        color: "var(--brand-navy)",
-      }}
-    >
-      Baan<span style={{ color: "var(--brand-purple)" }}>.</span>
-    </div>
+    <span style={{ display: "inline-flex", alignItems: "center", gap: Math.round(size * 0.4) }}>
+      <Image
+        src="/brand/localshouts.png"
+        alt="LocalShouts"
+        width={width}
+        height={height}
+        // Above the fold on every screen; letting it lazy-load flashes an
+        // empty header on first paint.
+        priority
+        style={{ width, height, flex: "none" }}
+      />
+      <span
+        style={{
+          font: `600 ${Math.round(size * 0.92)}px/1 var(--font-sans)`,
+          letterSpacing: "-.01em",
+          color: "var(--fg-3)",
+          whiteSpace: "nowrap",
+        }}
+      >
+        Stays
+      </span>
+    </span>
   );
 }
 

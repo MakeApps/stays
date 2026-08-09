@@ -130,7 +130,13 @@ export function AppShell({
             with no labels and no Quick add. CSS scopes the rail to desktop. */}
         <div className="sidebar-brand">
           <div className="brand-row">
-            <BrandGlyph />
+            {/* The wordmark is the brand; the glyph is only the compact mark
+                for the rail. Showing both here left no room for the collapse
+                toggle — 248px minus padding is 208, and the lockup filled it
+                exactly. */}
+            <span className="brand-mark">
+              <BrandGlyph />
+            </span>
             <span className="brand-word">
               <BrandWordmark />
             </span>

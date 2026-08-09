@@ -30,7 +30,7 @@ const dancing = Dancing_Script({
 });
 
 export const metadata: Metadata = {
-  title: { default: "Baan.", template: "%s · Baan." },
+  title: { default: "LocalShouts Stays", template: "%s · LocalShouts Stays" },
   description: "Condo, booking and expense management for Bangkok rentals.",
   robots: { index: false, follow: false },
 };

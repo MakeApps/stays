@@ -135,6 +135,9 @@ input, select, textarea, button { font-family: var(--font-sans); }
  * 64px rail there would be a second, conflicting navigation mode. */
 /* Layout for the sidebar header and the sign-out row, at every width. */
 .brand-row { display: flex; align-items: center; gap: 10px; }
+/* The compact mark appears only in the rail, where the wordmark cannot fit.
+   Everywhere else the wordmark carries the brand on its own. */
+.brand-mark { display: none; }
 .brand-spacer { flex: 1; }
 .sign-out { width: 28px; height: 28px; border: 0; background: transparent; }
 .sidebar-bottom .user-pill { position: relative; }
@@ -146,6 +149,7 @@ input, select, textarea, button { font-family: var(--font-sans); }
   /* The rail is a desktop state. Scoping every one of its rules to this
      breakpoint is what lets the same markup be the mobile drawer. */
   .sidebar.collapsed .brand-row { flex-direction: column; gap: 8px; }
+  .sidebar.collapsed .brand-mark { display: block; }
   .sidebar.collapsed .brand-word,
   .sidebar.collapsed .brand-spacer,
   .sidebar.collapsed .quick-add { display: none; }
