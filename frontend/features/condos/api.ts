@@ -2,7 +2,13 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 
 import { qk } from "@/lib/query";
 import { api, apiFetch, qs } from "@/services/http";
-import type { Condo, CondoFinance, CondoListResponse, UnitStatus } from "@/types/api";
+import type {
+  Condo,
+  CondoFinance,
+  CondoListResponse,
+  DepositLedger,
+  UnitStatus,
+} from "@/types/api";
 
 export interface CondoFilters {
   q?: string;
@@ -24,6 +30,9 @@ export interface CondoInput {
   month_rate: string;
   cleaning_fee: string;
   security_deposit: string;
+  lease_start_date: string | null;
+  lease_end_date: string | null;
+  monthly_lease_amount: string;
   address: string | null;
   description: string | null;
   is_maintenance: boolean;
@@ -104,6 +113,41 @@ export function useUploadCondoImage(id: string) {
       });
     },
     onSuccess: invalidate,
+  });
+}
+
+export interface DepositRefundInput {
+  refund_date: string;
+  refunded_amount: string;
+  deducted_amount: string;
+  deduction_reason: string | null;
+  notes: string | null;
+}
+
+export function useDepositLedger(condoId: string | null) {
+  return useQuery({
+    queryKey: [...qk.condos.detail(condoId ?? ""), "deposit"] as const,
+    queryFn: () => api.get<DepositLedger>(`/condos/${condoId}/deposit`),
+    enabled: Boolean(condoId),
+  });
+}
+
+/** Recording a recovery changes the deposit held, which the dashboard and the
+ *  income screen both report — so both caches go, not just this condo's. */
+export function useRefundDeposit(condoId: string) {
+  const client = useQueryClient();
+  const invalidate = useInvalidateCondos();
+  return useMutation({
+    mutationFn: (input: DepositRefundInput) =>
+      api.post<{ condo: Condo; status: string; outstanding_label: string }>(
+        `/condos/${condoId}/deposit/refunds`,
+        input,
+      ),
+    onSuccess: () => {
+      invalidate();
+      void client.invalidateQueries({ queryKey: qk.dashboard.all });
+      void client.invalidateQueries({ queryKey: qk.income.all });
+    },
   });
 }
 

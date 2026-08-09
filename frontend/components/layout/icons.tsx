@@ -130,6 +130,15 @@ export const CheckIcon = ({ size, className }: IconProps) => (
   </svg>
 );
 
+/** Held capital — a vault, deliberately unlike the ExpenseIcon wallet. */
+export const DepositIcon = ({ size, className }: IconProps) => (
+  <svg {...base} width={size} height={size} className={className}>
+    <rect x="3" y="4" width="18" height="16" rx="2" />
+    <circle cx="12" cy="12" r="3.2" />
+    <path d="M12 6.5v2.3M12 15.2v2.3M15.5 12h2M6.5 12h2" />
+  </svg>
+);
+
 export const LogoutIcon = ({ size, className }: IconProps) => (
   <svg {...base} width={size} height={size} className={className}>
     <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4M16 17l5-5-5-5M21 12H9" />

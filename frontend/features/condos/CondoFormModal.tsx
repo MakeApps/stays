@@ -8,6 +8,7 @@ import { toast } from "sonner";
 import { z } from "zod";
 
 import { CloseIcon, PlusIcon, TrashIcon } from "@/components/layout/icons";
+import { DEPOSIT_META } from "@/features/condos/display";
 import {
   useCreateCondo,
   useDeleteCondoImage,
@@ -41,10 +42,17 @@ const schema = z.object({
   month_rate: money,
   cleaning_fee: money,
   security_deposit: money,
+  lease_start_date: z.string().trim(),
+  lease_end_date: z.string().trim(),
+  monthly_lease_amount: money,
   address: z.string().trim().max(255),
   description: z.string().trim().max(5000),
   is_maintenance: z.boolean(),
-});
+})
+  .refine(
+    (v) => !v.lease_start_date || !v.lease_end_date || v.lease_end_date >= v.lease_start_date,
+    { path: ["lease_end_date"], message: "The lease cannot end before it starts" },
+  );
 
 type Values = z.infer<typeof schema>;
 
@@ -58,7 +66,10 @@ const EMPTY: Values = {
   night_rate: "",
   month_rate: "",
   cleaning_fee: "500",
-  security_deposit: "5000",
+  security_deposit: "",
+  lease_start_date: "",
+  lease_end_date: "",
+  monthly_lease_amount: "",
   address: "",
   description: "",
   is_maintenance: false,
@@ -76,6 +87,9 @@ function toValues(condo: Condo): Values {
     month_rate: condo.month_rate,
     cleaning_fee: condo.cleaning_fee,
     security_deposit: condo.security_deposit,
+    lease_start_date: condo.lease_start_date ?? "",
+    lease_end_date: condo.lease_end_date ?? "",
+    monthly_lease_amount: condo.monthly_lease_amount,
     address: condo.address ?? "",
     description: condo.description ?? "",
     is_maintenance: condo.status === "maintenance",
@@ -119,6 +133,11 @@ export function CondoFormModal({
       month_rate: values.month_rate || "0",
       cleaning_fee: values.cleaning_fee || "0",
       security_deposit: values.security_deposit || "0",
+      monthly_lease_amount: values.monthly_lease_amount || "0",
+      // Empty means "no lease recorded", which is a real state and distinct
+      // from a zero-length one — so it has to travel as null, not "".
+      lease_start_date: values.lease_start_date || null,
+      lease_end_date: values.lease_end_date || null,
       address: values.address || null,
       description: values.description || null,
     };
@@ -272,17 +291,69 @@ export function CondoFormModal({
                   <input placeholder="500" inputMode="decimal" {...register("cleaning_fee")} />
                 </Field>
 
-                <Field
-                  label="Security deposit (฿)"
-                  error={errors.security_deposit?.message}
-                  hint="Held at check-in, refunded at check-out."
-                >
-                  <input placeholder="5000" inputMode="decimal" {...register("security_deposit")} />
-                </Field>
-
                 <Field label="Address" span>
                   <input placeholder="Sukhumvit 21, Watthana, Bangkok" {...register("address")} />
                 </Field>
+
+                <div
+                  style={{
+                    gridColumn: "1/-1",
+                    marginTop: 4,
+                    paddingTop: 16,
+                    borderTop: "1px solid var(--line)",
+                  }}
+                >
+                  <div className="sidebar-group" style={{ padding: "0 0 2px" }}>
+                    Lease &amp; deposit
+                  </div>
+                  <div className="t-caption">
+                    What this unit costs us to hold, and the capital lodged with its owner.
+                  </div>
+                </div>
+
+                <Field label="Lease start" error={errors.lease_start_date?.message}>
+                  <input type="date" {...register("lease_start_date")} />
+                </Field>
+
+                <Field
+                  label="Lease end"
+                  error={errors.lease_end_date?.message}
+                  hint="Bookings cannot run past this date."
+                >
+                  <input type="date" {...register("lease_end_date")} />
+                </Field>
+
+                <Field
+                  label="Monthly lease (฿)"
+                  error={errors.monthly_lease_amount?.message}
+                  hint="Paid to the owner. Counts against profit."
+                >
+                  <input
+                    placeholder="25000"
+                    inputMode="decimal"
+                    {...register("monthly_lease_amount")}
+                  />
+                </Field>
+
+                <Field
+                  label="Security deposit (฿)"
+                  error={errors.security_deposit?.message}
+                  hint="Refundable deposit paid to the property owner. This is not an operating expense."
+                >
+                  <input placeholder="50000" inputMode="decimal" {...register("security_deposit")} />
+                </Field>
+
+                {condo && condo.deposit_status !== "none" ? (
+                  <div style={{ gridColumn: "1/-1", marginTop: -4 }}>
+                    <span className={DEPOSIT_META[condo.deposit_status].pill}>
+                      {DEPOSIT_META[condo.deposit_status].label}
+                    </span>
+                    <span className="t-caption" style={{ marginLeft: 8 }}>
+                      {condo.deposit_outstanding_label} still held. Recovery is recorded from the
+                      condo page, not here.
+                    </span>
+                  </div>
+                ) : null}
 
                 <Field label="Description" span>
                   <textarea

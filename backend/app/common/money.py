@@ -37,9 +37,15 @@ def format_thb(minor: int | None) -> str:
     """Render the way the design does: ``฿1,800`` — grouped, no decimals.
 
     Mirrors the prototype's ``money()`` helper, which rounds to whole baht.
+
+    The sign leads: ``-฿25,000``, not ``฿-25,000``. Interpolating a negative
+    straight after the symbol puts the minus inside the amount, which reads as
+    a typo at a glance. Negatives became routine once lease costs entered
+    profit — a unit between guests genuinely loses money that month.
     """
     baht = to_major(minor).quantize(Decimal("1"), rounding=ROUND_HALF_UP)
-    return f"฿{baht:,}"
+    sign = "-" if baht < 0 else ""
+    return f"{sign}฿{abs(baht):,}"
 
 
 def split_evenly(total_minor: int, parts: int) -> list[int]:

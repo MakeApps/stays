@@ -29,6 +29,34 @@ OCCUPYING_STATUSES = (
 )
 
 
+def _assert_within_lease(condo: Condo, check_out: date) -> None:
+    """A stay cannot outlive the lease that lets us sell the unit.
+
+    We hold these condos on a long-term lease from their owners, so a booking
+    running past the lease end is a night we have no right to sell. Checked on
+    ``check_out``, which is the day the guest leaves: a lease ending on 31 Dec
+    permits a checkout on 31 Dec but not a night spent in it.
+
+    Only enforced when a lease end is on file. Units with no lease recorded
+    keep behaving exactly as they did before this existed.
+    """
+    if condo.lease_end_date is None or check_out <= condo.lease_end_date:
+        return
+    raise ValidationError(
+        "Booking exceeds lease period",
+        details={
+            "fields": {
+                "check_out": [
+                    f"{condo.name}'s lease ends on "
+                    f"{condo.lease_end_date.strftime('%d %b %Y')}."
+                ]
+            },
+            "lease_end_date": condo.lease_end_date.isoformat(),
+            "condo_id": str(condo.id),
+        },
+    )
+
+
 class BookingService:
     def __init__(self, session=db.session) -> None:  # type: ignore[no-untyped-def]
         self.session = session
@@ -133,6 +161,7 @@ class BookingService:
                 "That condo does not exist.",
                 details={"fields": {"condo_id": ["Choose an existing condo."]}},
             )
+        _assert_within_lease(condo, check_out)
 
         q = self.price(
             check_in=check_in,
@@ -194,6 +223,13 @@ class BookingService:
         booking = self.get(booking_id)
         check_in = changes.get("check_in", booking.check_in)
         check_out = changes.get("check_out", booking.check_out)
+
+        # Checked against the destination condo, which a move may have changed,
+        # and before anything is written.
+        target_id = changes.get("condo_id", booking.condo_id)
+        target = self.session.get(Condo, target_id)
+        if target is not None:
+            _assert_within_lease(target, check_out)  # type: ignore[arg-type]
 
         for field in (
             "guest_name",

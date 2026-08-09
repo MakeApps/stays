@@ -29,6 +29,7 @@ from app.models.condo import Condo
 from app.models.expense import Expense, ExpenseCategory, PaymentMethod
 from app.services.analytics import REVENUE_STATUSES, AnalyticsService, month_bounds
 from app.services.availability import Span, derive_unit_status
+from app.services.lease import days_remaining, deposit_states, lease_status
 
 bp = Blueprint("dashboard", __name__)
 
@@ -107,8 +108,22 @@ def dashboard() -> Any:
 
     revenue_month = analytics.revenue_between(start, end)
     expenses_month = analytics.expenses_between(start, end)
+    lease_month = analytics.lease_costs_between(start, end)
     revenue_today = analytics.revenue_between(today, today + timedelta(days=1))
     owed, owed_count = analytics.outstanding()
+
+    condos = list(db.session.scalars(select(Condo).where(Condo.deleted_at.is_(None))))
+    states = deposit_states(db.session, condos)
+    deposits_held = sum(s.outstanding for s in states.values())
+    deposits_count = sum(1 for s in states.values() if s.outstanding > 0)
+
+    # Leases running out, soonest first. Expired ones stay in the list: a lapsed
+    # lease with guests still in the unit is the case most worth surfacing, and
+    # nothing here deletes or cancels anything on its own.
+    expiring = sorted(
+        (c for c in condos if lease_status(c, today=today) in ("expiring_soon", "expired")),
+        key=lambda c: c.lease_end_date or date.max,
+    )
 
     horizon = today + timedelta(days=7)
     check_ins = db.session.scalar(
@@ -183,7 +198,12 @@ def dashboard() -> Any:
                 "revenue_today": format_thb(revenue_today),
                 "revenue_month": format_thb(revenue_month),
                 "expenses_month": format_thb(expenses_month),
-                "net_month": format_thb(revenue_month - expenses_month),
+                "lease_month": format_thb(lease_month),
+                # Lease is a cost of holding the unit; the deposit is not a
+                # cost at all and is deliberately absent from this figure.
+                "net_month": format_thb(revenue_month - lease_month - expenses_month),
+                "deposits_held": format_thb(deposits_held),
+                "deposits_count": deposits_count,
                 "check_ins_7d": int(check_ins),
                 "check_outs_7d": int(check_outs),
                 "outstanding": format_thb(owed),
@@ -199,6 +219,36 @@ def dashboard() -> Any:
                 "maintenance": statuses["maintenance"],
             },
             "income_by_day": series,
+            # Capital parked with owners. Its own block, never mixed into the
+            # revenue/expense/profit figures above it.
+            "deposits": {
+                "total_label": format_thb(deposits_held),
+                "count": deposits_count,
+                "items": [
+                    {
+                        "id": str(c.id),
+                        "name": c.name,
+                        "code": c.code,
+                        "amount_label": format_thb(states[c.id].outstanding),
+                        "status": states[c.id].status,
+                    }
+                    for c in sorted(
+                        condos, key=lambda c: states[c.id].outstanding, reverse=True
+                    )
+                ],
+            },
+            "leases_expiring": [
+                {
+                    "id": str(c.id),
+                    "name": c.name,
+                    "code": c.code,
+                    "lease_end_date": c.lease_end_date.isoformat() if c.lease_end_date else None,
+                    "days_remaining": days_remaining(c, today=today),
+                    "status": lease_status(c, today=today),
+                    "monthly_lease_label": format_thb(c.monthly_lease_amount),
+                }
+                for c in expiring[:5]
+            ],
             "upcoming": [
                 {
                     "id": str(b.id),
@@ -377,20 +427,25 @@ def export_csv() -> Any:
         ]
 
     else:  # income — one row per condo
+        # Deposit sits at the far right, after the profit columns and clearly
+        # outside them, so the exported sheet cannot be summed into a total
+        # that treats held capital as a cost.
         header = [
             "Condo", "Code", "Bookings", "Booked nights", "Revenue (THB)",
-            "Expenses (THB)", "Net profit (THB)", "Occupancy %",
+            "Lease cost (THB)", "Operating expenses (THB)", "Net profit (THB)",
+            "Occupancy %", "Lease ends", "Deposit held (THB)", "Deposit status",
         ]
         finances = _analytics().per_condo(start, end)
-        condos = {
-            c.id: c
-            for c in db.session.scalars(select(Condo).where(Condo.deleted_at.is_(None)))
-        }
+        condo_rows = list(db.session.scalars(select(Condo).where(Condo.deleted_at.is_(None))))
+        condos = {c.id: c for c in condo_rows}
+        states = deposit_states(db.session, condo_rows)
         rows = [
             [
                 condos[cid].name, condos[cid].code, fin.bookings, fin.nights,
-                to_major(fin.revenue), to_major(fin.expenses), to_major(fin.net),
-                fin.occupancy_pct,
+                to_major(fin.revenue), to_major(fin.lease_cost), to_major(fin.expenses),
+                to_major(fin.net), fin.occupancy_pct,
+                condos[cid].lease_end_date.isoformat() if condos[cid].lease_end_date else "",
+                to_major(states[cid].outstanding), states[cid].status,
             ]
             for cid, fin in finances.items()
             if cid in condos

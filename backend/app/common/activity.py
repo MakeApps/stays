@@ -68,6 +68,15 @@ _TITLES: dict[tuple[ActivityEntity, ActivityAction], str] = {
     (ActivityEntity.SESSION, ActivityAction.LOGIN_FAILED): "Failed sign-in",
     (ActivityEntity.USER, ActivityAction.CREATED): "User added",
     (ActivityEntity.USER, ActivityAction.UPDATED): "User updated",
+    (ActivityEntity.LEASE, ActivityAction.CREATED): "Lease added",
+    (ActivityEntity.LEASE, ActivityAction.UPDATED): "Lease updated",
+    (ActivityEntity.LEASE, ActivityAction.EXPIRED): "Lease expired",
+    (ActivityEntity.DEPOSIT, ActivityAction.CREATED): "Security deposit added",
+    (ActivityEntity.DEPOSIT, ActivityAction.UPDATED): "Security deposit updated",
+    # One action, three headlines: whether a recovery closed the deposit
+    # out or only part of it is the thing a reader wants at a glance, and
+    # it is already in the row rather than needing its own enum member.
+    (ActivityEntity.DEPOSIT, ActivityAction.REFUNDED): "Deposit refunded",
 }
 
 
@@ -78,6 +87,11 @@ def render(entry: ActivityLog) -> dict[str, Any]:
         f"{entry.entity_type.value.title()} {entry.action.value}",
     )
     meta = entry.meta()
+    if (entry.entity_type, entry.action) == (ActivityEntity.DEPOSIT, ActivityAction.REFUNDED):
+        if meta.get("outstanding_satang"):
+            title = "Deposit partially refunded"
+        elif meta.get("deducted_satang"):
+            title = "Deposit refunded with a deduction"
     body = meta.get("summary") or entry.entity_label or ""
 
     return {

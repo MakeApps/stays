@@ -193,6 +193,66 @@ def register_cli(app: Flask) -> None:
         db.session.commit()
         click.echo(f"Removed {removed} expired refresh tokens.")
 
+    @app.cli.command("lease-check")
+    def lease_check() -> None:
+        """Log a "Lease expired" entry for any lease that has lapsed.
+
+        Expiry is a date passing, not a user action, so nothing in a request
+        can notice it. The status itself is derived and always current on every
+        screen; this only writes the *audit* entry, and needs a scheduler to
+        run it — a daily cron or Task Scheduler job.
+
+        Safe to run repeatedly: it skips condos already logged as expired, so a
+        missed day catches up rather than double-logging.
+        """
+        from datetime import date
+
+        from app.common import activity
+        from app.models.activity_log import ActivityAction, ActivityEntity, ActivityLog
+        from app.models.condo import Condo
+
+        today = date.today()
+        already = set(
+            db.session.scalars(
+                select(ActivityLog.entity_id).where(
+                    ActivityLog.entity_type == ActivityEntity.LEASE,
+                    ActivityLog.action == ActivityAction.EXPIRED,
+                )
+            )
+        )
+        lapsed = db.session.scalars(
+            select(Condo).where(
+                Condo.deleted_at.is_(None),
+                Condo.lease_end_date.is_not(None),
+                Condo.lease_end_date < today,
+            )
+        )
+
+        logged = 0
+        for condo in lapsed:
+            if condo.id in already:
+                continue
+            end = condo.lease_end_date
+            activity.record(
+                ActivityAction.EXPIRED,
+                ActivityEntity.LEASE,
+                entity_id=condo.id,
+                entity_label=condo.name,
+                meta={
+                    "summary": (
+                        f"{condo.name}'s lease ended on "
+                        f"{end.strftime('%d %b %Y') if end else 'an unknown date'}"
+                    ),
+                    "lease_end_date": end,
+                },
+            )
+            logged += 1
+
+        db.session.commit()
+        # Nothing is deleted or cancelled: an expired lease with guests still
+        # in the unit is a decision for a person, not a cleanup job.
+        click.echo(f"Logged {logged} newly expired lease(s).")
+
     @app.cli.command("routes-audit")
     def routes_audit() -> None:
         """List every route and the capability it declares."""

@@ -28,7 +28,10 @@ export function toMajor(minor: number): string {
 /** Renders the way the design does: grouped whole baht, e.g. "฿1,800". */
 export function formatTHB(minor: number): string {
   const baht = Math.round(minor / MINOR_UNITS);
-  return `฿${baht.toLocaleString("en-US")}`;
+  // Sign before the symbol, matching the API's format_thb. "฿-25,000" puts the
+  // minus inside the number and reads as a typo.
+  const sign = baht < 0 ? "-" : "";
+  return `${sign}฿${Math.abs(baht).toLocaleString("en-US")}`;
 }
 
 /**

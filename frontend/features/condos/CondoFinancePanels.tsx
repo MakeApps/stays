@@ -44,7 +44,10 @@ export function CondoFinancePanels({ condoId }: { condoId: string }) {
         }}
       >
         <Stat label="Revenue this month" value={data.revenue} />
-        <Stat label="Expenses" value={data.expenses} tone="warning" />
+        {/* Between revenue and expenses, in the order the arithmetic runs:
+            revenue − lease − operating expenses = net. */}
+        <Stat label="Lease cost" value={data.lease_cost} tone="warning" />
+        <Stat label="Operating expenses" value={data.expenses} tone="warning" />
         <Stat
           label="Net profit"
           value={data.net}

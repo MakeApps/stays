@@ -22,6 +22,10 @@ export interface SessionUser {
 }
 
 export type UnitStatus = "available" | "occupied" | "reserved" | "maintenance";
+/** Derived from the lease end date, never stored. */
+export type LeaseStatus = "none" | "active" | "expiring_soon" | "expired";
+/** Derived from the deposit ledger, never stored. */
+export type DepositStatus = "none" | "held" | "partially_refunded" | "refunded";
 export type PropertyType = "Condominium" | "Serviced apartment" | "Townhouse";
 
 export interface CondoImage {
@@ -45,7 +49,25 @@ export interface Condo {
   night_rate: string;
   month_rate: string;
   cleaning_fee: string;
+  /** Refundable deposit paid to the property owner. Capital, never an expense. */
   security_deposit: string;
+  security_deposit_label: string;
+
+  lease_start_date: string | null;
+  lease_end_date: string | null;
+  monthly_lease_amount: string;
+  monthly_lease_label: string;
+  lease_status: LeaseStatus;
+  /** Negative once the lease has lapsed; null when none is recorded. */
+  lease_days_remaining: number | null;
+
+  deposit_status: DepositStatus;
+  deposit_refunded: string;
+  deposit_deducted: string;
+  /** Still with the owner — what we expect to recover. */
+  deposit_outstanding: string;
+  deposit_outstanding_label: string;
+
   address: string | null;
   description: string | null;
   status: UnitStatus;
@@ -241,6 +263,7 @@ export interface TrendPoint {
   month: string;
   revenue: string;
   expenses: string;
+  lease: string;
   net: string;
 }
 
@@ -269,11 +292,18 @@ export interface CondoProfitRow {
   nights: number;
   revenue: string;
   revenue_label: string;
+  lease_cost: string;
+  lease_cost_label: string;
   expenses: string;
   expenses_label: string;
   net: string;
   net_label: string;
   occupancy_pct: number;
+  deposit_outstanding_label: string;
+  deposit_status: DepositStatus;
+  lease_status: LeaseStatus;
+  lease_end_date: string | null;
+  lease_days_remaining: number | null;
 }
 
 export interface IncomeSummary {
@@ -282,12 +312,15 @@ export interface IncomeSummary {
     today: string;
     week: string;
     month: string;
+    lease: string;
     expenses: string;
     net: string;
     margin_pct: number;
     outstanding: string;
     outstanding_count: number;
   };
+  /** Capital held, reported alongside earnings and never mixed into them. */
+  money_held: { deposits: string; deposits_count: number };
   by_condo: CondoProfitRow[];
   trend: TrendPoint[];
 }
@@ -303,7 +336,11 @@ export interface DashboardKpis {
   revenue_today: string;
   revenue_month: string;
   expenses_month: string;
+  lease_month: string;
+  /** revenue - lease - expenses. The deposit is not a term in this. */
   net_month: string;
+  deposits_held: string;
+  deposits_count: number;
   check_ins_7d: number;
   check_outs_7d: number;
   outstanding: string;
@@ -350,6 +387,26 @@ export interface DashboardResponse {
   kpis: DashboardKpis;
   occupancy: { occupied: number; vacant: number; maintenance: number };
   income_by_day: DayPoint[];
+  deposits: {
+    total_label: string;
+    count: number;
+    items: {
+      id: string;
+      name: string;
+      code: string;
+      amount_label: string;
+      status: DepositStatus;
+    }[];
+  };
+  leases_expiring: {
+    id: string;
+    name: string;
+    code: string;
+    lease_end_date: string | null;
+    days_remaining: number | null;
+    status: LeaseStatus;
+    monthly_lease_label: string;
+  }[];
   upcoming: UpcomingBooking[];
   activity: ActivityEntry[];
 }
@@ -371,9 +428,12 @@ export interface SearchResponse {
 export interface CondoFinance {
   period: { start: string; end: string };
   revenue: string;
+  lease_cost: string;
   expenses: string;
   net: string;
   net_is_negative: boolean;
+  deposit_outstanding: string;
+  deposit_status: DepositStatus;
   occupancy_pct: number;
   booked_nights: number;
   available_nights: number;
@@ -396,4 +456,27 @@ export interface CondoFinance {
     amount_label: string;
     amount: string;
   }[];
+}
+
+export interface DepositMovement {
+  id: string;
+  refund_date: string;
+  refunded_label: string;
+  deducted_label: string;
+  deducted: string;
+  deduction_reason: string | null;
+  notes: string | null;
+}
+
+export interface DepositLedger {
+  condo_id: string;
+  condo_name: string;
+  status: DepositStatus;
+  original: string;
+  original_label: string;
+  refunded_label: string;
+  deducted_label: string;
+  outstanding: string;
+  outstanding_label: string;
+  movements: DepositMovement[];
 }

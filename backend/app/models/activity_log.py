@@ -33,6 +33,8 @@ class ActivityAction(str, enum.Enum):
     LOGIN_FAILED = "login_failed"
     UPLOADED = "uploaded"
     EXPORTED = "exported"
+    REFUNDED = "refunded"
+    EXPIRED = "expired"
 
 
 class ActivityEntity(str, enum.Enum):
@@ -41,6 +43,8 @@ class ActivityEntity(str, enum.Enum):
     BOOKING = "booking"
     EXPENSE = "expense"
     SESSION = "session"
+    LEASE = "lease"
+    DEPOSIT = "deposit"
 
 
 # Dot colours used by the dashboard timeline (design lines 2350–2352).
@@ -50,6 +54,10 @@ TONE_BY_ENTITY: dict[ActivityEntity, str] = {
     ActivityEntity.BOOKING: "purple",
     ActivityEntity.EXPENSE: "red",
     ActivityEntity.SESSION: "blue",
+    ActivityEntity.LEASE: "amber",
+    # Deposits are capital moving, not profit or loss — its own colour so
+    # the feed never reads a recovered deposit as revenue.
+    ActivityEntity.DEPOSIT: "green",
 }
 
 

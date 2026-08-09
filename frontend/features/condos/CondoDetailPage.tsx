@@ -3,6 +3,7 @@ import Link from "next/link";
 
 import { CalendarIcon, CondoIcon, EditIcon } from "@/components/layout/icons";
 import { CondoFinancePanels } from "@/features/condos/CondoFinancePanels";
+import { LeaseCard } from "@/features/condos/LeaseCard";
 import { STATUS_META, groupBaht, specLine } from "@/features/condos/display";
 import type { Condo } from "@/types/api";
 
@@ -116,8 +117,11 @@ export function CondoDetailPage({ condo }: { condo: Condo }) {
         <Stat label="Per night" value={condo.night_rate_label} tone="purple" />
         <Stat label="Per month" value={condo.month_rate_label} tone="blue" />
         <Stat label="Cleaning fee" value={`฿${groupBaht(condo.cleaning_fee)}`} tone="green" />
-        <Stat label="Security deposit" value={`฿${groupBaht(condo.security_deposit)}`} tone="amber" />
       </div>
+
+      {/* Lease before the finance panels: what the unit costs to hold frames
+          what it earned, and the deposit stays out of the profit block. */}
+      <LeaseCard condo={condo} />
 
       <CondoFinancePanels condoId={condo.id} />
 

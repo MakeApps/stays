@@ -1,4 +1,4 @@
-import type { Condo, UnitStatus } from "@/types/api";
+import type { Condo, DepositStatus, LeaseStatus, UnitStatus } from "@/types/api";
 
 /**
  * Presentation helpers shared by server and client components.
@@ -27,4 +27,40 @@ export function specLine(condo: Condo): string {
 /** Whole baht, grouped — matches the prototype's money() helper. */
 export function groupBaht(amount: string): string {
   return Math.round(Number(amount)).toLocaleString("en-US");
+}
+
+/** Lease term → the same DS pill vocabulary the unit statuses use. */
+export const LEASE_META: Record<LeaseStatus, { label: string; pill: string; color: string }> = {
+  none: { label: "No lease", pill: "pill", color: "var(--fg-4)" },
+  active: { label: "Active", pill: "pill ok", color: "var(--success)" },
+  expiring_soon: { label: "Expiring soon", pill: "pill warn", color: "var(--warning)" },
+  expired: { label: "Expired", pill: "pill dgr", color: "var(--danger)" },
+};
+
+export const DEPOSIT_META: Record<DepositStatus, { label: string; pill: string }> = {
+  none: { label: "No deposit", pill: "pill" },
+  held: { label: "Held", pill: "pill info" },
+  partially_refunded: { label: "Partially refunded", pill: "pill warn" },
+  refunded: { label: "Refunded", pill: "pill ok" },
+};
+
+/** "42 days remaining" / "Ended 12 days ago" / null when no lease is on file. */
+export function leaseCountdown(days: number | null): string | null {
+  if (days === null) return null;
+  if (days < 0) {
+    const ago = Math.abs(days);
+    return `Ended ${ago} day${ago === 1 ? "" : "s"} ago`;
+  }
+  if (days === 0) return "Ends today";
+  return `${days} day${days === 1 ? "" : "s"} remaining`;
+}
+
+/** `2026-12-31` → `31 Dec 2026`, without going near a Date timezone shift. */
+const MONTHS = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
+
+export function formatDay(iso: string | null): string {
+  if (!iso) return "—";
+  const [year, month, day] = iso.split("-");
+  const name = MONTHS[Number(month) - 1];
+  return name ? `${Number(day)} ${name} ${year}` : iso;
 }

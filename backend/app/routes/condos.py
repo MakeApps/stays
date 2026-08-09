@@ -18,9 +18,10 @@ from app.extensions import db
 from app.models.booking import Booking
 from app.models.expense import Expense
 from app.repositories.condo_repo import CondoRepository
-from app.schemas.condo import CondoCreate, CondoListQuery, CondoUpdate
+from app.schemas.condo import CondoCreate, CondoListQuery, CondoUpdate, DepositRefundCreate
 from app.services.analytics import REVENUE_STATUSES, AnalyticsService, month_bounds
 from app.services.condo_service import CondoService
+from app.services.lease import deposit_state
 
 bp = Blueprint("condos", __name__)
 
@@ -36,8 +37,11 @@ def list_condos() -> Any:
     params = parse_query(CondoListQuery)
     page, counts = service.list(params)
     statuses = service.statuses_for(page.items)
+    deposits = service.deposits_for(page.items)
     body = page.envelope(
-        lambda c: service.serialise(c, statuses.get(c.id)).model_dump(mode="json")
+        lambda c: service.serialise(c, statuses.get(c.id), deposits.get(c.id)).model_dump(
+            mode="json"
+        )
     )
     body["facets"] = {"status": counts}
     return jsonify(body), 200
@@ -94,6 +98,7 @@ def condo_finance(condo_id: uuid.UUID) -> Any:
     analytics = AnalyticsService(db.session)
     fin = analytics.per_condo(start, end).get(condo.id)
     today = date.today()
+    deposit = deposit_state(condo)
 
     upcoming = list(
         db.session.scalars(
@@ -121,9 +126,14 @@ def condo_finance(condo_id: uuid.UUID) -> Any:
         {
             "period": {"start": start.isoformat(), "end": end.isoformat()},
             "revenue": format_thb(fin.revenue if fin else 0),
+            "lease_cost": format_thb(fin.lease_cost if fin else 0),
             "expenses": format_thb(fin.expenses if fin else 0),
             "net": format_thb(fin.net if fin else 0),
             "net_is_negative": bool(fin and fin.net < 0),
+            # Reported beside profit, never inside it: capital lodged with the
+            # owner, not a cost of trading.
+            "deposit_outstanding": format_thb(deposit.outstanding),
+            "deposit_status": deposit.status,
             "occupancy_pct": fin.occupancy_pct if fin else 0,
             "booked_nights": fin.nights if fin else 0,
             "available_nights": fin.available_nights if fin else 0,
@@ -154,6 +164,60 @@ def condo_finance(condo_id: uuid.UUID) -> Any:
             ],
         }
     ), 200
+
+
+@bp.get("/<uuid:condo_id>/deposit")
+@require_permission(CONDO_READ)
+def condo_deposit(condo_id: uuid.UUID) -> Any:
+    """The deposit balance and every recovery recorded against it."""
+    service = _service()
+    condo = service.get(condo_id)
+    state = deposit_state(condo)
+
+    return jsonify(
+        {
+            "condo_id": str(condo.id),
+            "condo_name": condo.name,
+            "status": state.status,
+            "original": str(to_major(state.original)),
+            "original_label": format_thb(state.original),
+            "refunded_label": format_thb(state.refunded),
+            "deducted_label": format_thb(state.deducted),
+            "outstanding": str(to_major(state.outstanding)),
+            "outstanding_label": format_thb(state.outstanding),
+            "movements": [
+                {
+                    "id": str(m.id),
+                    "refund_date": m.refund_date.isoformat(),
+                    "refunded_label": format_thb(m.refunded_amount),
+                    "deducted_label": format_thb(m.deducted_amount),
+                    "deducted": str(to_major(m.deducted_amount)),
+                    "deduction_reason": m.deduction_reason,
+                    "notes": m.notes,
+                }
+                for m in sorted(condo.deposit_movements, key=lambda m: m.refund_date, reverse=True)
+            ],
+        }
+    ), 200
+
+
+@bp.post("/<uuid:condo_id>/deposit/refunds")
+@require_permission(CONDO_WRITE)
+def refund_condo_deposit(condo_id: uuid.UUID) -> Any:
+    """Record a recovery against the deposit held by the owner."""
+    service = _service()
+    service.refund_deposit(condo_id, parse_body(DepositRefundCreate))
+    db.session.commit()
+
+    condo = service.get(condo_id)
+    state = deposit_state(condo)
+    return jsonify(
+        {
+            "condo": service.serialise(condo, deposit=state).model_dump(mode="json"),
+            "status": state.status,
+            "outstanding_label": format_thb(state.outstanding),
+        }
+    ), 201
 
 
 @bp.post("/<uuid:condo_id>/images")

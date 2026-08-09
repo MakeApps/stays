@@ -8,12 +8,19 @@ import {
   BookingIcon,
   CalendarIcon,
   CondoIcon,
+  DepositIcon,
   IncomeIcon,
   PlusIcon,
 } from "@/components/layout/icons";
 import { useCan } from "@/components/providers/Providers";
 import { PAY_META } from "@/features/bookings/BookingsScreen";
 import { useDashboard } from "@/features/dashboard/api";
+import {
+  DEPOSIT_META,
+  LEASE_META,
+  formatDay,
+  leaseCountdown,
+} from "@/features/condos/display";
 
 function dayLabel(iso: string): string {
   return new Date(`${iso}T00:00:00Z`).toLocaleDateString("en-GB", {
@@ -46,6 +53,7 @@ export function DashboardScreen() {
   const { data, isLoading } = useDashboard();
   const can = useCan();
   const [hover, setHover] = useState<number | null>(null);
+  const [showDeposits, setShowDeposits] = useState(false);
 
   const series = data?.income_by_day ?? [];
   const max = useMemo(
@@ -118,7 +126,102 @@ export function DashboardScreen() {
         <Stat tone="green" icon={<IncomeIcon size={17} />} value={k.revenue_month} label="Month revenue" />
         <Stat tone="amber" icon={<CalendarIcon size={17} />} value={String(k.check_ins_7d)} label="Check-ins · 7 days" link={{ href: "/calendar", label: "View" }} />
         <Stat tone="amber" icon={<CalendarIcon size={17} />} value={String(k.check_outs_7d)} label="Check-outs · 7 days" link={{ href: "/calendar", label: "View" }} />
+        {/* Capital, not earnings. Sits with the KPIs because it is a number
+            worth knowing daily, but it is never a term in profit. */}
+        <Stat
+          tone="blue"
+          icon={<DepositIcon size={17} />}
+          value={k.deposits_held}
+          label="Refundable deposits"
+          delta={`${k.deposits_count} condo${k.deposits_count === 1 ? "" : "s"}`}
+          onClick={() => setShowDeposits((open) => !open)}
+        />
       </div>
+
+      {showDeposits ? (
+        <div className="card" style={{ marginBottom: 16 }}>
+          <div className="card-head">
+            <div>
+              <h3 className="card-title">Refundable deposits</h3>
+              <div className="t-caption" style={{ marginTop: 4 }}>
+                Total refundable security deposits currently held by property owners.
+              </div>
+            </div>
+            <button className="btn btn-ghost btn-sm" onClick={() => setShowDeposits(false)}>
+              Hide
+            </button>
+          </div>
+          {data.deposits.items.length === 0 ? (
+            <div className="t-small">No deposits recorded yet.</div>
+          ) : (
+            <div style={{ display: "flex", flexDirection: "column" }}>
+              {data.deposits.items.map((d) => (
+                <Link
+                  key={d.id}
+                  href={`/condos/${d.id}` as never}
+                  style={{
+                    display: "flex",
+                    alignItems: "center",
+                    gap: 12,
+                    padding: "10px 0",
+                    borderBottom: "1px solid var(--line)",
+                    textDecoration: "none",
+                  }}
+                >
+                  <span style={{ flex: 1, minWidth: 0, font: "600 13px/1.3 var(--font-sans)", color: "var(--fg)" }}>
+                    {d.name}
+                  </span>
+                  <span style={{ font: "700 13px/1 var(--font-sans)", color: "var(--fg)" }}>
+                    {d.amount_label}
+                  </span>
+                  <span className={DEPOSIT_META[d.status].pill}>{DEPOSIT_META[d.status].label}</span>
+                </Link>
+              ))}
+            </div>
+          )}
+        </div>
+      ) : null}
+
+      {data.leases_expiring.length > 0 ? (
+        <div className="card" style={{ marginBottom: 16 }}>
+          <div className="card-head">
+            <div>
+              <h3 className="card-title">Lease expiring soon</h3>
+              <div className="t-caption" style={{ marginTop: 4 }}>
+                Nothing is cancelled automatically — these are yours to decide on
+              </div>
+            </div>
+          </div>
+          <div style={{ display: "flex", flexDirection: "column" }}>
+            {data.leases_expiring.map((l) => (
+              <Link
+                key={l.id}
+                href={`/condos/${l.id}` as never}
+                style={{
+                  display: "flex",
+                  alignItems: "center",
+                  gap: 12,
+                  padding: "10px 0",
+                  borderBottom: "1px solid var(--line)",
+                  textDecoration: "none",
+                  flexWrap: "wrap",
+                }}
+              >
+                <span style={{ flex: 1, minWidth: 140, font: "600 13px/1.3 var(--font-sans)", color: "var(--fg)" }}>
+                  {l.name}
+                  <span className="t-caption" style={{ display: "block", marginTop: 2 }}>
+                    {leaseCountdown(l.days_remaining)} · {formatDay(l.lease_end_date)}
+                  </span>
+                </span>
+                <span className={LEASE_META[l.status].pill}>
+                  <span className="dot" />
+                  {LEASE_META[l.status].label}
+                </span>
+              </Link>
+            ))}
+          </div>
+        </div>
+      ) : null}
 
       <div style={{ display: "flex", gap: 16, flexWrap: "wrap", marginBottom: 16 }}>
         {/* Income by day — plain divs, as the design draws them. */}
@@ -231,7 +334,8 @@ export function DashboardScreen() {
                 marginTop: 4,
               }}
             >
-              {k.revenue_month} earned, {k.expenses_month} spent — net {k.net_month}.
+              {k.revenue_month} earned, {k.lease_month} in lease, {k.expenses_month} spent — net{" "}
+              {k.net_month}.
             </div>
           </div>
         </div>
@@ -440,6 +544,7 @@ function Stat({
   label,
   delta,
   link,
+  onClick,
 }: {
   tone: "purple" | "green" | "amber" | "blue" | "red";
   icon: React.ReactNode;
@@ -447,9 +552,22 @@ function Stat({
   label: string;
   delta?: string;
   link?: { href: string; label: string };
+  onClick?: () => void;
 }) {
+  // A clickable stat is a real button, not a div with a handler: keyboard
+  // reachable, announced as a control, and no bespoke key handling.
+  const Tag = onClick ? "button" : "div";
   return (
-    <div className="stat">
+    <Tag
+      className="stat"
+      onClick={onClick}
+      type={onClick ? "button" : undefined}
+      style={
+        onClick
+          ? { cursor: "pointer", textAlign: "left", font: "inherit", width: "100%" }
+          : undefined
+      }
+    >
       <div className={`stat-icon ${tone}`}>{icon}</div>
       <div className="stat-value">{value}</div>
       <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 8 }}>
@@ -461,7 +579,7 @@ function Stat({
           </Link>
         ) : null}
       </div>
-    </div>
+    </Tag>
   );
 }
 

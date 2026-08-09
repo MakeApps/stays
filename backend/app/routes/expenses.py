@@ -27,6 +27,7 @@ from app.models.condo import Condo
 from app.models.expense import Expense, ExpenseStatus
 from app.services.analytics import AnalyticsService, month_bounds, previous_months
 from app.services.expense_service import ExpenseService
+from app.services.lease import days_remaining, deposit_states, lease_status, total_held
 
 bp = Blueprint("expenses", __name__)
 income_bp = Blueprint("income", __name__)
@@ -280,6 +281,8 @@ def expense_summary() -> Any:
 
     month_expenses = analytics.expenses_between(start, end)
     month_revenue = analytics.revenue_between(start, end)
+    month_lease = analytics.lease_costs_between(start, end)
+    month_net = month_revenue - month_lease - month_expenses
     categories = analytics.expenses_by_category(start, end)
     trend = analytics.monthly_series(previous_months(anchor, 6))
 
@@ -290,15 +293,13 @@ def expense_summary() -> Any:
             "month": {
                 "expenses": str(to_major(month_expenses)),
                 "expenses_label": format_thb(month_expenses),
+                "lease": str(to_major(month_lease)),
+                "lease_label": format_thb(month_lease),
                 "revenue": str(to_major(month_revenue)),
                 "revenue_label": format_thb(month_revenue),
-                "net": str(to_major(month_revenue - month_expenses)),
-                "net_label": format_thb(month_revenue - month_expenses),
-                "margin_pct": (
-                    round((month_revenue - month_expenses) / month_revenue * 100)
-                    if month_revenue
-                    else 0
-                ),
+                "net": str(to_major(month_net)),
+                "net_label": format_thb(month_net),
+                "margin_pct": round(month_net / month_revenue * 100) if month_revenue else 0,
             },
             "pending": {
                 "amount": str(to_major(int(pending_rows[0] or 0))),
@@ -321,9 +322,10 @@ def expense_summary() -> Any:
                     "start": start_.isoformat(),
                     "revenue": str(to_major(rev)),
                     "expenses": str(to_major(exp)),
-                    "net": str(to_major(rev - exp)),
+                    "lease": str(to_major(lease)),
+                    "net": str(to_major(rev - lease - exp)),
                 }
-                for (start_, _), (rev, exp) in zip(
+                for (start_, _), (rev, exp, lease) in zip(
                     previous_months(anchor, 6), trend, strict=True
                 )
             ],
@@ -346,13 +348,15 @@ def income_summary() -> Any:
     revenue_week = analytics.revenue_between(week_start, week_start + timedelta(days=7))
     revenue_month = analytics.revenue_between(start, end)
     expenses_month = analytics.expenses_between(start, end)
+    lease_month = analytics.lease_costs_between(start, end)
+    net_month = revenue_month - lease_month - expenses_month
     owed, owed_count = analytics.outstanding()
+    deposits_held, deposits_count = total_held(db.session)
 
     finances = analytics.per_condo(start, end)
-    condos = {
-        c.id: c
-        for c in db.session.scalars(select(Condo).where(Condo.deleted_at.is_(None)))
-    }
+    condo_rows = list(db.session.scalars(select(Condo).where(Condo.deleted_at.is_(None))))
+    condos = {c.id: c for c in condo_rows}
+    states = deposit_states(db.session, condo_rows)
 
     rows = []
     for condo_id, fin in finances.items():
@@ -368,11 +372,20 @@ def income_summary() -> Any:
                 "nights": fin.nights,
                 "revenue": str(to_major(fin.revenue)),
                 "revenue_label": format_thb(fin.revenue),
+                "lease_cost": str(to_major(fin.lease_cost)),
+                "lease_cost_label": format_thb(fin.lease_cost),
                 "expenses": str(to_major(fin.expenses)),
                 "expenses_label": format_thb(fin.expenses),
                 "net": str(to_major(fin.net)),
                 "net_label": format_thb(fin.net),
                 "occupancy_pct": fin.occupancy_pct,
+                "deposit_outstanding_label": format_thb(states[condo_id].outstanding),
+                "deposit_status": states[condo_id].status,
+                "lease_status": lease_status(condo, today=today),
+                "lease_end_date": (
+                    condo.lease_end_date.isoformat() if condo.lease_end_date else None
+                ),
+                "lease_days_remaining": days_remaining(condo, today=today),
             }
         )
     rows.sort(key=lambda r: float(str(r["revenue"])), reverse=True)
@@ -387,15 +400,19 @@ def income_summary() -> Any:
                 "today": format_thb(revenue_today),
                 "week": format_thb(revenue_week),
                 "month": format_thb(revenue_month),
+                "lease": format_thb(lease_month),
                 "expenses": format_thb(expenses_month),
-                "net": format_thb(revenue_month - expenses_month),
-                "margin_pct": (
-                    round((revenue_month - expenses_month) / revenue_month * 100)
-                    if revenue_month
-                    else 0
-                ),
+                "net": format_thb(net_month),
+                "margin_pct": round(net_month / revenue_month * 100) if revenue_month else 0,
                 "outstanding": format_thb(owed),
                 "outstanding_count": owed_count,
+            },
+            # Money we hold rather than money we earned. A sibling of the KPIs,
+            # never a term in them: net profit is revenue less lease and
+            # operating costs, and a refundable deposit is neither.
+            "money_held": {
+                "deposits": format_thb(deposits_held),
+                "deposits_count": deposits_count,
             },
             "by_condo": rows,
             "trend": [
@@ -403,9 +420,10 @@ def income_summary() -> Any:
                     "month": s.strftime("%b"),
                     "revenue": str(to_major(rev)),
                     "expenses": str(to_major(exp)),
-                    "net": str(to_major(rev - exp)),
+                    "lease": str(to_major(lease)),
+                    "net": str(to_major(rev - lease - exp)),
                 }
-                for (s, _), (rev, exp) in zip(windows, series, strict=True)
+                for (s, _), (rev, exp, lease) in zip(windows, series, strict=True)
             ],
         }
     ), 200

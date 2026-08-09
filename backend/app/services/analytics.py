@@ -23,6 +23,7 @@ from sqlalchemy.orm import Session
 from app.models.booking import Booking, BookingNight, BookingStatus
 from app.models.condo import Condo
 from app.models.expense import Expense, ExpenseCategory, ExpenseStatus
+from app.services.lease import lease_cost_between, lease_costs_for
 
 # Statuses whose nights represent sellable occupancy. A maintenance block holds
 # the dates but is not revenue, and is excluded from occupancy percentages so a
@@ -55,10 +56,24 @@ class CondoFinance:
     available_nights: int
     revenue: int
     expenses: int
+    #: What we owe the unit's owner for this window, prorated by day. A real
+    #: cost of running the unit, so it sits in `net` beside operating spend.
+    lease_cost: int = 0
 
     @property
     def net(self) -> int:
-        return self.revenue - self.expenses
+        """Revenue less what the unit costs to hold and to run.
+
+        The refundable deposit is deliberately absent. It is capital lodged
+        with the owner and expected back, so charging it here would report a
+        loss the month a unit is taken on and a windfall the month it is
+        handed back — see app.services.lease.
+        """
+        return self.revenue - self.lease_cost - self.expenses
+
+    @property
+    def total_costs(self) -> int:
+        return self.lease_cost + self.expenses
 
     @property
     def occupancy_pct(self) -> int:
@@ -180,12 +195,14 @@ class AnalyticsService:
         counts = {r[0]: int(r[1]) for r in booking_rows}
         spend = {r[0]: int(r[1]) for r in expense_rows}
 
-        condo_ids = list(
-            self.session.scalars(select(Condo.id).where(Condo.deleted_at.is_(None)))
-        )
+        # Whole rows, not just ids: the lease charge is prorated against each
+        # condo's own term, so the dates and the monthly amount are needed.
+        condos = list(self.session.scalars(select(Condo).where(Condo.deleted_at.is_(None))))
+        lease = lease_costs_for(condos, start, end)
 
         result: dict[uuid.UUID, CondoFinance] = {}
-        for condo_id in condo_ids:
+        for condo in condos:
+            condo_id = condo.id
             earned, nights = revenue.get(condo_id, (0, 0))
             result[condo_id] = CondoFinance(
                 condo_id=condo_id,
@@ -194,8 +211,14 @@ class AnalyticsService:
                 available_nights=max(0, span_nights - nights),
                 revenue=earned,
                 expenses=spend.get(condo_id, 0),
+                lease_cost=lease.get(condo_id, 0),
             )
         return result
+
+    def lease_costs_between(self, start: date, end: date) -> int:
+        """Total lease commitment across the portfolio for the window."""
+        condos = self.session.scalars(select(Condo).where(Condo.deleted_at.is_(None)))
+        return sum(lease_cost_between(c, start, end) for c in condos)
 
     def expenses_by_category(self, start: date, end: date) -> list[tuple[str, str, int]]:
         """(category name, tone, total) ordered by spend, for the donut."""
@@ -235,9 +258,18 @@ class AnalyticsService:
         ).all()
         return {r[0]: int(r[1]) for r in rows}
 
-    def monthly_series(self, months: list[tuple[date, date]]) -> list[tuple[int, int]]:
-        """(revenue, expenses) per month window, for the trend charts."""
+    def monthly_series(self, months: list[tuple[date, date]]) -> list[tuple[int, int, int]]:
+        """(revenue, expenses, lease cost) per month window, for the trends.
+
+        Lease is returned alongside rather than folded into expenses: the
+        charts plot operating spend, and a fixed monthly commitment moving that
+        bar would hide whether running costs themselves are drifting.
+        """
         return [
-            (self.revenue_between(start, end), self.expenses_between(start, end))
+            (
+                self.revenue_between(start, end),
+                self.expenses_between(start, end),
+                self.lease_costs_between(start, end),
+            )
             for start, end in months
         ]

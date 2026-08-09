@@ -17,7 +17,7 @@ from app.models.base import (
     uuid7,
 )
 from app.models.booking import Booking, BookingNight, BookingStatus, PricingModeColumn
-from app.models.condo import Condo, CondoImage, PropertyType
+from app.models.condo import Condo, CondoImage, DepositTransaction, PropertyType
 from app.models.expense import (
     Expense,
     ExpenseCategory,
@@ -38,6 +38,7 @@ __all__ = [
     "BookingStatus",
     "Condo",
     "CondoImage",
+    "DepositTransaction",
     "Expense",
     "ExpenseCategory",
     "ExpenseStatus",

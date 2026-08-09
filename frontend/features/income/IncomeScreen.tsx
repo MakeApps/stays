@@ -29,6 +29,8 @@ export function IncomeScreen() {
 
   const k = data.kpis;
   const netNegative = k.net.includes("-");
+  /** "-฿17,800" -> -17800, for the chart maths only. */
+  const amount = (label: string) => Number(label.replace(/[^\d.-]/g, ""));
   const totals = data.by_condo.reduce(
     (acc, r) => ({
       bookings: acc.bookings + r.bookings,
@@ -63,9 +65,10 @@ export function IncomeScreen() {
         <Stat tone="purple" label="Today's income" value={k.today} />
         <Stat tone="blue" label="This week" value={k.week} />
         <Stat tone="green" label="This month" value={k.month} />
+        <Stat tone="amber" label="Lease costs" value={k.lease} />
         <Stat
           tone="red"
-          label="Expenses"
+          label="Operating expenses"
           value={k.expenses}
           link={{ href: "/expenses", label: "Details" }}
         />
@@ -83,6 +86,39 @@ export function IncomeScreen() {
           value={k.outstanding}
           delta={`${k.outstanding_count} ${k.outstanding_count === 1 ? "booking" : "bookings"}`}
         />
+      </div>
+
+      <div
+        className="card"
+        style={{
+          marginBottom: 24,
+          borderLeft: "3px solid var(--info)",
+          display: "flex",
+          alignItems: "center",
+          justifyContent: "space-between",
+          gap: 16,
+          flexWrap: "wrap",
+        }}
+      >
+        <div style={{ minWidth: 0 }}>
+          <div className="sidebar-group" style={{ padding: "0 0 4px" }}>
+            Money held
+          </div>
+          <div className="t-caption">
+            Capital lodged with property owners. Not revenue, not an expense, and never part
+            of net profit — expected back when each lease ends.
+          </div>
+        </div>
+        <div style={{ textAlign: "right" }}>
+          <div className="t-caption">Refundable deposits</div>
+          <div style={{ font: "700 26px/1.1 var(--font-sans)", color: "var(--fg)", marginTop: 2 }}>
+            {data.money_held.deposits}
+          </div>
+          <div className="t-caption" style={{ marginTop: 2 }}>
+            across {data.money_held.deposits_count}{" "}
+            {data.money_held.deposits_count === 1 ? "condo" : "condos"}
+          </div>
+        </div>
       </div>
 
       <div style={{ display: "flex", gap: 16, flexWrap: "wrap", marginBottom: 16 }}>
@@ -117,15 +153,25 @@ export function IncomeScreen() {
             <Donut
               size={104}
               segments={[
-                { label: "Net profit", value: Math.max(0, Number(k.net.replace(/[^\d.-]/g, ""))), color: "var(--success)" },
-                { label: "Expenses", value: Number(k.expenses.replace(/[^\d.-]/g, "")), color: "var(--warning)" },
+                { label: "Net profit", value: Math.max(0, amount(k.net)), color: "var(--success)" },
+                // Lease belongs here or the chart under-reports where the
+                // money went: on a leased unit it is usually the largest
+                // outflow, and omitting it made the slices not add up to
+                // revenue.
+                { label: "Lease costs", value: amount(k.lease), color: "var(--info)" },
+                { label: "Operating expenses", value: amount(k.expenses), color: "var(--warning)" },
               ]}
               centerValue={`${k.margin_pct}%`}
               centerLabel="margin"
             />
             <div style={{ display: "flex", flexDirection: "column", gap: 12, flex: 1 }}>
-              <LegendRow color="var(--success)" label="Net profit" value={k.net} />
-              <LegendRow color="var(--warning)" label="Expenses" value={k.expenses} />
+              <LegendRow
+                color={netNegative ? "var(--danger)" : "var(--success)"}
+                label="Net profit"
+                value={k.net}
+              />
+              <LegendRow color="var(--info)" label="Lease costs" value={k.lease} />
+              <LegendRow color="var(--warning)" label="Operating expenses" value={k.expenses} />
               <LegendRow color="var(--brand-purple)" label="Revenue" value={k.month} strong />
             </div>
           </div>
@@ -136,7 +182,7 @@ export function IncomeScreen() {
         <div style={{ padding: "18px 20px 14px" }}>
           <h3 className="card-title">Profit by condo</h3>
           <div className="t-caption" style={{ marginTop: 4 }}>
-            {period} · revenue less recorded expenses
+            {period} · revenue less lease costs and recorded expenses
           </div>
         </div>
 
@@ -159,6 +205,7 @@ export function IncomeScreen() {
                     <th style={{ textAlign: "right" }}>Bookings</th>
                     <th style={{ textAlign: "right" }}>Booked nights</th>
                     <th style={{ textAlign: "right" }}>Revenue</th>
+                    <th style={{ textAlign: "right" }}>Lease</th>
                     <th style={{ textAlign: "right" }}>Expenses</th>
                     <th style={{ textAlign: "right" }}>Net profit</th>
                     <th style={{ textAlign: "right" }}>Occupancy</th>
@@ -175,6 +222,9 @@ export function IncomeScreen() {
                       <td style={{ textAlign: "right" }}>{r.nights}</td>
                       <td style={{ textAlign: "right" }}>
                         <strong>{r.revenue_label}</strong>
+                      </td>
+                      <td style={{ textAlign: "right", color: "var(--warning)" }}>
+                        {r.lease_cost_label}
                       </td>
                       <td style={{ textAlign: "right", color: "var(--warning)" }}>
                         {r.expenses_label}
@@ -203,8 +253,16 @@ export function IncomeScreen() {
                     <td style={TOTAL_CELL}>{totals.bookings}</td>
                     <td style={TOTAL_CELL}>{totals.nights}</td>
                     <td style={TOTAL_CELL}>{k.month}</td>
+                    <td style={{ ...TOTAL_CELL, color: "var(--warning)" }}>{k.lease}</td>
                     <td style={{ ...TOTAL_CELL, color: "var(--warning)" }}>{k.expenses}</td>
-                    <td style={{ ...TOTAL_CELL, color: "var(--success)" }}>{k.net}</td>
+                    <td
+                      style={{
+                        ...TOTAL_CELL,
+                        color: netNegative ? "var(--danger)" : "var(--success)",
+                      }}
+                    >
+                      {k.net}
+                    </td>
                     <td style={TOTAL_CELL} />
                   </tr>
                 </tfoot>

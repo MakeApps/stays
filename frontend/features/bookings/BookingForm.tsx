@@ -1,11 +1,13 @@
 "use client";
 
+import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
 import { useEffect, useMemo, useState } from "react";
 import { toast } from "sonner";
 
-import { CheckIcon } from "@/components/layout/icons";
+import { CalendarIcon, CheckIcon } from "@/components/layout/icons";
 import { useCondos } from "@/features/condos/api";
+import { formatDay } from "@/features/condos/display";
 import {
   useAvailability,
   useBooking,
@@ -136,6 +138,13 @@ export function BookingForm() {
   const conflict: BookingConflict | null = availability?.conflict ?? null;
 
   const selectedCondo = condos.find((c) => c.id === form.condo_id);
+
+  // These condos are ours on a long-term lease, so a stay running past the
+  // lease end is a night we have no right to sell. Checked here as well as
+  // server-side so it shows while the dates are being picked rather than on
+  // submit. Compared as ISO strings — same format, no Date, no timezone shift.
+  const leaseEnd = selectedCondo?.lease_end_date ?? null;
+  const exceedsLease = Boolean(leaseEnd && form.check_out > leaseEnd);
   const nightly = form.mode === "nightly";
   const saving = create.isPending || update.isPending;
 
@@ -176,6 +185,12 @@ export function BookingForm() {
     if (conflict) {
       toast.error("Booking conflict", {
         description: `Those dates overlap ${conflict.guest_name}.`,
+      });
+      return;
+    }
+    if (exceedsLease) {
+      toast.error("Booking exceeds lease period", {
+        description: `${selectedCondo?.name ?? "That condo"}'s lease ends on ${formatDay(leaseEnd)}.`,
       });
       return;
     }
@@ -292,6 +307,46 @@ export function BookingForm() {
                 >
                   {selectedCondo?.name ?? "That condo"} is already booked {conflict.check_in} →{" "}
                   {conflict.check_out} for {conflict.guest_name}. Pick other dates or another unit.
+                </div>
+              </div>
+            </div>
+          ) : null}
+
+          {exceedsLease ? (
+            <div
+              role="alert"
+              style={{
+                display: "flex",
+                gap: 12,
+                padding: 16,
+                background: "var(--warning-bg)",
+                border: "1px solid var(--warning-border)",
+                borderRadius: 12,
+                animation: "lsPop 180ms var(--ease-out) both",
+              }}
+            >
+              <CalendarIcon size={18} />
+              <div>
+                <div style={{ font: "700 14px/1.3 var(--font-sans)", color: "var(--warning)" }}>
+                  Booking exceeds lease period
+                </div>
+                <div
+                  style={{
+                    font: "400 13px/1.5 var(--font-sans)",
+                    color: "var(--warning)",
+                    opacity: 0.9,
+                    marginTop: 3,
+                  }}
+                >
+                  {selectedCondo?.name ?? "That condo"}&rsquo;s lease ends on{" "}
+                  {formatDay(leaseEnd)}. Shorten the stay, or extend the lease from{" "}
+                  <Link
+                    href={{ pathname: "/condos", query: { edit: form.condo_id } } as never}
+                    style={{ color: "inherit", textDecoration: "underline" }}
+                  >
+                    the condo&rsquo;s settings
+                  </Link>
+                  .
                 </div>
               </div>
             </div>
@@ -542,7 +597,7 @@ export function BookingForm() {
             <button
               // The design deliberately restyles rather than disables, so the
               // reason stays readable (line 2410).
-              className={`btn ${conflict ? "btn-outline" : "btn-primary"}`}
+              className={`btn ${conflict || exceedsLease ? "btn-outline" : "btn-primary"}`}
               style={{ padding: "12px 22px", fontSize: 15 }}
               onClick={save}
               disabled={saving}
@@ -552,6 +607,8 @@ export function BookingForm() {
                 ? "Saving…"
                 : conflict
                   ? "Resolve conflict to save"
+                  : exceedsLease
+                    ? "Booking exceeds lease period"
                   : editId
                     ? "Save changes"
                     : "Save booking"}
