@@ -576,7 +576,7 @@ export function BookingForm() {
             </Grid>
           </Card>
 
-          <div
+          <div className="ls-sticky-foot"
             style={{
               position: "sticky",
               bottom: 0,

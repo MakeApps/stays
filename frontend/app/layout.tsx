@@ -39,6 +39,11 @@ export const viewport: Viewport = {
   width: "device-width",
   initialScale: 1,
   themeColor: "#7c3aed",
+  // Without this, every env(safe-area-inset-*) resolves to 0 on iOS and the
+  // bottom tab bar sits under the home indicator. It also un-insets the left
+  // and right edges in landscape, which is why the fixed drawer and the
+  // mobile topbar carry their own horizontal safe-area padding.
+  viewportFit: "cover",
 };
 
 export default function RootLayout({

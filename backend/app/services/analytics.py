@@ -16,6 +16,7 @@ import uuid
 from calendar import monthrange
 from dataclasses import dataclass
 from datetime import date, timedelta
+from typing import Any
 
 from sqlalchemy import Select, func, select
 from sqlalchemy.orm import Session
@@ -29,6 +30,15 @@ from app.services.lease import lease_cost_between, lease_costs_for
 # the dates but is not revenue, and is excluded from occupancy percentages so a
 # unit under repair does not read as "fully booked".
 REVENUE_STATUSES = (BookingStatus.BOOKED, BookingStatus.PENDING)
+
+# Statuses that make a unit unavailable. Wider than REVENUE_STATUSES: a
+# maintenance block earns nothing but you still cannot sell the night, so
+# "condos available today" has to count it as taken.
+OCCUPYING_STATUSES = (
+    BookingStatus.BOOKED,
+    BookingStatus.PENDING,
+    BookingStatus.MAINTENANCE,
+)
 
 
 def month_bounds(anchor: date) -> tuple[date, date]:
@@ -46,6 +56,23 @@ def previous_months(anchor: date, count: int) -> list[tuple[date, date]]:
         windows.append(month_bounds(cursor))
         cursor = (cursor - timedelta(days=1)).replace(day=1)
     return list(reversed(windows))
+
+
+@dataclass(frozen=True, slots=True)
+class DayCell:
+    """One night, as the calendar needs to draw and summarise it.
+
+    ``occupied`` and ``booked`` differ deliberately. A maintenance block takes
+    the unit — you cannot sell that night — but it is not sellable occupancy,
+    and counting it as such makes a building under repair read as fully
+    booked. Availability uses ``occupied``; occupancy uses ``booked``.
+    """
+
+    day: date
+    bookings: int
+    occupied: int
+    booked: int
+    revenue: int
 
 
 @dataclass(frozen=True, slots=True)
@@ -219,6 +246,86 @@ class AnalyticsService:
         """Total lease commitment across the portfolio for the window."""
         condos = self.session.scalars(select(Condo).where(Condo.deleted_at.is_(None)))
         return sum(lease_cost_between(c, start, end) for c in condos)
+
+    def daily_breakdown(
+        self, start: date, end: date, *, condo_id: uuid.UUID | None = None
+    ) -> dict[date, DayCell]:
+        """Per-night bookings, occupied units and accrued revenue.
+
+        Two grouped queries for the whole window rather than one per day. The
+        mobile calendar draws a cell per day and summarises whichever is
+        tapped, so a per-day round trip would be thirty-one of them.
+
+        Occupancy counts maintenance, revenue does not — a blocked unit is
+        unavailable but earns nothing, and conflating the two would either
+        oversell the calendar or overstate the income.
+        """
+        # Joined to Condo as well, so a night belonging to a removed unit is
+        # not counted against a portfolio that no longer contains it — which
+        # is how occupancy could exceed 100%.
+        def _per_night(statuses: tuple[BookingStatus, ...]) -> list[Any]:
+            return self.session.execute(
+                select(
+                    BookingNight.night_date,
+                    func.count(func.distinct(BookingNight.booking_id)),
+                    func.count(func.distinct(BookingNight.condo_id)),
+                )
+                .join(Booking, Booking.id == BookingNight.booking_id)
+                .join(Condo, Condo.id == BookingNight.condo_id)
+                .where(
+                    BookingNight.night_date >= start,
+                    BookingNight.night_date < end,
+                    Booking.deleted_at.is_(None),
+                    Condo.deleted_at.is_(None),
+                    # A unit flagged out of service is excluded from the whole
+                    # availability calculation, so it must not appear here
+                    # either. Callers subtract `occupied` from a condo count
+                    # that already excludes it — counting it in both places
+                    # takes the same unit away twice and under-reports how many
+                    # are free.
+                    Condo.is_maintenance.is_(False),
+                    Booking.status.in_(statuses),
+                    *([BookingNight.condo_id == condo_id] if condo_id else []),
+                )
+                .group_by(BookingNight.night_date)
+            ).all()
+
+        occupancy_rows = _per_night(OCCUPYING_STATUSES)
+        booked_rows = _per_night(REVENUE_STATUSES)
+
+        revenue_rows = self.session.execute(
+            select(
+                BookingNight.night_date,
+                func.coalesce(func.sum(BookingNight.revenue_share), 0),
+            )
+            .join(Booking, Booking.id == BookingNight.booking_id)
+            .join(Condo, Condo.id == BookingNight.condo_id)
+            .where(
+                BookingNight.night_date >= start,
+                BookingNight.night_date < end,
+                Booking.deleted_at.is_(None),
+                Condo.deleted_at.is_(None),
+                Booking.status.in_(REVENUE_STATUSES),
+                *([BookingNight.condo_id == condo_id] if condo_id else []),
+            )
+            .group_by(BookingNight.night_date)
+        ).all()
+
+        earned = {r[0]: int(r[1]) for r in revenue_rows}
+        booked = {r[0]: int(r[2]) for r in booked_rows}
+        days = set(earned) | set(booked) | {r[0] for r in occupancy_rows}
+        occupancy = {r[0]: (int(r[1]), int(r[2])) for r in occupancy_rows}
+
+        return {
+            day: DayCell(
+                day=day,
+                bookings=occupancy.get(day, (0, 0))[0],
+                occupied=occupancy.get(day, (0, 0))[1],
+                booked=booked.get(day, 0),
+                revenue=earned.get(day, 0),
+            )
+            for day in days
+        }
 
     def expenses_by_category(self, start: date, end: date) -> list[tuple[str, str, int]]:
         """(category name, tone, total) ordered by spend, for the donut."""

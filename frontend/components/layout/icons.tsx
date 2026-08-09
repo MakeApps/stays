@@ -139,6 +139,41 @@ export const DepositIcon = ({ size, className }: IconProps) => (
   </svg>
 );
 
+export const MoreIcon = ({ size, className }: IconProps) => (
+  <svg {...base} width={size} height={size} className={className} strokeWidth={2.5}>
+    <circle cx="5" cy="12" r="1" />
+    <circle cx="12" cy="12" r="1" />
+    <circle cx="19" cy="12" r="1" />
+  </svg>
+);
+
+/** FAB glyph: a calendar with a plus, matching "add a booking on a date". */
+export const CalendarPlusIcon = ({ size, className }: IconProps) => (
+  <svg {...base} width={size} height={size} className={className}>
+    <path d="M21 13V6a2 2 0 0 0-2-2H5a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h8" />
+    <path d="M8 2v4M16 2v4M3 10h18M18 16v6M15 19h6" />
+  </svg>
+);
+
+export const ChevronRightIcon = ({ size, className }: IconProps) => (
+  <svg {...base} width={size} height={size} className={className}>
+    <path d="M9 18l6-6-6-6" />
+  </svg>
+);
+
+export const WalletIcon = ({ size, className }: IconProps) => (
+  <svg {...base} width={size} height={size} className={className}>
+    <path d="M20 7H4a1 1 0 0 1 0-2h13a2 2 0 0 0-2-2H5a2 2 0 0 0-2 2v12a2 2 0 0 0 2 2h15a1 1 0 0 0 1-1V8a1 1 0 0 0-1-1z" />
+    <circle cx="17" cy="13" r="1.3" />
+  </svg>
+);
+
+export const ChartIcon = ({ size, className }: IconProps) => (
+  <svg {...base} width={size} height={size} className={className}>
+    <path d="M6 20V10M12 20V4M18 20v-6" />
+  </svg>
+);
+
 export const LogoutIcon = ({ size, className }: IconProps) => (
   <svg {...base} width={size} height={size} className={className}>
     <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4M16 17l5-5-5-5M21 12H9" />

@@ -193,6 +193,7 @@ export interface CalendarResource {
   id: string;
   code: string;
   name: string;
+  cover_url: string | null;
 }
 
 export interface CalendarEvent {
@@ -204,10 +205,29 @@ export interface CalendarEvent {
   nights: number;
   status: BookingStatus;
   payment_status: PaymentStatus;
+  total_label: string;
+}
+
+/** One night, as the calendar draws and summarises it. */
+export interface CalendarDay {
+  date: string;
+  bookings: number;
+  occupied: number;
+  available: number;
+  revenue: string;
+  revenue_label: string;
 }
 
 export interface CalendarResponse {
   range: { start: string; end: string };
+  summary: {
+    revenue_label: string;
+    booked_nights: number;
+    occupancy_pct: number;
+    condos: number;
+    bookings: number;
+  };
+  days: CalendarDay[];
   resources: CalendarResource[];
   events: CalendarEvent[];
 }

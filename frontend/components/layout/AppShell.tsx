@@ -5,7 +5,7 @@ import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
 
-import { BrandGlyph, BrandLockup, BrandWordmark } from "@/components/ds/Brand";
+import { BrandGlyph, BrandWordmark } from "@/components/ds/Brand";
 import {
   BellIcon,
   BookingIcon,
@@ -21,6 +21,8 @@ import {
   PlusIcon,
   RefreshIcon,
 } from "@/components/layout/icons";
+import { BottomTabs } from "@/components/layout/BottomTabs";
+import { Fab } from "@/components/layout/Fab";
 import { GlobalSearch } from "@/components/layout/GlobalSearch";
 import { NAV_COOKIE, collapsesOnArrival } from "@/components/layout/nav-preference";
 import { useSession } from "@/components/providers/Providers";
@@ -119,17 +121,17 @@ export function AppShell({
   return (
     <div className="ls-base app" style={{ minHeight: "100vh" }}>
       <aside className={cn("sidebar", navOpen && "open", collapsed && "collapsed")}>
+        {/* Nothing below branches on `collapsed` in JS. The rail is a desktop
+            state, but the same markup is the mobile drawer — branching here
+            meant opening "More" on an auto-collapsing screen gave a drawer
+            with no labels and no Quick add. CSS scopes the rail to desktop. */}
         <div className="sidebar-brand">
-          <div
-            style={{
-              display: "flex",
-              alignItems: "center",
-              gap: 10,
-              flexDirection: collapsed ? "column" : "row",
-            }}
-          >
-            {collapsed ? <BrandGlyph /> : <BrandLockup />}
-            {collapsed ? null : <div style={{ flex: 1 }} />}
+          <div className="brand-row">
+            <BrandGlyph />
+            <span className="brand-word">
+              <BrandWordmark />
+            </span>
+            <div className="brand-spacer" />
             <button
               type="button"
               className="nav-toggle"
@@ -151,10 +153,11 @@ export function AppShell({
               href={href}
               className={cn("sidebar-item", isActive(href) && "active")}
               aria-current={isActive(href) ? "page" : undefined}
-              // The label is display:none in the rail, so it no longer names
-              // the link. title doubles as the hover tooltip the rail needs.
-              aria-label={collapsed ? label : undefined}
-              title={collapsed ? label : undefined}
+              // The visible label is display:none in the rail, which strips the
+              // accessible name, so it is set here unconditionally. Identical
+              // to the visible text, so nothing is announced twice.
+              aria-label={label}
+              title={label}
             >
               <Icon />
               <span className="nav-label">{label}</span>
@@ -166,8 +169,8 @@ export function AppShell({
               with the nav item directly above it — same icon, different
               action — and every one of these is a primary button on the screen
               it leads to, so nothing here is otherwise unreachable. */}
-          {!collapsed && QUICK_ADD.some((item) => allowed(item.capability)) ? (
-            <>
+          {QUICK_ADD.some((item) => allowed(item.capability)) ? (
+            <div className="quick-add">
               <div className="sidebar-group">Quick add</div>
               {QUICK_ADD.filter((item) => allowed(item.capability)).map(({ href, label }) => (
                 <Link
@@ -180,7 +183,7 @@ export function AppShell({
                   <span className="nav-label">{label}</span>
                 </Link>
               ))}
-            </>
+            </div>
           ) : null}
         </nav>
 
@@ -188,7 +191,7 @@ export function AppShell({
           <div
             className="user-pill"
             style={{ background: "var(--surface-2)" }}
-            title={collapsed ? `${user?.full_name} · ${user?.role}` : undefined}
+            title={`${user?.full_name} · ${user?.role}`}
           >
             <div className="user-avatar">{initials(user?.full_name ?? "?")}</div>
             <div className="user-meta" style={{ minWidth: 0, flex: 1 }}>
@@ -197,33 +200,18 @@ export function AppShell({
                 {user?.role}
               </div>
             </div>
-            {/* In the rail there is no room beside the avatar, so sign-out
-                moves below it rather than being dropped from the shell. */}
-            {collapsed ? null : (
-              <button
-                className="icon-btn"
-                style={{ width: 28, height: 28, border: 0, background: "transparent" }}
-                onClick={signOut}
-                disabled={signingOut}
-                title="Sign out"
-                aria-label="Sign out"
-              >
-                <LogoutIcon size={15} />
-              </button>
-            )}
           </div>
-          {collapsed ? (
-            <button
-              className="icon-btn"
-              style={{ width: "100%", border: 0, background: "transparent" }}
-              onClick={signOut}
-              disabled={signingOut}
-              title="Sign out"
-              aria-label="Sign out"
-            >
-              <LogoutIcon size={15} />
-            </button>
-          ) : null}
+          {/* One button. In the rail there is no room beside the avatar, so
+              CSS moves it below rather than the shell rendering two. */}
+          <button
+            className="icon-btn sign-out"
+            onClick={signOut}
+            disabled={signingOut}
+            title="Sign out"
+            aria-label="Sign out"
+          >
+            <LogoutIcon size={15} />
+          </button>
         </div>
       </aside>
 
@@ -314,6 +302,13 @@ export function AppShell({
 
         {children}
       </main>
+
+      {/* Both outside <main>. Every screen's root section animates a
+          transform with fill:both, which makes it a containing block — a
+          position:fixed child of one is fixed to the section, not the
+          viewport. "More" reuses the drawer instead of duplicating it. */}
+      <Fab />
+      <BottomTabs onMore={() => setNavOpen(true)} />
     </div>
   );
 }

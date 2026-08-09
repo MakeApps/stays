@@ -58,11 +58,17 @@ export function useBooking(id: string | null) {
   });
 }
 
-export function useCalendar(start: string, end: string, condoId?: string) {
+export function useCalendar(start: string, end: string, condoId?: string, month?: string) {
   return useQuery({
-    queryKey: qk.bookings.calendar({ start, end, condoId: condoId ?? null }),
+    queryKey: qk.bookings.calendar({ start, end, condoId: condoId ?? null, month: month ?? null }),
     queryFn: () =>
-      api.get<CalendarResponse>(`/bookings/calendar${qs({ start, end, condo_id: condoId })}`),
+      api.get<CalendarResponse>(
+        // `month` scopes the summary figures. The mobile grid asks for six
+        // whole weeks so its leading and trailing cells hold real data, but
+        // its header reports a month — without this the totals would describe
+        // the fetch window and span three of them.
+        `/bookings/calendar${qs({ start, end, condo_id: condoId, month })}`,
+      ),
     placeholderData: (previous) => previous,
     staleTime: 30_000,
   });

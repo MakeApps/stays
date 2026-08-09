@@ -103,14 +103,20 @@ ok(
   (await p.locator('.sidebar-item[aria-label="Condos"]').count()) > 0,
   "rail items keep an accessible name once the label is hidden",
 );
+// Hidden by CSS rather than dropped from the DOM: the same markup is the
+// mobile drawer, where Quick add must stay. display:none removes it from the
+// accessibility tree and tab order too, so "hidden" here means hidden.
 ok(
-  (await p.locator('.sidebar-item:has-text("New condo")').count()) === 0,
+  (await p.locator('.sidebar-item:has-text("New condo")').isVisible()) === false,
   "quick add leaves the rail rather than becoming three identical plus signs",
 );
+const railVisible = await p
+  .locator(".sidebar .sidebar-item")
+  .evaluateAll((els) => els.filter((el) => el.offsetParent !== null).length);
 ok(
-  (await p.locator(".sidebar .sidebar-item").count()) === 6,
-  "the rail carries exactly the six nav destinations",
-  `${await p.locator(".sidebar .sidebar-item").count()} items`,
+  railVisible === 6,
+  "the rail shows exactly the six nav destinations",
+  `${railVisible} visible items`,
 );
 
 await fresh(`${BASE}/condos`);

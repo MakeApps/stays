@@ -16,17 +16,12 @@ from app.extensions import db
 from app.models.activity_log import ActivityAction, ActivityEntity
 from app.models.booking import Booking, BookingNight, BookingStatus, PricingModeColumn
 from app.models.condo import Condo
+from app.services.analytics import OCCUPYING_STATUSES
 from app.services.pricing import PricingMode, Quote, quote
 
 # A cancelled booking releases its dates; every other status holds them.
 # En dash, matching how the design renders date spans ("1–9 Aug").
 DASH = "–"
-
-OCCUPYING_STATUSES = (
-    BookingStatus.BOOKED,
-    BookingStatus.PENDING,
-    BookingStatus.MAINTENANCE,
-)
 
 
 def _assert_within_lease(condo: Condo, check_out: date) -> None:

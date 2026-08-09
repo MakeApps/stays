@@ -12,9 +12,17 @@ import { useBooking, useCalendar, useMoveBooking } from "@/features/bookings/api
 import { MonthGrid } from "@/features/calendar/MonthGrid";
 import { Timeline, type DragChange } from "@/features/calendar/Timeline";
 import { useCondos } from "@/features/condos/api";
-import { addDays, nightsBetween, todayISO } from "@/lib/booking-math";
+import { addDays, nightsBetween, overlaps, todayISO } from "@/lib/booking-math";
 import { qk } from "@/lib/query";
 import { ApiError } from "@/services/http";
+
+/** Weekday index (0 = Sunday) of an ISO date, computed in UTC. */
+function weekdayOf(iso: string): number {
+  return new Date(`${iso}T00:00:00Z`).getUTCDay();
+}
+
+const minISO = (a: string, b: string) => (a < b ? a : b);
+const maxISO = (a: string, b: string) => (a > b ? a : b);
 
 function plural(n: number, word: string): string {
   return `${n} ${word}${n === 1 ? "" : "s"}`;
@@ -64,6 +72,21 @@ export function CalendarScreen() {
   const days = view === "week" ? 7 : nightsBetween(anchor, shiftMonth(anchor, 1));
   const end = addDays(start, days);
 
+  // The mobile grid draws the days either side of the month to complete its
+  // weeks, so the fetch has to cover them. Rendering 31 Jul in an August grid
+  // while only asking the server about August produces a cell that confidently
+  // reports "no stays" — worse than the blank padding it replaced.
+  // Unconditionally, not only in month view. `view` is desktop-only state with
+  // no viewport coupling, so a session that picked Week and then narrowed to a
+  // phone rendered a full month grid backed by a seven-day fetch — five weeks
+  // of cells confidently reporting nothing. One extra month of rows is a
+  // cheaper answer than a conditional that has to stay in step with a
+  // breakpoint it cannot see.
+  const gridStart = addDays(monthStart(anchor), -weekdayOf(monthStart(anchor)));
+  const gridEnd = addDays(gridStart, 42);
+  const fetchStart = minISO(start, gridStart);
+  const fetchEnd = maxISO(end, gridEnd);
+
   // Reset per month rather than storing a day that is no longer on screen.
   const selectedDay =
     picked && picked.slice(0, 7) === anchor.slice(0, 7)
@@ -72,11 +95,17 @@ export function CalendarScreen() {
         ? today
         : anchor;
 
-  const { data, isLoading } = useCalendar(start, end, selectedCondo?.id);
+  const { data, isLoading, isPlaceholderData } = useCalendar(
+    fetchStart,
+    fetchEnd,
+    selectedCondo?.id,
+    anchor,
+  );
   const calendarKey = qk.bookings.calendar({
-    start,
-    end,
+    start: fetchStart,
+    end: fetchEnd,
     condoId: selectedCondo?.id ?? null,
+    month: anchor,
   });
   const move = useMoveBooking(calendarKey);
   const { data: detail } = useBooking(detailId);
@@ -104,13 +133,34 @@ export function CalendarScreen() {
     return list;
   }, [data, status, search]);
 
+  // The fetch now spans the whole drawn grid, which is wider than the window
+  // the timeline draws. Anything the desktop view counts or filters by has to
+  // use the narrower set, or a stay in the previous month keeps a row alive
+  // that shows no bar.
+  const windowEvents = useMemo(
+    () => events.filter((e) => overlaps(e.check_in, e.check_out, start, end)),
+    [events, start, end],
+  );
+
   const resources = useMemo(() => {
     const all = data?.resources ?? [];
     // Hide rows that no longer have a matching bar, as the design does (2163).
     if (status === "all" && !search.trim()) return all;
-    const withBars = new Set(events.map((e) => e.condo_id));
+    const withBars = new Set(windowEvents.map((e) => e.condo_id));
     return all.filter((r) => withBars.has(r.id));
-  }, [data, events, status, search]);
+  }, [data, windowEvents, status, search]);
+
+  /** Tapping a greyed neighbouring day moves to its month and selects it.
+   *
+   * Without this the cell is tappable and does nothing: `selectedDay` rejects
+   * a pick outside the anchor month, so the selection silently snapped back to
+   * today. A dead control that looks live is worse than the blank padding
+   * these cells replaced. */
+  function selectDay(iso: string) {
+    const month = `${iso.slice(0, 7)}-01`;
+    if (month !== monthStart(anchor)) setAnchor(month);
+    setPicked(iso);
+  }
 
   async function onChange(change: DragChange) {
     try {
@@ -132,17 +182,20 @@ export function CalendarScreen() {
       <div className="page-header">
         <div>
           <h1>Calendar</h1>
-          <div className="t-small" style={{ marginTop: 6 }}>
+          <div className="t-small desktop-only" style={{ marginTop: 6 }}>
             {view === "week"
               ? `Week of ${start} · ${plural(resources.length, "unit")}`
               : `${monthLabel(anchor)} · ${plural(resources.length, "unit")} · ${plural(
-                  events.length,
+                  windowEvents.length,
                   "booking",
                 )}`}
           </div>
         </div>
+        {/* Desktop only. On mobile the same action is the floating button,
+            which is thumb-reachable and does not scroll away — two identical
+            primary actions on one screen is a defect, not a feature. */}
         {can("booking:write") ? (
-          <div className="actions">
+          <div className="actions desktop-only">
             <Link className="btn btn-primary" href="/bookings/new">
               <PlusIcon size={17} />
               New booking
@@ -195,7 +248,7 @@ export function CalendarScreen() {
         </div>
 
         <button
-          className="btn btn-outline btn-sm"
+          className="btn btn-outline btn-sm cal-today"
           onClick={() => {
             setView("month");
             setAnchor(monthStart(today));
@@ -206,7 +259,7 @@ export function CalendarScreen() {
           Today
         </button>
 
-        <div className="cal-monthnav">
+        <div className="cal-monthnav desktop-only">
           <button
             className="icon-btn"
             aria-label="Previous month"
@@ -234,7 +287,10 @@ export function CalendarScreen() {
           </button>
         </div>
 
-        <div style={{ flex: 1 }} />
+        {/* Pushes the filters right on desktop. On mobile the month nav
+            beside it is hidden, so the spacer becomes the first flex item,
+            grows to fill the row and strands each control on its own line. */}
+        <div className="desktop-only" style={{ flex: 1 }} />
 
         <select
           className="filter-sel cal-filter"
@@ -262,7 +318,7 @@ export function CalendarScreen() {
           <option value="maintenance">Maintenance</option>
         </select>
 
-        <div className="search-box" style={{ minWidth: 200, padding: "7px 12px" }}>
+        <div className="search-box cal-search" style={{ minWidth: 200, padding: "7px 12px" }}>
           <input
             placeholder="Search guest"
             value={search}
@@ -287,7 +343,7 @@ export function CalendarScreen() {
           <div className="desktop-only">
             <Timeline
               resources={resources}
-              events={events}
+              events={windowEvents}
               start={start}
               days={days}
               today={today}
@@ -296,20 +352,38 @@ export function CalendarScreen() {
               pendingId={move.isPending ? (move.variables?.id ?? null) : null}
             />
           </div>
+          {/* Always `anchor`, never the week's month. The grid is a month
+              view and `view` is a desktop-only concept, so pinning the grid to
+              `monthStart(start)` while the heading and the summary both used
+              `anchor` let them disagree — most visibly on the 1st of a month,
+              when the week starts in the previous one. */}
           <MonthGrid
-            anchor={view === "week" ? monthStart(start) : anchor}
+            anchor={anchor}
             events={events}
-            resources={resources}
+            resources={data?.resources ?? []}
+            days={data?.days ?? []}
+            summary={
+              data?.summary ?? { revenue_label: "฿0", booked_nights: 0, occupancy_pct: 0 }
+            }
+            monthLabel={monthLabel(anchor)}
+            // True while the newly-selected month is still in flight.
+            // Without it the figures beside the label belong to the month
+            // you just navigated away from.
+            stale={isPlaceholderData}
+            onPrev={() => setAnchor((a) => shiftMonth(a, -1))}
+            onNext={() => setAnchor((a) => shiftMonth(a, 1))}
             today={today}
             selected={selectedDay}
-            onSelect={setPicked}
+            onSelect={selectDay}
             onOpen={(id) => setParam({ booking: id })}
           />
         </>
       )}
 
-      {/* Legend — design lines 835–843 */}
+      {/* Legend — design lines 835–843. Desktop only: the mobile grid carries
+          its own legend inside the calendar card, where it is read. */}
       <div
+        className="desktop-only"
         style={{
           display: "flex",
           gap: 20,

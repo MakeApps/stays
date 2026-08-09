@@ -238,3 +238,8 @@ class CalendarQuery(BaseModel):
     start: date
     end: date | None = None
     condo_id: uuid.UUID | None = None
+    #: Which month the summary figures describe. The mobile grid fetches six
+    #: whole weeks so its leading and trailing cells hold real data, but its
+    #: header reports a month — without this the totals would cover 42 days
+    #: and span three months. Any date inside the month will do.
+    month: date | None = None

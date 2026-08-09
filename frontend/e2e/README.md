@@ -73,3 +73,33 @@ and that is exactly where divide-by-zero and stray `undefined` reach a money
 screen. `empty.mjs` walks all eight screens and fails on any of `NaN`,
 `undefined`, `null`, `[object Object]` or `Infinity` appearing in the rendered
 text.
+
+## A known flake in the backend suite
+
+The backend suite intermittently fails with a MySQL error on an unrelated
+statement — usually inside the `auth_client` login fixture:
+
+    OperationalError: (1213, 'Deadlock found when trying to get lock')
+    OperationalError: (1412, 'Table definition has changed, please retry')
+
+It looks exactly like a bug in whatever you just changed. It is not.
+
+`tests/conftest.py` commits for real and truncates every table between tests
+(see its docstring for why). That means the outer test session and the
+request's own session are two connections contending over the same rows, plus
+DDL from `create_all`/`drop_all` at session boundaries. Anything that adds
+load makes it likelier.
+
+Observed, honestly: it has failed and passed under both random and fixed
+ordering, and with the dev stack both running and stopped. Neither factor
+alone explains it. The most reliable configuration is
+
+    .\dev.ps1 -Stop
+    cd backend && .\.venv\Scripts\python.exe -m pytest -q
+
+but that is a probability, not a guarantee. Before investigating a failure
+here, re-run it. If it moves, it is this. If it reproduces on the same test
+twice, it is yours.
+
+This is pre-existing infrastructure fragility rather than test coupling, and
+it has been left visible rather than papered over with a retry.
