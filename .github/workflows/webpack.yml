@@ -1,0 +1,30 @@
+name: Deploy LeadMiner on push
+
+on:
+  push:
+    branches:
+      - production
+      - staging
+
+jobs:
+  web-deploy:
+    name: Deploy LeadMiner
+    runs-on: ubuntu-latest
+    steps:
+      - name: Install sshpass
+        run: sudo apt-get update && sudo apt-get install -y sshpass
+
+      - name: Deploy (staging)
+        if: github.ref == 'refs/heads/staging'
+        run: |
+          sshpass -p '${{ secrets.SSHPASSWORD }}' ssh -p 522 -o StrictHostKeyChecking=no thermalcoderz@thermalcode.com '
+            set -e
+            source ~/.nvm/nvm.sh
+            cd ~/stays && git fetch origin && git reset --hard origin/staging
+            cd ~/stays/backend && venv/bin/pip install -r requirements.txt
+            cd ~/stays/backend && venv/bin/python -m alembic upgrade head
+            cd ~/stays/frontend && npm ci && npm run dev
+            pm2 restart stays 
+            pm2 restart stays-front 
+
+          '
