@@ -21,7 +21,7 @@ jobs:
             set -e
             source ~/.nvm/nvm.sh
             cd ~/stays && git fetch origin && git reset --hard origin/staging
-            cd ~/stays/backend && venv/bin/pip install -r requirements.txt
+            #cd ~/stays/backend && venv/bin/pip install -r requirements.txt
             cd ~/stays/backend && venv/bin/python -m alembic upgrade head
             cd ~/stays/frontend && npm ci && npm run dev
             pm2 restart stays 
