@@ -20,6 +20,12 @@ jobs:
           sshpass -p '${{ secrets.SSHPASSWORD }}' ssh -p 522 -o StrictHostKeyChecking=no thermalcoderz@thermalcode.com '
             set -e
             source ~/.nvm/nvm.sh
+            # Match CI (node-version: 22). Without an explicit use, nvm falls back
+            # to the default alias (18), and npm silently skips optional deps that
+            # fail their engine check -- so @tailwindcss/oxide never gets its Linux
+            # binary and the build dies on "Cannot find native binding".
+            nvm install 22
+            nvm use 22
             cd ~/stays && git fetch origin && git reset --hard origin/staging
             #cd ~/stays/backend && venv/bin/pip install -r requirements.txt
             cd ~/stays/backend && venv/bin/python -m alembic upgrade head
