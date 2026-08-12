@@ -29,8 +29,12 @@ jobs:
             cd ~/stays && git fetch origin && git reset --hard origin/staging
             #cd ~/stays/backend && venv/bin/pip install -r requirements.txt
             cd ~/stays/backend && venv/bin/python -m alembic upgrade head
-            cd ~/stays/frontend && npm ci && npm run build   
-            pm2 restart stays 
-            pm2 restart stays-front 
+            cd ~/stays/frontend && npm ci && npm run build
+            # Only the build needs 22. pm2 is installed under the default Node and
+            # nvm scopes global binaries per version, so switch back or it vanishes
+            # from PATH -- and the apps keep the runtime they have always had.
+            nvm use default
+            pm2 restart stays
+            pm2 restart stays-front
 
           '
