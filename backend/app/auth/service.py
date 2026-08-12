@@ -16,11 +16,14 @@ from app.auth.tokens import (
     hash_refresh_token,
     mint_access_token,
 )
-from app.common.errors import AuthenticationError, InvalidCredentialsError
+from app.common import activity
+from app.common.errors import AuthenticationError, InvalidCredentialsError, ValidationError
 from app.config import Settings
 from app.extensions import db, password_hasher
+from app.models.activity_log import ActivityAction, ActivityEntity
 from app.models.base import utcnow, uuid7
 from app.models.user import RefreshToken, Role, User
+from app.services.user_service import MIN_PASSWORD_LENGTH
 
 log = structlog.get_logger("app.auth")
 
@@ -206,6 +209,81 @@ class AuthService:
         for token in db.session.scalars(
             select(RefreshToken).where(
                 RefreshToken.family_id == family_id, RefreshToken.revoked_at.is_(None)
+            )
+        ):
+            token.revoked_at = now
+
+    # ---------- change password ----------
+    def change_password(
+        self,
+        user: User,
+        *,
+        current_password: str,
+        new_password: str,
+    ) -> None:
+        """Change your own password, proving you know the old one.
+
+        Requiring the current password is the whole point: an unattended tab is
+        the threat, and without it anyone who walks up to one could lock the
+        owner out of their own account.
+
+        Every session dies here, this one included — which is what makes this
+        the lever for "someone else has my password". The caller does not get
+        signed out, because the endpoint mints them a fresh session afterwards;
+        it cannot instead *spare* their existing one, as the refresh cookie is
+        path-scoped to /auth/refresh and so never arrives here to be identified.
+        """
+        try:
+            password_hasher.verify(user.password_hash, current_password)
+        except (VerifyMismatchError, InvalidHashError) as exc:
+            # 422, not 401. A 401 means "your session is over" to everything
+            # above this — the browser client would refresh and then bounce to
+            # /login — when all that is wrong is one field of a form the user
+            # is still sitting in front of.
+            raise ValidationError(
+                "That is not your current password.",
+                details={"fields": {"current_password": ["Check this and try again."]}},
+            ) from exc
+
+        if len(new_password) < MIN_PASSWORD_LENGTH:
+            raise ValidationError(
+                f"Use at least {MIN_PASSWORD_LENGTH} characters.",
+                details={
+                    "fields": {"new_password": [f"At least {MIN_PASSWORD_LENGTH} characters."]}
+                },
+            )
+
+        unchanged = False
+        with suppress(VerifyMismatchError, InvalidHashError):
+            password_hasher.verify(user.password_hash, new_password)
+            unchanged = True
+        if unchanged:
+            raise ValidationError(
+                "That is already your password.",
+                details={"fields": {"new_password": ["Choose a different one."]}},
+            )
+
+        user.password_hash = password_hasher.hash(new_password)
+        self._revoke_all_sessions(user)
+
+        activity.record(
+            ActivityAction.UPDATED,
+            ActivityEntity.USER,
+            entity_id=user.id,
+            entity_label=user.full_name,
+            actor_id=user.id,
+            actor_name=user.full_name,
+            # The password is never logged, not even its length.
+            meta={"summary": f"{user.full_name} changed their password", "changed": ["password"]},
+        )
+
+    def _revoke_all_sessions(self, user: User) -> None:
+        # Runs before the replacement session is issued, so the new token is
+        # not caught by its own revocation sweep.
+        now = utcnow()
+        for token in db.session.scalars(
+            select(RefreshToken).where(
+                RefreshToken.user_id == user.id, RefreshToken.revoked_at.is_(None)
             )
         ):
             token.revoked_at = now

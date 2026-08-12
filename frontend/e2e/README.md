@@ -54,6 +54,23 @@ Kill and restart it:
   that hovering a bar updates the header readout, as the design does), global
   search across all three entity types with navigation, and a real CSV download
   checked for its UTF-8 BOM and row count.
+- `settings.mjs` — the settings screen and the password change on it: the
+  sidebar user pill reaching `/settings` at all, the client-side guards, and
+  that the new password works while the old one does not.
+
+`settings.mjs` really does change a password, so point it at a throwaway
+account rather than the admin:
+
+    E2E_EMAIL=someone@localshouts.test E2E_PASSWORD=their-password node e2e/settings.mjs
+
+It changes the password back at the end, so a clean run leaves the account as
+it found it. A crash midway does not — the account is then on the temporary
+password named at the top of the script.
+
+Its load-bearing check is that a *wrong* current password leaves you on the
+screen. The endpoint answers 422 rather than 401 for that case specifically so
+the browser client does not read it as a dead session and sign out the person
+trying to fix a typo; a 401 there would send them to `/login` instead.
 
 ## Two mutually exclusive fixtures
 

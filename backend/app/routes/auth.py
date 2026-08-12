@@ -17,6 +17,7 @@ from app.common.errors import AuthenticationError
 from app.extensions import db, limiter
 from app.models.activity_log import ActivityAction, ActivityEntity
 from app.models.user import User
+from app.services.user_service import MIN_PASSWORD_LENGTH
 
 bp = Blueprint("auth", __name__)
 
@@ -136,3 +137,52 @@ def logout() -> Any:
 @require_auth
 def me() -> Any:
     return jsonify({"user": _me(current_user())}), 200
+
+
+class ChangePasswordPayload(BaseModel):
+    current_password: str = Field(min_length=1, max_length=200)
+    new_password: str = Field(min_length=MIN_PASSWORD_LENGTH, max_length=256)
+
+
+@bp.post("/password")
+@require_auth
+# Rate limited like sign-in, not like an ordinary write: it checks a
+# credential, so it is a guessing target in exactly the same way.
+@limiter.limit(lambda: current_app.config["SETTINGS"].RATELIMIT_LOGIN)
+def change_password() -> Any:
+    """Self-service, so it lives here rather than under /users.
+
+    That blueprint is admin-only, which would leave a manager with no way to
+    change their own password at all.
+    """
+    payload = parse_body(ChangePasswordPayload)
+    user = current_user()
+    service = _service()
+
+    service.change_password(
+        user,
+        current_password=payload.current_password,
+        new_password=payload.new_password,
+    )
+    # Every session, including this one, was just revoked. Replacing it here is
+    # what keeps the caller signed in — without this they would keep working
+    # until the access token expired and then be bounced to /login.
+    #
+    # Not remembered: the original choice is not recoverable (only the cookie's
+    # lifetime ever encoded it, and that cookie does not reach this path), and
+    # after a credential change the shorter-lived option is the safer default.
+    session = service.issue_session(
+        user,
+        remember=False,
+        user_agent=request.headers.get("User-Agent"),
+        ip=request.remote_addr,
+    )
+    db.session.commit()
+
+    response = make_response(
+        jsonify(
+            {"user": _me(user), "access_expires_at": session.access_expires_at.isoformat()}
+        ),
+        200,
+    )
+    return set_session_cookies(response, session, current_app.config["SETTINGS"])

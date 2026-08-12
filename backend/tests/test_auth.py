@@ -226,3 +226,166 @@ class TestHealth:
         r = client.get("/version")
         assert r.status_code == 200
         assert r.get_json()["env"] == "testing"
+
+
+class TestChangePassword:
+    """Self-service password change.
+
+    Lives under /auth rather than /users because the users blueprint is
+    admin-only, which would leave a manager unable to change their own.
+    """
+
+    NEW = "a-much-better-secret"
+
+    def test_changes_the_password_and_signs_in_with_it(
+        self, auth_client: FlaskClient, admin: User
+    ) -> None:
+        r = auth_client.post(
+            "/api/v1/auth/password",
+            json={"current_password": ADMIN_PASSWORD, "new_password": self.NEW},
+        )
+        assert r.status_code == 200, r.get_json()
+
+        auth_client.post("/api/v1/auth/logout")
+        assert (
+            auth_client.post(
+                "/api/v1/auth/login", json={"email": ADMIN_EMAIL, "password": self.NEW}
+            ).status_code
+            == 200
+        )
+
+    def test_old_password_stops_working(self, auth_client: FlaskClient, admin: User) -> None:
+        auth_client.post(
+            "/api/v1/auth/password",
+            json={"current_password": ADMIN_PASSWORD, "new_password": self.NEW},
+        )
+        auth_client.post("/api/v1/auth/logout")
+        r = auth_client.post(
+            "/api/v1/auth/login", json={"email": ADMIN_EMAIL, "password": ADMIN_PASSWORD}
+        )
+        assert r.status_code == 401
+
+    def test_wrong_current_password_is_a_field_error_not_a_401(
+        self, auth_client: FlaskClient
+    ) -> None:
+        """422, not 401.
+
+        A 401 tells every layer above "your session is over" — the browser
+        client would refresh and bounce to /login — when one field of a form is
+        simply wrong.
+        """
+        r = auth_client.post(
+            "/api/v1/auth/password",
+            json={"current_password": "not-my-password", "new_password": self.NEW},
+        )
+        assert r.status_code == 422
+        assert "current_password" in r.get_json()["error"]["details"]["fields"]
+
+    def test_wrong_current_password_leaves_the_old_one_working(
+        self, auth_client: FlaskClient
+    ) -> None:
+        auth_client.post(
+            "/api/v1/auth/password",
+            json={"current_password": "not-my-password", "new_password": self.NEW},
+        )
+        auth_client.post("/api/v1/auth/logout")
+        assert (
+            auth_client.post(
+                "/api/v1/auth/login", json={"email": ADMIN_EMAIL, "password": ADMIN_PASSWORD}
+            ).status_code
+            == 200
+        )
+
+    def test_short_new_password_is_rejected(self, auth_client: FlaskClient) -> None:
+        r = auth_client.post(
+            "/api/v1/auth/password",
+            json={"current_password": ADMIN_PASSWORD, "new_password": "short"},
+        )
+        assert r.status_code == 422
+        assert "new_password" in r.get_json()["error"]["details"]["fields"]
+
+    def test_reusing_the_same_password_is_rejected(self, auth_client: FlaskClient) -> None:
+        r = auth_client.post(
+            "/api/v1/auth/password",
+            json={"current_password": ADMIN_PASSWORD, "new_password": ADMIN_PASSWORD},
+        )
+        assert r.status_code == 422
+        assert "new_password" in r.get_json()["error"]["details"]["fields"]
+
+    def test_requires_a_session(self, client: FlaskClient, admin: User) -> None:
+        r = client.post(
+            "/api/v1/auth/password",
+            json={"current_password": ADMIN_PASSWORD, "new_password": self.NEW},
+        )
+        assert r.status_code == 401
+
+    def test_the_password_never_reaches_the_activity_log(
+        self, auth_client: FlaskClient, session: Any, admin: User
+    ) -> None:
+        auth_client.post(
+            "/api/v1/auth/password",
+            json={"current_password": ADMIN_PASSWORD, "new_password": self.NEW},
+        )
+        from app.models.activity_log import ActivityLog
+
+        entries = list(session.scalars(select(ActivityLog)))
+        blob = " ".join(str(e.meta) for e in entries)
+        assert self.NEW not in blob and ADMIN_PASSWORD not in blob
+
+
+class TestChangePasswordSessions:
+    """Other devices are signed out; the one you are sitting at is not."""
+
+    NEW = "a-much-better-secret"
+
+    def test_other_sessions_are_revoked(
+        self, client: FlaskClient, app: Flask, admin: User, session: Any
+    ) -> None:
+        # A second device: its own client, so its own cookie jar and family.
+        other = app.test_client()
+        assert (
+            other.post(
+                "/api/v1/auth/login", json={"email": ADMIN_EMAIL, "password": ADMIN_PASSWORD}
+            ).status_code
+            == 200
+        )
+        assert (
+            client.post(
+                "/api/v1/auth/login", json={"email": ADMIN_EMAIL, "password": ADMIN_PASSWORD}
+            ).status_code
+            == 200
+        )
+
+        assert (
+            client.post(
+                "/api/v1/auth/password",
+                json={"current_password": ADMIN_PASSWORD, "new_password": self.NEW},
+            ).status_code
+            == 200
+        )
+
+        # The other device cannot renew: its family died with the old password.
+        assert other.post("/api/v1/auth/refresh").status_code == 401
+
+    def test_the_calling_session_survives(
+        self, client: FlaskClient, admin: User
+    ) -> None:
+        assert (
+            client.post(
+                "/api/v1/auth/login", json={"email": ADMIN_EMAIL, "password": ADMIN_PASSWORD}
+            ).status_code
+            == 200
+        )
+        changed = client.post(
+            "/api/v1/auth/password",
+            json={"current_password": ADMIN_PASSWORD, "new_password": self.NEW},
+        )
+        assert changed.status_code == 200
+
+        # The old session was revoked with all the others, so staying signed in
+        # depends on the endpoint handing back a replacement pair.
+        assert _cookie(changed, ACCESS_COOKIE) and _cookie(changed, REFRESH_COOKIE)
+
+        # Still signed in, and still able to rotate — no re-login, no dead tab.
+        assert client.get("/api/v1/auth/me").status_code == 200
+        assert client.post("/api/v1/auth/refresh").status_code == 200

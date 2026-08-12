@@ -202,6 +202,19 @@ export function AppShell({
             style={{ background: "var(--surface-2)" }}
             title={`${user?.full_name} · ${user?.role}`}
           >
+            {/* Overlaid rather than wrapped around the avatar and name. The
+                rail depends on those being direct flex children of the pill —
+                it wraps the sign-out button onto its own line and hides
+                `.user-meta` — and a wrapper element would break that. Out of
+                flow, so it covers the pill without joining the layout; the
+                pill is already `position: relative` for exactly this. */}
+            <Link
+              href="/settings"
+              className="user-pill-link"
+              style={{ position: "absolute", inset: 0, borderRadius: 10 }}
+              aria-label="Settings"
+              aria-current={pathname === "/settings" ? "page" : undefined}
+            />
             <div className="user-avatar">{initials(user?.full_name ?? "?")}</div>
             <div className="user-meta" style={{ minWidth: 0, flex: 1 }}>
               <div className="user-name">{user?.full_name}</div>
@@ -217,6 +230,9 @@ export function AppShell({
               onClick={signOut}
               disabled={signingOut}
               title="Sign out"
+              // Lifted over the settings overlay, which would otherwise take
+              // the click that signs you out.
+              style={{ position: "relative", zIndex: 1 }}
               aria-label="Sign out"
             >
               <LogoutIcon size={15} />
