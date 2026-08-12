@@ -12,12 +12,13 @@ from flask import Blueprint, Response, jsonify, stream_with_context
 from pydantic import BaseModel, Field
 from sqlalchemy import func, or_, select
 
-from app.auth.decorators import require_permission
+from app.auth.decorators import current_user, require_permission
 from app.auth.permissions import (
     ACTIVITY_READ,
     BOOKING_READ,
     DASHBOARD_READ,
     INCOME_EXPORT,
+    can,
 )
 from app.common import activity as activity_helper
 from app.common.api import parse_query
@@ -177,10 +178,19 @@ def dashboard() -> Any:
         )
     )
 
-    recent = list(
-        db.session.scalars(
-            select(ActivityLog).order_by(ActivityLog.created_at.desc()).limit(6)
+    # This endpoint only needs DASHBOARD_READ, but the feed it embeds is the
+    # audit trail — every other account's actions. Gating it in the UI alone
+    # would still have shipped the rows to anyone who opened the network tab,
+    # so the capability is checked here and the query is skipped entirely.
+    may_read_activity = can(current_user().role, ACTIVITY_READ)
+    recent = (
+        list(
+            db.session.scalars(
+                select(ActivityLog).order_by(ActivityLog.created_at.desc()).limit(6)
+            )
         )
+        if may_read_activity
+        else []
     )
 
     nights = analytics.nights_between(start, end)
@@ -263,7 +273,14 @@ def dashboard() -> Any:
                 }
                 for b in upcoming
             ],
-            "activity": [activity_helper.render(a) for a in recent],
+            # Omitted rather than emptied. An empty list renders as "Nothing has
+            # happened yet", which is a different claim and an untrue one; an
+            # absent key lets the client drop the card altogether.
+            **(
+                {"activity": [activity_helper.render(a) for a in recent]}
+                if may_read_activity
+                else {}
+            ),
         }
     ), 200
 

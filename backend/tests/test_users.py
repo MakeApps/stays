@@ -33,14 +33,15 @@ def create(client: FlaskClient, **overrides: Any) -> dict[str, Any]:
 
 
 class TestWhatANewAccountCanDo:
-    def test_a_manager_has_everything_except_administering_accounts(self) -> None:
+    def test_a_manager_has_everything_except_accounts_and_the_audit_trail(self) -> None:
         """The product decision, expressed as a set difference.
 
-        Nobody hits a permission wall doing the job, and the one power that
-        can lock the owner out of their own system stays with the admin.
+        Nobody hits a permission wall doing the job. What stays with the admin
+        is the power that can lock the owner out of their own system, and the
+        feed showing what every other employee did.
         """
         granted = capabilities_for(Role.MANAGER)
-        assert ALL_CAPABILITIES - granted == {"user:read", "user:write"}
+        assert ALL_CAPABILITIES - granted == {"user:read", "user:write", "activity:read"}
 
     def test_a_new_account_can_sign_in_and_work(self, auth_client: FlaskClient) -> None:
         created = create(auth_client)
@@ -73,6 +74,36 @@ class TestWhatANewAccountCanDo:
 
         assert fresh.get("/api/v1/users").status_code == 403
         assert fresh.post("/api/v1/users", json=NEW_USER).status_code == 403
+
+    def test_a_new_account_is_not_sent_the_activity_feed(
+        self, auth_client: FlaskClient
+    ) -> None:
+        """Withheld from the payload, not merely hidden on the dashboard.
+
+        /dashboard needs only dashboard:read, so a manager reaches it — and it
+        embeds the audit trail. Hiding the card in React would still have put
+        every other account's actions one network tab away.
+        """
+        create(auth_client)
+        fresh = auth_client.application.test_client()
+        fresh.post(
+            "/api/v1/auth/login",
+            json={"email": NEW_USER["email"], "password": NEW_USER["password"]},
+        )
+
+        assert fresh.get("/api/v1/dashboard/activity").status_code == 403
+
+        board = fresh.get("/api/v1/dashboard")
+        assert board.status_code == 200, board.get_json()
+        assert "activity" not in board.get_json()
+
+    def test_the_admin_still_gets_the_activity_feed(
+        self, auth_client: FlaskClient
+    ) -> None:
+        board = auth_client.get("/api/v1/dashboard")
+        assert board.status_code == 200
+        assert isinstance(board.get_json()["activity"], list)
+        assert auth_client.get("/api/v1/dashboard/activity").status_code == 200
 
 
 class TestCreating:

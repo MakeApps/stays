@@ -83,3 +83,25 @@ class TestStaff:
     def test_withheld_from_destructive_and_export(self) -> None:
         for capability in (perms.CONDO_DELETE, perms.INCOME_EXPORT, perms.USER_WRITE):
             assert not can(Role.STAFF, capability)
+
+
+class TestActivityFeedIsAdminOnly:
+    """The audit trail shows one employee what every other one did.
+
+    Read access is the admin's alone, so the assertions that matter are that
+    no other role holds it — including roles the product cannot create yet,
+    which would otherwise inherit it the day they are switched on.
+    """
+
+    def test_admin_can_read_it(self) -> None:
+        assert can(Role.ADMIN, perms.ACTIVITY_READ)
+
+    @pytest.mark.parametrize(
+        "role", [Role.MANAGER, Role.STAFF, Role.ACCOUNTANT, Role.CLEANER]
+    )
+    def test_no_other_role_can(self, role: Role) -> None:
+        assert not can(role, perms.ACTIVITY_READ)
+
+    def test_the_rest_of_the_dashboard_is_untouched(self) -> None:
+        # Withholding the feed must not cost a manager the dashboard itself.
+        assert can(Role.MANAGER, perms.DASHBOARD_READ)

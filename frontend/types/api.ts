@@ -430,7 +430,8 @@ export interface DashboardResponse {
     monthly_lease_label: string;
   }[];
   upcoming: UpcomingBooking[];
-  activity: ActivityEntry[];
+  /** Absent unless the caller holds `activity:read`, which only an admin does. */
+  activity?: ActivityEntry[];
 }
 
 export interface SearchHit {

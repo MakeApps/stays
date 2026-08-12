@@ -21,6 +21,7 @@ import {
   formatDay,
   leaseCountdown,
 } from "@/features/condos/display";
+import type { ActivityEntry } from "@/types/api";
 
 function dayLabel(iso: string): string {
   return new Date(`${iso}T00:00:00Z`).toLocaleDateString("en-GB", {
@@ -480,54 +481,66 @@ export function DashboardScreen() {
           )}
         </div>
 
-        <div className="card" style={{ flex: "1 1 300px", minWidth: 0 }}>
-          <div className="card-head">
-            <h3 className="card-title">Recent activity</h3>
-          </div>
-          {data.activity.length === 0 ? (
-            <div className="t-small" style={{ padding: "24px 0", textAlign: "center" }}>
-              Nothing has happened yet.
-            </div>
-          ) : (
-            <div style={{ display: "flex", flexDirection: "column", gap: 2 }}>
-              {data.activity.map((a, i) => (
-                <div key={a.id} style={{ display: "flex", gap: 12, padding: "10px 0" }}>
-                  <div
-                    style={{ display: "flex", flexDirection: "column", alignItems: "center", flex: "none" }}
-                  >
-                    <div
-                      style={{
-                        width: 9,
-                        height: 9,
-                        borderRadius: 999,
-                        marginTop: 5,
-                        background: DOT[a.kind] ?? "var(--brand-purple)",
-                      }}
-                    />
-                    {i < data.activity.length - 1 ? (
-                      <div style={{ width: 1, flex: 1, background: "var(--line)", marginTop: 4 }} />
-                    ) : null}
-                  </div>
-                  <div style={{ minWidth: 0, paddingBottom: 2 }}>
-                    <div style={{ font: "600 13px/1.4 var(--font-sans)", color: "var(--fg)" }}>
-                      {a.title}
-                    </div>
-                    {a.body ? (
-                      <div className="t-small" style={{ marginTop: 2 }}>
-                        {a.body}
-                      </div>
-                    ) : null}
-                    <div className="t-caption" style={{ color: "var(--fg-4)", marginTop: 4 }}>
-                      {relative(a.when)}
-                    </div>
-                  </div>
-                </div>
-              ))}
-            </div>
-          )}
-        </div>
+        {/* Admin only. The server omits `activity` from the payload for
+            everyone else, so this is the card disappearing rather than the
+            feed being withheld — the neighbouring card grows to fill the row. */}
+        {can("activity:read") && data.activity ? (
+          <ActivityCard entries={data.activity} />
+        ) : null}
       </div>
     </section>
+  );
+}
+
+/** Extracted only so the capability check above reads as one line. */
+function ActivityCard({ entries }: { entries: ActivityEntry[] }) {
+  return (
+    <div className="card" style={{ flex: "1 1 300px", minWidth: 0 }}>
+      <div className="card-head">
+        <h3 className="card-title">Recent activity</h3>
+      </div>
+      {entries.length === 0 ? (
+        <div className="t-small" style={{ padding: "24px 0", textAlign: "center" }}>
+          Nothing has happened yet.
+        </div>
+      ) : (
+        <div style={{ display: "flex", flexDirection: "column", gap: 2 }}>
+          {entries.map((a, i) => (
+            <div key={a.id} style={{ display: "flex", gap: 12, padding: "10px 0" }}>
+              <div
+                style={{ display: "flex", flexDirection: "column", alignItems: "center", flex: "none" }}
+              >
+                <div
+                  style={{
+                    width: 9,
+                    height: 9,
+                    borderRadius: 999,
+                    marginTop: 5,
+                    background: DOT[a.kind] ?? "var(--brand-purple)",
+                  }}
+                />
+                {i < entries.length - 1 ? (
+                  <div style={{ width: 1, flex: 1, background: "var(--line)", marginTop: 4 }} />
+                ) : null}
+              </div>
+              <div style={{ minWidth: 0, paddingBottom: 2 }}>
+                <div style={{ font: "600 13px/1.4 var(--font-sans)", color: "var(--fg)" }}>
+                  {a.title}
+                </div>
+                {a.body ? (
+                  <div className="t-small" style={{ marginTop: 2 }}>
+                    {a.body}
+                  </div>
+                ) : null}
+                <div className="t-caption" style={{ color: "var(--fg-4)", marginTop: 4 }}>
+                  {relative(a.when)}
+                </div>
+              </div>
+            </div>
+          ))}
+        </div>
+      )}
+    </div>
   );
 }
 
