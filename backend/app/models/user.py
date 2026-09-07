@@ -11,7 +11,7 @@ import enum
 import uuid
 from datetime import datetime
 
-from sqlalchemy import Boolean, DateTime, Enum, ForeignKey, Index, String
+from sqlalchemy import Boolean, DateTime, ForeignKey, Index, String
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from app.models.base import GUID, AuditMixin, Base, SoftDeleteMixin, UUIDPrimaryKeyMixin
@@ -36,11 +36,10 @@ class User(Base, UUIDPrimaryKeyMixin, AuditMixin, SoftDeleteMixin):
     # Argon2id hashes are ~100 chars; 255 leaves room for parameter changes.
     password_hash: Mapped[str] = mapped_column(String(255), nullable=False)
     full_name: Mapped[str] = mapped_column(String(160), nullable=False)
-    role: Mapped[Role] = mapped_column(
-        Enum(Role, values_callable=lambda e: [m.value for m in e], native_enum=False, length=20),
-        nullable=False,
-        default=Role.ADMIN,
-    )
+    # No role column. Being an admin is something you are *within* an
+    # organisation, so it lives on OrganisationMember -- see
+    # app/models/organisation.py. A column here would disagree with it the
+    # first time someone belongs to two.
     is_active: Mapped[bool] = mapped_column(Boolean, nullable=False, default=True)
     last_login_at: Mapped[datetime | None] = mapped_column(DateTime, nullable=True)
 
@@ -54,12 +53,12 @@ class User(Base, UUIDPrimaryKeyMixin, AuditMixin, SoftDeleteMixin):
         # a plain UNIQUE(email) would make an address unusable forever once a
         # user is soft-deleted.
         Index("ix_users_email", "email"),
-        Index("ix_users_role_active", "role", "is_active"),
+        Index("ix_users_is_active", "is_active"),
         Index("ix_users_deleted_at", "deleted_at"),
     )
 
     def __repr__(self) -> str:  # pragma: no cover - debugging aid
-        return f"<User {self.email} role={self.role.value}>"
+        return f"<User {self.email}>"
 
 
 class RefreshToken(Base, UUIDPrimaryKeyMixin):
@@ -74,6 +73,13 @@ class RefreshToken(Base, UUIDPrimaryKeyMixin):
 
     user_id: Mapped[uuid.UUID] = mapped_column(
         GUID, ForeignKey("users.id", ondelete="CASCADE"), nullable=False
+    )
+    # Which organisation this session is acting in, so a refresh lands the user
+    # back where they were rather than guessing at their first membership.
+    # A plain column, not OrganisationScopedMixin: refresh happens before any
+    # scope is established, so the row has to be findable by hash alone.
+    organisation_id: Mapped[uuid.UUID] = mapped_column(
+        GUID, ForeignKey("organisations.id"), nullable=False
     )
     # SHA-256 hex of the opaque token. Storing the raw token would make a
     # database read equivalent to a session hijack.

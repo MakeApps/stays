@@ -35,6 +35,10 @@ class Settings(BaseSettings):
     APP_NAME: str = "LocalShouts Stays"
     APP_TIMEZONE: str = "Asia/Bangkok"
     API_PREFIX: str = "/api/v1"
+
+    #: Used only when bootstrapping an empty system, so `create-admin` has
+    #: an organisation to make the admin an admin of.
+    DEFAULT_ORGANISATION_NAME: str = "LocalShouts Stays"
     APP_GIT_SHA: str = "dev"
     APP_VERSION: str = "0.1.0"
 

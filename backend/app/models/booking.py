@@ -33,7 +33,14 @@ from sqlalchemy import (
 )
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
-from app.models.base import GUID, AuditMixin, Base, SoftDeleteMixin, UUIDPrimaryKeyMixin
+from app.models.base import (
+    GUID,
+    AuditMixin,
+    Base,
+    OrganisationScopedMixin,
+    SoftDeleteMixin,
+    UUIDPrimaryKeyMixin,
+)
 from app.models.condo import Condo
 
 
@@ -49,7 +56,7 @@ class PricingModeColumn(str, enum.Enum):
     TOTAL = "total"
 
 
-class Booking(Base, UUIDPrimaryKeyMixin, AuditMixin, SoftDeleteMixin):
+class Booking(Base, UUIDPrimaryKeyMixin, OrganisationScopedMixin, AuditMixin, SoftDeleteMixin):
     __tablename__ = "bookings"
 
     condo_id: Mapped[uuid.UUID] = mapped_column(

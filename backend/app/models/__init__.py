@@ -10,6 +10,7 @@ from app.models.base import (
     GUID,
     AuditMixin,
     Base,
+    OrganisationScopedMixin,
     SoftDeleteMixin,
     TimestampMixin,
     UUIDPrimaryKeyMixin,
@@ -24,6 +25,7 @@ from app.models.expense import (
     ExpenseStatus,
     PaymentMethod,
 )
+from app.models.organisation import Organisation, OrganisationMember
 from app.models.user import RefreshToken, Role, User
 
 __all__ = [
@@ -42,6 +44,9 @@ __all__ = [
     "Expense",
     "ExpenseCategory",
     "ExpenseStatus",
+    "Organisation",
+    "OrganisationMember",
+    "OrganisationScopedMixin",
     "PaymentMethod",
     "PricingModeColumn",
     "PropertyType",

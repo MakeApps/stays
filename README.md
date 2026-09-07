@@ -56,6 +56,8 @@ cp .env.example .env.local        # then fill SECRET_KEY and JWT_SECRET:
 mysql -u root -e "CREATE DATABASE localshouts_stays CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;"
 alembic upgrade head
 flask --app wsgi create-admin     # prints a generated password if ADMIN_PASSWORD is blank
+                                  # also creates the first organisation, with
+                                  # the admin as its admin
 flask --app wsgi seed-demo        # the nine condos from the design
 
 flask --app wsgi run --port 8000
@@ -64,6 +66,13 @@ flask --app wsgi run --port 8000
 Useful commands: `flask --app wsgi routes-audit` lists every endpoint and the
 capability it requires; `flask --app wsgi purge-tokens` clears expired refresh
 tokens.
+
+Everything below an organisation belongs to it: condos, bookings, expenses,
+the categories they are filed under, and the activity feed. `seed-demo`,
+`seed-lookups` and `reset-data` therefore act on one, and take `--org NAME`
+when more than one exists — with several present they refuse rather than guess,
+because seeding demo data into a real customer's account is not undone by
+editing a row.
 
 ### Frontend
 

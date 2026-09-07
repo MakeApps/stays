@@ -40,6 +40,10 @@ ACTIVITY_READ: Final = "activity:read"
 USER_READ: Final = "user:read"
 USER_WRITE: Final = "user:write"
 
+#: Creating a new organisation, and renaming this one. Held by admins
+#: only, so a manager cannot spin up a tenant of their own.
+ORGANISATION_WRITE: Final = "organisation:write"
+
 ALL_CAPABILITIES: Final[frozenset[str]] = frozenset(
     {
         CONDO_READ,
@@ -59,6 +63,7 @@ ALL_CAPABILITIES: Final[frozenset[str]] = frozenset(
         ACTIVITY_READ,
         USER_READ,
         USER_WRITE,
+        ORGANISATION_WRITE,
     }
 )
 
@@ -71,7 +76,7 @@ ALL_CAPABILITIES: Final[frozenset[str]] = frozenset(
 # still allows listing users — a different intent, kept intact rather than
 # quietly redefined under a role that already had a documented meaning.
 _MANAGER: Final[frozenset[str]] = frozenset(
-    ALL_CAPABILITIES - {USER_READ, USER_WRITE, ACTIVITY_READ}
+    ALL_CAPABILITIES - {USER_READ, USER_WRITE, ACTIVITY_READ, ORGANISATION_WRITE}
 )
 
 # A cleaner needs to know which unit to turn over and when — and nothing about
@@ -95,7 +100,7 @@ _ACCOUNTANT: Final[frozenset[str]] = frozenset(
 )
 
 _STAFF: Final[frozenset[str]] = frozenset(
-    ALL_CAPABILITIES - {CONDO_DELETE, INCOME_EXPORT, USER_WRITE, ACTIVITY_READ}
+    ALL_CAPABILITIES - {CONDO_DELETE, INCOME_EXPORT, USER_WRITE, ACTIVITY_READ, ORGANISATION_WRITE}
 )
 
 MATRIX: Final[dict[Role, frozenset[str]]] = {

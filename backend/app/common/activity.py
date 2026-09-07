@@ -29,16 +29,29 @@ def record(
     meta: dict[str, Any] | None = None,
     actor_id: uuid.UUID | None = None,
     actor_name: str | None = None,
+    organisation_id: uuid.UUID | None = None,
 ) -> ActivityLog:
+    from app.common.current_org import get_current_org_id
     from app.common.current_user import get_current_user_id
 
     if actor_id is None:
         actor_id = get_current_user_id()
+    # Ambient by default. Passed explicitly only when the row belongs somewhere
+    # other than where the request is acting -- creating an organisation is the
+    # case that matters, since the acting scope is still the previous one.
+    if organisation_id is None:
+        organisation_id = get_current_org_id()
+    if organisation_id is None:
+        raise RuntimeError(
+            "Activity outside any organisation. Pass organisation_id, or run "
+            "inside app.common.current_org.scoped_to()."
+        )
     if actor_name is None and has_request_context():
         user = getattr(g, "current_user", None)
         actor_name = getattr(user, "full_name", None)
 
     entry = ActivityLog(
+        organisation_id=organisation_id,
         actor_id=actor_id,
         actor_name=actor_name,
         action=action,
@@ -54,6 +67,8 @@ def record(
 
 
 _TITLES: dict[tuple[ActivityEntity, ActivityAction], str] = {
+    (ActivityEntity.ORGANISATION, ActivityAction.CREATED): "Organisation created",
+    (ActivityEntity.ORGANISATION, ActivityAction.UPDATED): "Organisation updated",
     (ActivityEntity.CONDO, ActivityAction.CREATED): "Condo added",
     (ActivityEntity.CONDO, ActivityAction.UPDATED): "Condo updated",
     (ActivityEntity.CONDO, ActivityAction.DELETED): "Condo removed",

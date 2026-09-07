@@ -22,9 +22,18 @@ from typing import Any, Self
 
 from sqlalchemy import BINARY, DateTime, ForeignKey, MetaData, event
 from sqlalchemy.engine import Dialect
-from sqlalchemy.orm import DeclarativeBase, Mapped, mapped_column, registry
+from sqlalchemy.orm import (
+    DeclarativeBase,
+    Mapped,
+    Session,
+    declared_attr,
+    mapped_column,
+    registry,
+    with_loader_criteria,
+)
 from sqlalchemy.types import TypeDecorator
 
+from app.common.current_org import get_current_org_id
 from app.common.current_user import get_current_user_id
 
 # Deterministic constraint names. Without this, Alembic autogenerate cannot
@@ -129,6 +138,19 @@ class AuditMixin(TimestampMixin):
     )
 
 
+class OrganisationScopedMixin:
+    """Rows that belong to exactly one tenant.
+
+    Carrying the column is only half of it: see ``_apply_organisation_scope``
+    below, which is what makes forgetting the filter impossible rather than
+    merely discouraged.
+    """
+
+    @declared_attr
+    def organisation_id(cls) -> Mapped[uuid.UUID]:  # noqa: N805
+        return mapped_column(GUID, ForeignKey("organisations.id"), nullable=False, index=True)
+
+
 class SoftDeleteMixin:
     # Indexed per-model, usually as the leading column of a composite that also
     # covers the list query's sort order.
@@ -144,6 +166,32 @@ class SoftDeleteMixin:
 
 
 @event.listens_for(Base, "before_insert", propagate=True)
+def _stamp_organisation(mapper: Any, connection: Any, target: Any) -> None:
+    """New rows land in the organisation being acted in.
+
+    The alternative is passing ``organisation_id=`` at every construction site
+    in every service, which is the same bet as a per-query filter and loses it
+    the same way -- silently, once, in a place nobody looks again.
+
+    Raises rather than defaulting when nothing is in scope. A row that belongs
+    to no tenant is not a thing this schema has, and the loud failure is how a
+    forgotten ``scoped_to`` in a seed or a CLI command gets found.
+    """
+    if not isinstance(target, OrganisationScopedMixin):
+        return
+    if getattr(target, "organisation_id", None) is not None:
+        return
+
+    org_id = get_current_org_id()
+    if org_id is None:
+        raise RuntimeError(
+            f"{type(target).__name__} written outside any organisation. Set one with "
+            "app.common.current_org.scoped_to(), or pass organisation_id explicitly."
+        )
+    target.organisation_id = org_id
+
+
+@event.listens_for(Base, "before_insert", propagate=True)
 def _stamp_created_by(mapper: Any, connection: Any, target: Any) -> None:
     if isinstance(target, AuditMixin) and target.created_by is None:
         actor = get_current_user_id()
@@ -155,3 +203,36 @@ def _stamp_created_by(mapper: Any, connection: Any, target: Any) -> None:
 def _stamp_updated_by(mapper: Any, connection: Any, target: Any) -> None:
     if isinstance(target, AuditMixin) and (actor := get_current_user_id()) is not None:
         target.updated_by = actor
+
+
+@event.listens_for(Session, "do_orm_execute")
+def _apply_organisation_scope(state: Any) -> None:
+    """Confine every read to the acting organisation.
+
+    A filter per call site would be forgotten exactly once, and the failure is
+    silent: one tenant's revenue quietly added to another's dashboard. Doing it
+    here means a new query is scoped before anyone remembers to think about it,
+    and it reaches relationship loads and joins too, which a hand-written
+    ``.where()`` on the outer statement does not.
+
+    Unscoped when no organisation is set. That is not a hole to close: sign-in
+    must find the user before it knows where they are acting, and migrations,
+    seeds and the CLI work across tenants by design. What closes it is
+    ``require_auth``, which sets the scope for every authenticated request.
+    """
+    if not state.is_select or state.is_column_load or state.is_relationship_load:
+        return
+    if state.execution_options.get("include_all_organisations", False):
+        return
+
+    org_id = get_current_org_id()
+    if org_id is None:
+        return
+
+    state.statement = state.statement.options(
+        with_loader_criteria(
+            OrganisationScopedMixin,
+            lambda cls: cls.organisation_id == org_id,
+            include_aliases=True,
+        )
+    )

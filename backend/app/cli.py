@@ -10,9 +10,72 @@ from flask import Flask
 from sqlalchemy import select
 
 from app.auth.service import AuthService
+from app.common.current_org import scoped_to
 from app.common.current_user import acting_as
 from app.extensions import db
+from app.models.organisation import Organisation
 from app.models.user import Role, User
+
+
+def _ensure_organisation(user: User, default_name: str) -> Organisation:
+    """Make sure the bootstrap admin is an admin of something.
+
+    Joins the first existing organisation rather than making a second one:
+    running create-admin twice on a live system should not quietly split it
+    into two tenants.
+    """
+    from app.models.organisation import OrganisationMember
+    from app.services.organisation_service import OrganisationService
+
+    service = OrganisationService(db.session)
+    organisation = db.session.scalars(
+        select(Organisation)
+        .where(Organisation.deleted_at.is_(None))
+        .order_by(Organisation.created_at)
+    ).first()
+
+    if organisation is None:
+        with acting_as(user.id):
+            organisation = service.create(name=default_name, owner=user)
+        return organisation
+
+    member = service.membership(organisation.id, user.id)
+    if member is None:
+        db.session.add(
+            OrganisationMember(
+                organisation_id=organisation.id, user_id=user.id, role=Role.ADMIN
+            )
+        )
+        db.session.flush()
+    elif member.role is not Role.ADMIN:
+        member.role = Role.ADMIN
+    return organisation
+
+
+def _resolve_organisation(name: str | None = None) -> Organisation:
+    """Which organisation a CLI command acts on.
+
+    The commands below all write tenant-owned rows, and the CLI has no session
+    to infer one from. Named explicitly with --org, otherwise the only
+    organisation there is; ambiguity is refused rather than guessed, because
+    seeding demo data into the wrong customer's account is not recoverable by
+    editing a row.
+    """
+    stmt = select(Organisation).where(Organisation.deleted_at.is_(None))
+    if name:
+        stmt = stmt.where(Organisation.name == name)
+    organisations = list(db.session.scalars(stmt.order_by(Organisation.created_at)))
+
+    if not organisations:
+        raise click.ClickException(
+            f"No organisation named {name!r}."
+            if name
+            else "No organisation exists. Run create-admin first."
+        )
+    if len(organisations) > 1 and not name:
+        names = ", ".join(o.name for o in organisations)
+        raise click.ClickException(f"Several organisations exist; pass --org. Found: {names}")
+    return organisations[0]
 
 
 def register_cli(app: Flask) -> None:
@@ -23,7 +86,12 @@ def register_cli(app: Flask) -> None:
     )
     @click.option("--name", default=None, help="Defaults to ADMIN_NAME.")
     def create_admin(email: str | None, password: str | None, name: str | None) -> None:
-        """Create or update the bootstrap Admin. There is no public signup."""
+        """Create or update the bootstrap Admin. There is no public signup.
+
+        Also ensures there is an organisation for them to be an admin *of*:
+        without a membership the account can authenticate and then has nowhere
+        to go, which is a confusing way to bootstrap an empty system.
+        """
         s = app.config["SETTINGS"]
         email = (email or s.ADMIN_EMAIL).strip().lower()
         name = name or s.ADMIN_NAME
@@ -41,23 +109,23 @@ def register_cli(app: Flask) -> None:
 
             existing.password_hash = password_hasher.hash(password)
             existing.full_name = name
-            existing.role = Role.ADMIN
             existing.is_active = True
             existing.deleted_at = None
-            db.session.commit()
+            user = existing
             click.echo(f"Updated existing admin {email}")
         else:
             service = AuthService(s)
-            user = service.create_user(
-                email=email, password=password, full_name=name, role=Role.ADMIN
-            )
+            user = service.create_user(email=email, password=password, full_name=name)
             db.session.flush()
             # Attribute the row to itself rather than leaving created_by null.
             with acting_as(user.id):
                 user.created_by = user.id
                 user.updated_by = user.id
-            db.session.commit()
             click.echo(f"Created admin {email}")
+
+        organisation = _ensure_organisation(user, s.DEFAULT_ORGANISATION_NAME)
+        db.session.commit()
+        click.echo(f"Admin of organisation: {organisation.name}")
 
         if generated:
             click.echo("")
@@ -66,42 +134,57 @@ def register_cli(app: Flask) -> None:
             click.echo("")
 
     @app.cli.command("seed-lookups")
-    def seed_lookups_cmd() -> None:
+    @click.option("--org", default=None, help="Organisation name; required if there are several.")
+    def seed_lookups_cmd(org: str | None) -> None:
         """Load the design's expense categories and payment methods."""
         from app.seeds.lookups import seed_lookups
 
-        categories, methods = seed_lookups()
-        click.echo(f"Seeded {categories} categories and {methods} payment methods.")
+        organisation = _resolve_organisation(org)
+        categories, methods = seed_lookups(organisation.id)
+        click.echo(
+            f"Seeded {categories} categories and {methods} payment methods "
+            f"into {organisation.name}."
+        )
 
     @app.cli.command("seed-demo")
     @click.option("--force", is_flag=True, help="Seed even if condos already exist.")
-    def seed_demo(force: bool) -> None:
+    @click.option("--org", default=None, help="Organisation name; required if there are several.")
+    def seed_demo(force: bool, org: str | None) -> None:
         """Load the nine condos from the approved design."""
         from app.seeds.demo import seed_condos
         from app.seeds.demo_activity import seed_activity
         from app.seeds.lookups import seed_lookups
 
-        seed_lookups()
-        created = seed_condos(force=force)
-        if created < 0:
-            click.echo("Condos already present — pass --force to seed anyway.")
-        else:
-            click.echo(f"Seeded {created} condos.")
+        organisation = _resolve_organisation(org)
+        click.echo(f"Seeding into {organisation.name}.")
+        seed_lookups(organisation.id)
 
-        bookings, expenses = seed_activity(force=force)
-        if bookings < 0:
-            click.echo("Bookings/expenses already present — pass --force to seed anyway.")
-        else:
-            click.echo(f"Seeded {bookings} bookings and {expenses} expenses.")
+        with scoped_to(organisation.id):
+            created = seed_condos(force=force)
+            if created < 0:
+                click.echo("Condos already present — pass --force to seed anyway.")
+            else:
+                click.echo(f"Seeded {created} condos.")
+
+            bookings, expenses = seed_activity(force=force)
+            if bookings < 0:
+                click.echo("Bookings/expenses already present — pass --force to seed anyway.")
+            else:
+                click.echo(f"Seeded {bookings} bookings and {expenses} expenses.")
 
     @app.cli.command("reset-data")
     @click.option("--yes", is_flag=True, help="Skip the confirmation prompt.")
-    def reset_data(yes: bool) -> None:
+    @click.option("--org", default=None, help="Organisation name; required if there are several.")
+    def reset_data(yes: bool, org: str | None) -> None:
         """Delete all condos, bookings, expenses and activity.
 
         Keeps user accounts and the expense category / payment method lookups.
         Those are not demo data: the lookups are reference data the expense form
         depends on, and deleting the users would lock you out of the app.
+
+        Confined to one organisation. The read filter does not apply to bulk
+        deletes, so every statement below names the organisation explicitly --
+        without that this command would empty every tenant on the box.
         """
         from sqlalchemy import func, select
 
@@ -110,53 +193,70 @@ def register_cli(app: Flask) -> None:
         from app.models.condo import Condo, CondoImage
         from app.models.expense import Expense
 
-        counts = {
-            "condos": db.session.scalar(select(func.count()).select_from(Condo)) or 0,
-            "bookings": db.session.scalar(select(func.count()).select_from(Booking)) or 0,
-            "expenses": db.session.scalar(select(func.count()).select_from(Expense)) or 0,
-        }
-        settings = app.config["SETTINGS"]
-        local_root = settings.STORAGE_LOCAL_DIR
-        stray_files = (
-            sum(1 for p in local_root.rglob("*") if p.is_file())
-            if settings.STORAGE_BACKEND == "local" and local_root.exists()
-            else 0
-        )
-
-        # Files are counted separately: rows removed outside the app leave
-        # orphans behind, and "the database is empty" must not mean "there is
-        # nothing to clean up".
-        if not any(counts.values()) and not stray_files:
-            click.echo("Nothing to remove - already clean.")
-            return
-
-        parts = [f"{n} {label}" for label, n in counts.items() if n]
-        if stray_files:
-            parts.append(f"{stray_files} uploaded files")
-        summary = ", ".join(parts) or "nothing"
-        if not yes and not click.confirm(f"Permanently delete {summary}?"):
-            click.echo("Cancelled.")
-            return
-
+        organisation = _resolve_organisation(org)
+        with scoped_to(organisation.id):
+            counts = {
+                "condos": db.session.scalar(select(func.count()).select_from(Condo)) or 0,
+                "bookings": db.session.scalar(select(func.count()).select_from(Booking)) or 0,
+                "expenses": db.session.scalar(select(func.count()).select_from(Expense)) or 0,
+            }
         storage = app.extensions["storage"]
+        org_bookings = select(Booking.id).where(Booking.organisation_id == organisation.id)
+        org_condos = select(Condo.id).where(Condo.organisation_id == organisation.id)
+
+        # CondoImage has no organisation of its own, so it is reached through
+        # the condo that does. Collecting keys unfiltered would have queued
+        # another tenant's photos for deletion from disk.
         keys = [
             k
             for k in (
-                *db.session.scalars(select(CondoImage.storage_key)),
                 *db.session.scalars(
-                    select(Expense.receipt_key).where(Expense.receipt_key.isnot(None))
+                    select(CondoImage.storage_key).where(CondoImage.condo_id.in_(org_condos))
+                ),
+                *db.session.scalars(
+                    select(Expense.receipt_key).where(
+                        Expense.receipt_key.isnot(None),
+                        Expense.organisation_id == organisation.id,
+                    )
                 ),
             )
             if k
         ]
 
+        # Counted from the rows that reference them rather than from the
+        # directory: the storage directory is shared between organisations, so
+        # what is on disk says nothing about what belongs to this one.
+        if not any(counts.values()) and not keys:
+            click.echo("Nothing to remove - already clean.")
+            return
+
+        parts = [f"{n} {label}" for label, n in counts.items() if n]
+        if keys:
+            parts.append(f"{len(keys)} uploaded files")
+        summary = ", ".join(parts) or "nothing"
+        if not yes and not click.confirm(f"Permanently delete {summary}?"):
+            click.echo("Cancelled.")
+            return
+
         # Children first: booking_nights and images have FKs into what follows.
-        db.session.query(BookingNight).delete()
-        db.session.query(Booking).delete()
-        db.session.query(Expense).delete()
-        db.session.query(CondoImage).delete()
-        db.session.query(Condo).delete()
-        db.session.query(ActivityLog).delete()
+        db.session.query(BookingNight).filter(
+            BookingNight.booking_id.in_(org_bookings)
+        ).delete(synchronize_session=False)
+        db.session.query(Booking).filter(
+            Booking.organisation_id == organisation.id
+        ).delete(synchronize_session=False)
+        db.session.query(Expense).filter(
+            Expense.organisation_id == organisation.id
+        ).delete(synchronize_session=False)
+        db.session.query(CondoImage).filter(
+            CondoImage.condo_id.in_(org_condos)
+        ).delete(synchronize_session=False)
+        db.session.query(Condo).filter(
+            Condo.organisation_id == organisation.id
+        ).delete(synchronize_session=False)
+        db.session.query(ActivityLog).filter(
+            ActivityLog.organisation_id == organisation.id
+        ).delete(synchronize_session=False)
         db.session.commit()
 
         # Only after the rows are gone: an orphaned file costs pennies, a
@@ -169,21 +269,14 @@ def register_cli(app: Flask) -> None:
                 storage.delete(key)
                 removed_files += 1
 
-        # After this command nothing in the database can reference a stored
-        # file, so anything left on disk is an orphan - typically from rows
-        # removed outside the app. Sweeping is only safe *because* every
-        # referencing row has just been deleted.
-        if settings.STORAGE_BACKEND == "local" and local_root.exists():
-            for path in sorted(local_root.rglob("*"), reverse=True):
-                if path.is_file():
-                    with suppress(OSError):
-                        path.unlink()
-                        removed_files += 1
-                elif path.is_dir():
-                    with suppress(OSError):
-                        path.rmdir()
+        # The blanket sweep of the storage directory that used to live here is
+        # gone. It was safe when there was one tenant and "anything left on
+        # disk is an orphan" was true; with several organisations sharing the
+        # directory it would delete another customer's photos. Files are keyed,
+        # not foldered, per organisation, so an orphan left by a row removed
+        # outside the app now has to be cleaned up deliberately.
 
-        click.echo(f"Removed {summary}.")
+        click.echo(f"Removed {summary} from {organisation.name}.")
         click.echo("Kept: user accounts, expense categories, payment methods.")
 
     @app.cli.command("purge-tokens")

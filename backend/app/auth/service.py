@@ -22,6 +22,7 @@ from app.config import Settings
 from app.extensions import db, password_hasher
 from app.models.activity_log import ActivityAction, ActivityEntity
 from app.models.base import utcnow, uuid7
+from app.models.organisation import Organisation, OrganisationMember
 from app.models.user import RefreshToken, Role, User
 from app.services.user_service import MIN_PASSWORD_LENGTH
 
@@ -38,6 +39,8 @@ _DUMMY_HASH = (
 @dataclass(frozen=True, slots=True)
 class IssuedSession:
     user: User
+    organisation: Organisation
+    role: Role
     access_token: str
     access_expires_at: datetime
     refresh_token: str
@@ -75,24 +78,84 @@ class AuthService:
         user.last_login_at = utcnow()
         return user
 
+    def find_by_email(self, email: str) -> User | None:
+        """Live account for an address, without checking any credential.
+
+        Used only to attribute a failed sign-in to the right organisation.
+        """
+        return db.session.scalar(
+            select(User).where(
+                User.email == email.strip().lower(), User.deleted_at.is_(None)
+            )
+        )
+
     def _waste_time(self) -> None:
         # The verification is expected to fail; the point is the elapsed time,
         # so that an unknown address costs the same as a wrong password.
         with suppress(Exception):
             password_hasher.verify(_DUMMY_HASH, "not-the-password")
 
+
+    # ---------- organisations ----------
+    def memberships_for(self, user: User) -> list[tuple[Organisation, OrganisationMember]]:
+        """Every organisation this account can act in, oldest first.
+
+        Oldest first so the default landing place is stable: a user who creates
+        a second organisation should not find their session moving to it.
+        """
+        rows = db.session.execute(
+            select(Organisation, OrganisationMember)
+            .join(OrganisationMember, OrganisationMember.organisation_id == Organisation.id)
+            .where(
+                OrganisationMember.user_id == user.id,
+                OrganisationMember.deleted_at.is_(None),
+                Organisation.deleted_at.is_(None),
+                Organisation.is_active.is_(True),
+            )
+            .order_by(OrganisationMember.created_at)
+        ).all()
+        return [(org, member) for org, member in rows]
+
+    def membership_or_raise(
+        self, user: User, organisation_id: uuid.UUID
+    ) -> tuple[Organisation, OrganisationMember]:
+        """Resolve one organisation the user may act in, or refuse.
+
+        Every entry point into a tenant goes through here -- sign-in, refresh
+        and switching -- so there is one place that decides whether an account
+        belongs somewhere, and no caller can accidentally skip the check.
+        """
+        for org, member in self.memberships_for(user):
+            if org.id == organisation_id:
+                return org, member
+        raise AuthenticationError("You do not have access to that organisation.")
+
+    def default_organisation(self, user: User) -> tuple[Organisation, OrganisationMember]:
+        memberships = self.memberships_for(user)
+        if not memberships:
+            # Not a 403: the credentials were right, there is simply nowhere to
+            # go. It happens when the last membership is revoked between one
+            # sign-in and the next.
+            raise AuthenticationError(
+                "This account is not a member of any organisation. Ask an admin to add you."
+            )
+        return memberships[0]
+
     # ---------- issue ----------
     def issue_session(
         self,
         user: User,
         *,
+        organisation: Organisation,
+        role: Role,
         remember: bool,
         user_agent: str | None = None,
         ip: str | None = None,
     ) -> IssuedSession:
         access, access_exp = mint_access_token(
             user_id=user.id,
-            role=user.role,
+            organisation_id=organisation.id,
+            role=role,
             secret=self._s.JWT_SECRET,
             algorithm=self._s.JWT_ALGORITHM,
             ttl_minutes=self._s.ACCESS_TOKEN_TTL_MIN,
@@ -103,6 +166,7 @@ class AuthService:
         db.session.add(
             RefreshToken(
                 user_id=user.id,
+                organisation_id=organisation.id,
                 token_hash=hashed,
                 family_id=uuid7(),
                 issued_at=utcnow(),
@@ -113,6 +177,8 @@ class AuthService:
         )
         return IssuedSession(
             user=user,
+            organisation=organisation,
+            role=role,
             access_token=access,
             access_expires_at=access_exp,
             refresh_token=raw,
@@ -158,9 +224,15 @@ class AuthService:
         if user is None or user.deleted_at is not None or not user.is_active:
             raise AuthenticationError("This account is no longer active.")
 
+        # The refresh token remembers which organisation the session was acting
+        # in, so a refresh lands back where the user was instead of guessing at
+        # their first membership.
+        organisation, membership = self.membership_or_raise(user, record.organisation_id)
+
         access, access_exp = mint_access_token(
             user_id=user.id,
-            role=user.role,
+            organisation_id=organisation.id,
+            role=membership.role,
             secret=self._s.JWT_SECRET,
             algorithm=self._s.JWT_ALGORITHM,
             ttl_minutes=self._s.ACCESS_TOKEN_TTL_MIN,
@@ -168,6 +240,7 @@ class AuthService:
         new_raw, new_hash = generate_refresh_token()
         successor = RefreshToken(
             user_id=user.id,
+            organisation_id=organisation.id,
             token_hash=new_hash,
             # Same family, so a later replay of any ancestor kills the chain.
             family_id=record.family_id,
@@ -184,6 +257,8 @@ class AuthService:
 
         return IssuedSession(
             user=user,
+            organisation=organisation,
+            role=membership.role,
             access_token=access,
             access_expires_at=access_exp,
             refresh_token=new_raw,
@@ -298,14 +373,16 @@ class AuthService:
         return len(rows)
 
     # ---------- bootstrap ----------
-    def create_user(
-        self, *, email: str, password: str, full_name: str, role: Role = Role.ADMIN
-    ) -> User:
+    def create_user(self, *, email: str, password: str, full_name: str) -> User:
+        """The account only. It has no role until it belongs somewhere.
+
+        Callers pair this with an OrganisationMember; the bootstrap path in
+        app/cli.py is the one that does it for a brand new system.
+        """
         user = User(
             email=email.strip().lower(),
             password_hash=password_hasher.hash(password),
             full_name=full_name.strip(),
-            role=role,
         )
         db.session.add(user)
         return user

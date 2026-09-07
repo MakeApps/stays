@@ -1,6 +1,7 @@
 """Token minting and verification.
 
-Access tokens are short-lived JWTs carrying identity and role. Refresh tokens
+Access tokens are short-lived JWTs carrying identity, the organisation being
+acted in, and the role held *there*. Refresh tokens
 are **opaque random strings**, not JWTs: they are stored server-side (hashed)
 so they can be revoked, rotated and reuse-detected. A self-contained refresh
 JWT cannot be revoked before it expires, which defeats the point.
@@ -25,18 +26,30 @@ ACCESS_TYPE = "access"
 @dataclass(frozen=True, slots=True)
 class AccessClaims:
     user_id: uuid.UUID
+    #: The organisation this session is acting in. Switching organisations
+    #: mints a new token rather than mutating anything server-side, so a stolen
+    #: token can never be pointed at a different tenant.
+    organisation_id: uuid.UUID
+    #: Held in that organisation, not globally.
     role: Role
     expires_at: datetime
     jti: str
 
 
 def mint_access_token(
-    *, user_id: uuid.UUID, role: Role, secret: str, algorithm: str, ttl_minutes: int
+    *,
+    user_id: uuid.UUID,
+    organisation_id: uuid.UUID,
+    role: Role,
+    secret: str,
+    algorithm: str,
+    ttl_minutes: int,
 ) -> tuple[str, datetime]:
     now = datetime.now(UTC)
     expires = now + timedelta(minutes=ttl_minutes)
     payload = {
         "sub": str(user_id),
+        "org": str(organisation_id),
         "role": role.value,
         "typ": ACCESS_TYPE,
         "iat": int(now.timestamp()),
@@ -52,7 +65,7 @@ def decode_access_token(token: str, *, secret: str, algorithm: str) -> AccessCla
             token,
             secret,
             algorithms=[algorithm],
-            options={"require": ["exp", "iat", "sub"]},
+            options={"require": ["exp", "iat", "sub", "org"]},
         )
     except jwt.ExpiredSignatureError as exc:
         raise TokenExpiredError() from exc
@@ -65,12 +78,14 @@ def decode_access_token(token: str, *, secret: str, algorithm: str) -> AccessCla
 
     try:
         user_id = uuid.UUID(payload["sub"])
+        organisation_id = uuid.UUID(payload["org"])
         role = Role(payload["role"])
     except (KeyError, ValueError) as exc:
         raise AuthenticationError("That session token is malformed.") from exc
 
     return AccessClaims(
         user_id=user_id,
+        organisation_id=organisation_id,
         role=role,
         expires_at=datetime.fromtimestamp(payload["exp"], tz=UTC),
         jti=payload.get("jti", ""),

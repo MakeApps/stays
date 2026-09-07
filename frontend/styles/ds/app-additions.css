@@ -653,3 +653,111 @@ input, select, textarea, button { font-family: var(--font-sans); }
   pointer-events: none;
   transition: opacity 120ms;
 }
+
+/* ---------------------------------------------------------- organisations
+ * The switcher sits under the wordmark, where it qualifies the whole nav.
+ * Not part of the vendored design system: the approved sidebar predates
+ * organisations, so this lives here with the rest of the app's additions. */
+.org-switch {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  width: 100%;
+  margin-top: 10px;
+  padding: 7px 8px;
+  border: 1px solid var(--line);
+  border-radius: 10px;
+  background: var(--surface-2);
+  color: var(--fg);
+  font: 600 13px/1.2 var(--font-sans);
+  cursor: pointer;
+  text-align: left;
+}
+.org-switch:hover { background: var(--surface-3, var(--surface-2)); }
+.org-switch:disabled { opacity: 0.6; cursor: progress; }
+
+.org-mark {
+  width: 22px;
+  height: 22px;
+  flex: none;
+  border-radius: 6px;
+  background: var(--brand-purple);
+  color: #fff;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font: 700 11px/1 var(--font-sans);
+}
+.org-name {
+  flex: 1;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+/* One organisation and no power to make another: a name, not a control. */
+.org-current.org-static {
+  margin-top: 10px;
+  padding: 2px 2px 0;
+  color: var(--fg-3);
+  font: 600 12px/1.3 var(--font-sans);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.org-menu {
+  min-width: 240px;
+  max-width: 320px;
+  padding: 6px;
+  border: 1px solid var(--line);
+  border-radius: 12px;
+  background: var(--surface);
+  box-shadow: var(--shadow-lg);
+  z-index: 70;
+}
+.org-menu-label {
+  padding: 6px 8px 4px;
+  color: var(--fg-4);
+  font: 600 11px/1 var(--font-sans);
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+}
+.org-menu-item {
+  display: flex;
+  align-items: center;
+  gap: 9px;
+  padding: 8px;
+  border-radius: 8px;
+  color: var(--fg);
+  font: 500 13px/1.2 var(--font-sans);
+  cursor: pointer;
+  outline: none;
+}
+.org-menu-item[data-highlighted] { background: var(--surface-2); }
+.org-menu-name {
+  display: block;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.org-menu-role {
+  display: block;
+  margin-top: 1px;
+  color: var(--fg-4);
+  font: 500 11px/1 var(--font-sans);
+  text-transform: capitalize;
+}
+.org-menu-sep {
+  height: 1px;
+  margin: 6px 4px;
+  background: var(--line);
+}
+
+@media (min-width: 769px) {
+  /* In the rail there is room for the mark and nothing else. */
+  .sidebar.collapsed .org-name,
+  .sidebar.collapsed .org-switch > svg { display: none; }
+  .sidebar.collapsed .org-switch { justify-content: center; padding: 7px 0; }
+  .sidebar.collapsed .org-current.org-static { display: none; }
+}

@@ -4,6 +4,10 @@ Every route here needs ``user:read`` or ``user:write``, which only the admin
 role holds — so the whole module is admin-only without a single explicit role
 check. Accounts created through it are managers: everything except this
 screen.
+
+Scoped to the organisation the caller is acting in. "The team" is a question
+about one organisation, not about the system, and an address that already has
+an account elsewhere is invited into this one rather than rejected.
 """
 
 from __future__ import annotations
@@ -30,14 +34,15 @@ def _service() -> UserService:
     return UserService(db.session)
 
 
-def _serialise(user: User) -> dict[str, Any]:
+def _serialise(user: User, role: Role | None = None) -> dict[str, Any]:
     return {
         "id": str(user.id),
         "email": user.email,
         "full_name": user.full_name,
         # Sent so the UI can mark the owner account and disable the controls
-        # that would remove it. The server refuses regardless.
-        "is_admin": user.role is Role.ADMIN,
+        # that would remove it. The server refuses regardless. Admin *here* --
+        # the same person may be a manager in another organisation.
+        "is_admin": role is Role.ADMIN,
         "is_active": user.is_active,
         "last_login_at": (
             user.last_login_at.isoformat() + "Z" if user.last_login_at else None
@@ -82,24 +87,27 @@ def list_users() -> Any:
         service.search(params.q),
         PageParams(page=params.page, per_page=params.per_page),
     )
-    return jsonify(page.envelope(_serialise)), 200
+    roles = {m.user_id: m.role for m in service.memberships()}
+    return jsonify(page.envelope(lambda u: _serialise(u, roles.get(u.id)))), 200
 
 
 @bp.post("")
 @require_permission(USER_WRITE)
 def create_user() -> Any:
     payload = parse_body(UserCreate)
-    user = _service().create(
+    service = _service()
+    user = service.create(
         email=payload.email, full_name=payload.full_name, password=payload.password
     )
     db.session.commit()
-    return jsonify(_serialise(user)), 201
+    return jsonify(_serialise(user, service.role_of(user.id))), 201
 
 
 @bp.get("/<uuid:user_id>")
 @require_permission(USER_READ)
 def get_user(user_id: uuid.UUID) -> Any:
-    return jsonify(_serialise(_service().get(user_id))), 200
+    service = _service()
+    return jsonify(_serialise(service.get(user_id), service.role_of(user_id))), 200
 
 
 @bp.patch("/<uuid:user_id>")
@@ -107,7 +115,8 @@ def get_user(user_id: uuid.UUID) -> Any:
 def update_user(user_id: uuid.UUID) -> Any:
     payload = parse_body(UserUpdate)
     data = payload.model_dump(exclude_unset=True)
-    user = _service().update(
+    service = _service()
+    user = service.update(
         user_id,
         actor_id=get_current_user_id(),
         full_name=data.get("full_name"),
@@ -116,7 +125,7 @@ def update_user(user_id: uuid.UUID) -> Any:
         is_active=data.get("is_active"),
     )
     db.session.commit()
-    return jsonify(_serialise(user)), 200
+    return jsonify(_serialise(user, service.role_of(user_id))), 200
 
 
 @bp.delete("/<uuid:user_id>")

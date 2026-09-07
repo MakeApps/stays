@@ -15,6 +15,7 @@ import pytest
 from flask import Flask
 from sqlalchemy import func, select
 
+from app.common.current_org import scoped_to
 from app.common.errors import BookingConflictError
 from app.common.money import to_minor
 from app.extensions import db
@@ -27,7 +28,7 @@ D = date.fromisoformat
 
 
 @pytest.fixture()
-def condo(session: Any) -> Condo:
+def condo(session: Any, scoped: Any) -> Condo:
     unit = Condo(code="A-1204", name="Ashton Asoke 1204", night_rate=to_minor(1800))
     session.add(unit)
     session.commit()
@@ -234,7 +235,7 @@ class TestUpdate:
 @pytest.mark.concurrency
 class TestConcurrency:
     def test_simultaneous_requests_yield_exactly_one_booking(
-        self, app: Flask, condo: Condo
+        self, app: Flask, condo: Condo, organisation: Any
     ) -> None:
         """Two threads, same condo, same dates, separate connections.
 
@@ -243,12 +244,17 @@ class TestConcurrency:
         key cannot.
         """
         condo_id = condo.id
+        organisation_id = organisation.id
         outcomes: list[str] = []
         lock = threading.Lock()
         barrier = threading.Barrier(2)
 
         def attempt(index: int) -> None:
-            with app.app_context():
+            # The organisation scope is a ContextVar, and a new thread does not
+            # inherit it. A real request never hits this because require_auth
+            # sets it per request; anything spawning its own thread has to say
+            # which organisation it is working in, exactly as here.
+            with app.app_context(), scoped_to(organisation_id):
                 svc = BookingService(db.session)
                 barrier.wait(timeout=10)
                 try:

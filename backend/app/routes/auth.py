@@ -2,21 +2,29 @@
 
 from __future__ import annotations
 
+import uuid
 from typing import Any
 
 from flask import Blueprint, current_app, jsonify, make_response, request
 from pydantic import BaseModel, Field
 
 from app.auth.cookies import REFRESH_COOKIE, clear_session_cookies, set_session_cookies
-from app.auth.decorators import current_user, public, require_auth
+from app.auth.decorators import (
+    current_organisation,
+    current_role,
+    current_user,
+    public,
+    require_auth,
+)
 from app.auth.permissions import capabilities_for
-from app.auth.service import AuthService
+from app.auth.service import AuthService, IssuedSession
 from app.common import activity
 from app.common.api import parse_body
 from app.common.errors import AuthenticationError
 from app.extensions import db, limiter
 from app.models.activity_log import ActivityAction, ActivityEntity
-from app.models.user import User
+from app.models.organisation import Organisation
+from app.models.user import Role, User
 from app.services.user_service import MIN_PASSWORD_LENGTH
 
 bp = Blueprint("auth", __name__)
@@ -36,15 +44,60 @@ def _service() -> AuthService:
     return AuthService(current_app.config["SETTINGS"])
 
 
-def _me(user: User) -> dict[str, Any]:
+def _organisation(organisation: Organisation, role: Role) -> dict[str, Any]:
+    return {
+        "id": str(organisation.id),
+        "name": organisation.name,
+        "role": role.value,
+    }
+
+
+def _me(user: User, organisation: Organisation, role: Role) -> dict[str, Any]:
+    """Identity, plus where the session is standing.
+
+    ``role`` and ``capabilities`` describe this organisation only. The same
+    account can be an admin in one and a manager in another, so a client that
+    cached them across a switch would draw the wrong screen.
+    """
     return {
         "id": str(user.id),
         "email": user.email,
         "full_name": user.full_name,
-        "role": user.role.value,
-        "capabilities": sorted(capabilities_for(user.role)),
+        "role": role.value,
+        "capabilities": sorted(capabilities_for(role)),
         "last_login_at": user.last_login_at.isoformat() + "Z" if user.last_login_at else None,
+        "organisation": _organisation(organisation, role),
     }
+
+
+def _session_body(session: IssuedSession) -> dict[str, Any]:
+    return {
+        "user": _me(session.user, session.organisation, session.role),
+        "access_expires_at": session.access_expires_at.isoformat(),
+    }
+
+
+def _record_failed_sign_in(service: AuthService, email: str) -> None:
+    """Attributed to the account's own organisation, or dropped entirely.
+
+    An address nobody has registered belongs to no tenant, so there is no feed
+    it could honestly appear in. What an admin needs to see is somebody
+    guessing at *their* people's passwords, and that is what survives here.
+    """
+    user = service.find_by_email(email)
+    if user is None:
+        return
+    memberships = service.memberships_for(user)
+    if not memberships:
+        return
+    organisation, _ = memberships[0]
+    activity.record(
+        ActivityAction.LOGIN_FAILED,
+        ActivityEntity.SESSION,
+        entity_label=email,
+        organisation_id=organisation.id,
+        meta={"summary": "Failed sign-in attempt"},
+    )
 
 
 @bp.post("/login")
@@ -57,17 +110,17 @@ def login() -> Any:
     try:
         user = service.authenticate(payload.email, payload.password)
     except AuthenticationError:
-        activity.record(
-            ActivityAction.LOGIN_FAILED,
-            ActivityEntity.SESSION,
-            entity_label=payload.email,
-            meta={"summary": "Failed sign-in attempt"},
-        )
+        _record_failed_sign_in(service, payload.email)
         db.session.commit()
         raise
 
+    # Oldest membership, so signing in always lands in the same place. Creating
+    # a second organisation must not quietly move where you start.
+    organisation, membership = service.default_organisation(user)
     session = service.issue_session(
         user,
+        organisation=organisation,
+        role=membership.role,
         remember=payload.remember,
         user_agent=request.headers.get("User-Agent"),
         ip=request.remote_addr,
@@ -79,19 +132,12 @@ def login() -> Any:
         entity_label=user.full_name,
         actor_id=user.id,
         actor_name=user.full_name,
+        organisation_id=organisation.id,
         meta={"summary": f"{user.full_name} signed in"},
     )
     db.session.commit()
 
-    response = make_response(
-        jsonify(
-            {
-                "user": _me(user),
-                "access_expires_at": session.access_expires_at.isoformat(),
-            }
-        ),
-        200,
-    )
+    response = make_response(jsonify(_session_body(session)), 200)
     return set_session_cookies(response, session, current_app.config["SETTINGS"])
 
 
@@ -107,15 +153,7 @@ def refresh() -> Any:
     )
     db.session.commit()
 
-    response = make_response(
-        jsonify(
-            {
-                "user": _me(session.user),
-                "access_expires_at": session.access_expires_at.isoformat(),
-            }
-        ),
-        200,
-    )
+    response = make_response(jsonify(_session_body(session)), 200)
     return set_session_cookies(response, session, current_app.config["SETTINGS"])
 
 
@@ -136,7 +174,61 @@ def logout() -> Any:
 @bp.get("/me")
 @require_auth
 def me() -> Any:
-    return jsonify({"user": _me(current_user())}), 200
+    return jsonify(
+        {"user": _me(current_user(), current_organisation(), current_role())}
+    ), 200
+
+
+@bp.get("/organisations")
+@require_auth
+def my_organisations() -> Any:
+    """Everywhere this account can act, for the switcher.
+
+    Deliberately not behind a capability: this is the list of doors you already
+    hold keys to, and a manager needs it as much as an admin does.
+    """
+    memberships = _service().memberships_for(current_user())
+    return jsonify(
+        {
+            "items": [_organisation(org, member.role) for org, member in memberships],
+            "current_id": str(current_organisation().id),
+        }
+    ), 200
+
+
+class SwitchOrganisationPayload(BaseModel):
+    organisation_id: uuid.UUID
+
+
+@bp.post("/organisation")
+@require_auth
+def switch_organisation() -> Any:
+    """Move this session into another organisation.
+
+    A fresh token rather than a server-side flag: the organisation is a claim,
+    so switching cannot be done to somebody else's session, and an old token
+    keeps pointing at the tenant it was minted for until it expires.
+    """
+    payload = parse_body(SwitchOrganisationPayload)
+    user = current_user()
+    service = _service()
+
+    organisation, membership = service.membership_or_raise(user, payload.organisation_id)
+    session = service.issue_session(
+        user,
+        organisation=organisation,
+        role=membership.role,
+        # The previous session's choice is not readable here (the refresh cookie
+        # is path-scoped to /auth/refresh), and a switch is not a new sign-in,
+        # so the shorter-lived option is the safe default.
+        remember=False,
+        user_agent=request.headers.get("User-Agent"),
+        ip=request.remote_addr,
+    )
+    db.session.commit()
+
+    response = make_response(jsonify(_session_body(session)), 200)
+    return set_session_cookies(response, session, current_app.config["SETTINGS"])
 
 
 class ChangePasswordPayload(BaseModel):
@@ -173,16 +265,13 @@ def change_password() -> Any:
     # after a credential change the shorter-lived option is the safer default.
     session = service.issue_session(
         user,
+        organisation=current_organisation(),
+        role=current_role(),
         remember=False,
         user_agent=request.headers.get("User-Agent"),
         ip=request.remote_addr,
     )
     db.session.commit()
 
-    response = make_response(
-        jsonify(
-            {"user": _me(user), "access_expires_at": session.access_expires_at.isoformat()}
-        ),
-        200,
-    )
+    response = make_response(jsonify(_session_body(session)), 200)
     return set_session_cookies(response, session, current_app.config["SETTINGS"])

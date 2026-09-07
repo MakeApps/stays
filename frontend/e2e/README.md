@@ -2,7 +2,8 @@
 
 Browser-driven verification of the Phase 1 slice. Both scripts assume the API
 is on :8000 and Next on :3000, and that `flask create-admin` and
-`flask seed-demo` have been run.
+`flask seed-demo` have been run. Both act on a single organisation, which is
+what `create-admin` sets up; with more than one present they need `--org NAME`.
 
     npm run e2e
 

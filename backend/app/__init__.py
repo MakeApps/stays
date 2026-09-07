@@ -88,6 +88,7 @@ def _register_blueprints(app: Flask, s: Settings) -> None:
     from app.routes.expenses import income_bp
     from app.routes.files import bp as files_bp
     from app.routes.health import bp as health_bp
+    from app.routes.organisations import bp as organisations_bp
     from app.routes.users import bp as users_bp
 
     # Health endpoints live both at the root (for orchestrator probes, which
@@ -102,6 +103,7 @@ def _register_blueprints(app: Flask, s: Settings) -> None:
     app.register_blueprint(income_bp, url_prefix=f"{s.API_PREFIX}/income")
     app.register_blueprint(dashboard_bp, url_prefix=f"{s.API_PREFIX}/dashboard")
     app.register_blueprint(users_bp, url_prefix=f"{s.API_PREFIX}/users")
+    app.register_blueprint(organisations_bp, url_prefix=f"{s.API_PREFIX}/organisations")
     app.register_blueprint(files_bp, url_prefix=s.API_PREFIX)
 
 

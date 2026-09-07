@@ -12,7 +12,7 @@ from flask import Blueprint, Response, jsonify, stream_with_context
 from pydantic import BaseModel, Field
 from sqlalchemy import func, or_, select
 
-from app.auth.decorators import current_user, require_permission
+from app.auth.decorators import current_role, require_permission
 from app.auth.permissions import (
     ACTIVITY_READ,
     BOOKING_READ,
@@ -182,7 +182,7 @@ def dashboard() -> Any:
     # audit trail — every other account's actions. Gating it in the UI alone
     # would still have shipped the rows to anyone who opened the network tab,
     # so the capability is checked here and the query is skipped entirely.
-    may_read_activity = can(current_user().role, ACTIVITY_READ)
+    may_read_activity = can(current_role(), ACTIVITY_READ)
     recent = (
         list(
             db.session.scalars(

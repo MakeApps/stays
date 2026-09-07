@@ -161,6 +161,12 @@ export const ChevronRightIcon = ({ size, className }: IconProps) => (
   </svg>
 );
 
+export const ChevronDownIcon = ({ size, className }: IconProps) => (
+  <svg {...base} width={size} height={size} className={className}>
+    <path d="M6 9l6 6 6-6" />
+  </svg>
+);
+
 export const WalletIcon = ({ size, className }: IconProps) => (
   <svg {...base} width={size} height={size} className={className}>
     <path d="M20 7H4a1 1 0 0 1 0-2h13a2 2 0 0 0-2-2H5a2 2 0 0 0-2 2v12a2 2 0 0 0 2 2h15a1 1 0 0 0 1-1V8a1 1 0 0 0-1-1z" />

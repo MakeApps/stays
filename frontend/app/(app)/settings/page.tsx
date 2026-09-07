@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import { redirect } from "next/navigation";
 
+import { OrganisationCard } from "@/features/organisations/OrganisationCard";
 import { ChangePasswordForm } from "@/features/settings/ChangePasswordForm";
 import { getSession } from "@/lib/session";
 
@@ -23,20 +24,24 @@ export default async function SettingsPage() {
         <div>
           <h1>Settings</h1>
           <div className="t-small" style={{ marginTop: 6 }}>
-            Signed in as {user.email}.
+            Signed in as {user.email} · {user.organisation.name}
           </div>
         </div>
       </div>
 
-      <div className="card" style={{ maxWidth: 560 }}>
-        <div className="card-head">
-          <div className="card-title">Change password</div>
-        </div>
-        <div style={{ padding: "18px 20px 20px" }}>
-          <div className="t-small" style={{ marginBottom: 16 }}>
-            Changing it signs out every other device. You will stay signed in here.
+      <div style={{ display: "flex", flexDirection: "column", gap: 16 }}>
+        <OrganisationCard />
+
+        <div className="card" style={{ maxWidth: 560 }}>
+          <div className="card-head">
+            <div className="card-title">Change password</div>
           </div>
-          <ChangePasswordForm />
+          <div style={{ padding: "18px 20px 20px" }}>
+            <div className="t-small" style={{ marginBottom: 16 }}>
+              Changing it signs out every other device. You will stay signed in here.
+            </div>
+            <ChangePasswordForm />
+          </div>
         </div>
       </div>
     </section>

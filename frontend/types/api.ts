@@ -12,15 +12,38 @@ export type Capability =
   | "income:read" | "income:export"
   | "calendar:read" | "calendar:write"
   | "dashboard:read" | "activity:read"
+  | "organisation:write"
   | "user:read" | "user:write";
+
+/** One organisation, as seen by the account looking at it. */
+export interface OrganisationSummary {
+  id: string;
+  name: string;
+  /** Held here. The same account can be an admin in one and a manager in another. */
+  role: Role;
+}
 
 export interface SessionUser {
   id: string;
   email: string;
   full_name: string;
+  /** In the current organisation only, as are the capabilities below. */
   role: Role;
   capabilities: Capability[];
   last_login_at: string | null;
+  organisation: OrganisationSummary;
+}
+
+export interface OrganisationListResponse {
+  items: OrganisationSummary[];
+  current_id: string;
+}
+
+export interface OrganisationDetail {
+  id: string;
+  name: string;
+  created_at: string;
+  role?: Role;
 }
 
 export type UnitStatus = "available" | "occupied" | "reserved" | "maintenance";

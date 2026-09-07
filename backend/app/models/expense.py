@@ -20,7 +20,14 @@ from datetime import date
 from sqlalchemy import BigInteger, Boolean, Date, Enum, ForeignKey, Index, Integer, String, Text
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
-from app.models.base import GUID, AuditMixin, Base, SoftDeleteMixin, UUIDPrimaryKeyMixin
+from app.models.base import (
+    GUID,
+    AuditMixin,
+    Base,
+    OrganisationScopedMixin,
+    SoftDeleteMixin,
+    UUIDPrimaryKeyMixin,
+)
 from app.models.condo import Condo
 
 
@@ -30,7 +37,7 @@ class ExpenseStatus(str, enum.Enum):
     CANCELLED = "cancelled"
 
 
-class ExpenseCategory(Base, UUIDPrimaryKeyMixin, AuditMixin):
+class ExpenseCategory(Base, UUIDPrimaryKeyMixin, OrganisationScopedMixin, AuditMixin):
     __tablename__ = "expense_categories"
 
     name: Mapped[str] = mapped_column(String(64), nullable=False)
@@ -39,20 +46,37 @@ class ExpenseCategory(Base, UUIDPrimaryKeyMixin, AuditMixin):
     position: Mapped[int] = mapped_column(Integer, nullable=False, default=0)
     is_active: Mapped[bool] = mapped_column(Boolean, nullable=False, default=True)
 
-    __table_args__ = (Index("uq_expense_categories_name", "name", unique=True),)
+    # Unique *within* an organisation. A global constraint would mean the
+    # first tenant to create "Electricity" took the name away from every
+    # other one, which is exactly what happened before this was composite.
+    __table_args__ = (
+        Index(
+            "uq_expense_categories_organisation_id_name",
+            "organisation_id",
+            "name",
+            unique=True,
+        ),
+    )
 
 
-class PaymentMethod(Base, UUIDPrimaryKeyMixin, AuditMixin):
+class PaymentMethod(Base, UUIDPrimaryKeyMixin, OrganisationScopedMixin, AuditMixin):
     __tablename__ = "payment_methods"
 
     name: Mapped[str] = mapped_column(String(64), nullable=False)
     position: Mapped[int] = mapped_column(Integer, nullable=False, default=0)
     is_active: Mapped[bool] = mapped_column(Boolean, nullable=False, default=True)
 
-    __table_args__ = (Index("uq_payment_methods_name", "name", unique=True),)
+    __table_args__ = (
+        Index(
+            "uq_payment_methods_organisation_id_name",
+            "organisation_id",
+            "name",
+            unique=True,
+        ),
+    )
 
 
-class Expense(Base, UUIDPrimaryKeyMixin, AuditMixin, SoftDeleteMixin):
+class Expense(Base, UUIDPrimaryKeyMixin, OrganisationScopedMixin, AuditMixin, SoftDeleteMixin):
     __tablename__ = "expenses"
 
     condo_id: Mapped[uuid.UUID] = mapped_column(

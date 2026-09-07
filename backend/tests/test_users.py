@@ -33,15 +33,23 @@ def create(client: FlaskClient, **overrides: Any) -> dict[str, Any]:
 
 
 class TestWhatANewAccountCanDo:
-    def test_a_manager_has_everything_except_accounts_and_the_audit_trail(self) -> None:
+    def test_a_manager_has_everything_except_accounts_the_trail_and_new_tenants(
+        self,
+    ) -> None:
         """The product decision, expressed as a set difference.
 
         Nobody hits a permission wall doing the job. What stays with the admin
-        is the power that can lock the owner out of their own system, and the
-        feed showing what every other employee did.
+        is the power that can lock the owner out of their own system, the feed
+        showing what every other employee did, and standing up a new
+        organisation.
         """
         granted = capabilities_for(Role.MANAGER)
-        assert ALL_CAPABILITIES - granted == {"user:read", "user:write", "activity:read"}
+        assert ALL_CAPABILITIES - granted == {
+            "user:read",
+            "user:write",
+            "activity:read",
+            "organisation:write",
+        }
 
     def test_a_new_account_can_sign_in_and_work(self, auth_client: FlaskClient) -> None:
         created = create(auth_client)

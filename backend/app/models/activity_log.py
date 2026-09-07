@@ -20,7 +20,13 @@ from typing import Any
 from sqlalchemy import Enum, Index, String, Text
 from sqlalchemy.orm import Mapped, mapped_column
 
-from app.models.base import GUID, Base, TimestampMixin, UUIDPrimaryKeyMixin
+from app.models.base import (
+    GUID,
+    Base,
+    OrganisationScopedMixin,
+    TimestampMixin,
+    UUIDPrimaryKeyMixin,
+)
 
 
 class ActivityAction(str, enum.Enum):
@@ -38,6 +44,7 @@ class ActivityAction(str, enum.Enum):
 
 
 class ActivityEntity(str, enum.Enum):
+    ORGANISATION = "organisation"
     USER = "user"
     CONDO = "condo"
     BOOKING = "booking"
@@ -49,6 +56,7 @@ class ActivityEntity(str, enum.Enum):
 
 # Dot colours used by the dashboard timeline (design lines 2350–2352).
 TONE_BY_ENTITY: dict[ActivityEntity, str] = {
+    ActivityEntity.ORGANISATION: "brand",
     ActivityEntity.USER: "blue",
     ActivityEntity.CONDO: "purple",
     ActivityEntity.BOOKING: "purple",
@@ -61,7 +69,7 @@ TONE_BY_ENTITY: dict[ActivityEntity, str] = {
 }
 
 
-class ActivityLog(Base, UUIDPrimaryKeyMixin, TimestampMixin):
+class ActivityLog(Base, UUIDPrimaryKeyMixin, OrganisationScopedMixin, TimestampMixin):
     __tablename__ = "activity_logs"
 
     actor_id: Mapped[uuid.UUID | None] = mapped_column(GUID, nullable=True)

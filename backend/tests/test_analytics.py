@@ -29,7 +29,7 @@ SEP = month_bounds(date(2026, 9, 1))
 
 
 @pytest.fixture()
-def condo(session: Any) -> Condo:
+def condo(session: Any, scoped: Any) -> Condo:
     unit = Condo(code="A-1204", name="Ashton Asoke 1204", night_rate=to_minor(1000))
     session.add(unit)
     session.commit()
@@ -37,7 +37,7 @@ def condo(session: Any) -> Condo:
 
 
 @pytest.fixture()
-def lookups(session: Any) -> tuple[ExpenseCategory, PaymentMethod]:
+def lookups(session: Any, scoped: Any) -> tuple[ExpenseCategory, PaymentMethod]:
     category = ExpenseCategory(name="Electricity", tone="info", position=0)
     method = PaymentMethod(name="Cash", position=0)
     session.add_all([category, method])

@@ -28,7 +28,14 @@ from sqlalchemy import (
 )
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
-from app.models.base import GUID, AuditMixin, Base, SoftDeleteMixin, UUIDPrimaryKeyMixin
+from app.models.base import (
+    GUID,
+    AuditMixin,
+    Base,
+    OrganisationScopedMixin,
+    SoftDeleteMixin,
+    UUIDPrimaryKeyMixin,
+)
 
 
 class PropertyType(str, enum.Enum):
@@ -37,7 +44,7 @@ class PropertyType(str, enum.Enum):
     TOWNHOUSE = "Townhouse"
 
 
-class Condo(Base, UUIDPrimaryKeyMixin, AuditMixin, SoftDeleteMixin):
+class Condo(Base, UUIDPrimaryKeyMixin, OrganisationScopedMixin, AuditMixin, SoftDeleteMixin):
     __tablename__ = "condos"
 
     # Human-facing short code shown on the calendar and card overlays ("A-1204").

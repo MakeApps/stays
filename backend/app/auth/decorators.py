@@ -19,8 +19,10 @@ from flask import current_app, g, request
 
 from app.auth.permissions import can
 from app.auth.tokens import decode_access_token
+from app.common.current_org import set_current_org_id
 from app.common.current_user import set_current_user_id
 from app.common.errors import AuthenticationError, PermissionDeniedError
+from app.models.organisation import Organisation, OrganisationMember
 from app.models.user import Role, User
 
 log = structlog.get_logger("app.auth")
@@ -50,6 +52,8 @@ def _bearer_token() -> str | None:
 
 
 def _load_user() -> User:
+    from sqlalchemy import select
+
     from app.extensions import db
 
     token = _bearer_token()
@@ -64,14 +68,41 @@ def _load_user() -> User:
         # Deactivating a user must take effect before their access token expires.
         raise AuthenticationError("This account is no longer active.")
 
-    if user.role is not claims.role:
-        # Role changed since the token was minted — force a refresh so the new
+    # The membership is re-read on every request rather than trusted from the
+    # token. Being removed from an organisation has to take effect immediately;
+    # honouring the claim would leave the person inside it until their access
+    # token expired, which is the whole window an eviction exists to close.
+    membership = db.session.scalar(
+        select(OrganisationMember).where(
+            OrganisationMember.organisation_id == claims.organisation_id,
+            OrganisationMember.user_id == user.id,
+            OrganisationMember.deleted_at.is_(None),
+        )
+    )
+    if membership is None:
+        raise AuthenticationError("You no longer have access to that organisation.")
+
+    organisation = db.session.get(Organisation, claims.organisation_id)
+    if organisation is None or organisation.deleted_at is not None or not organisation.is_active:
+        raise AuthenticationError("That organisation is no longer available.")
+
+    if membership.role is not claims.role:
+        # Role changed since the token was minted - force a refresh so the new
         # role takes effect rather than honouring a stale claim.
         raise AuthenticationError("Your access level changed. Sign in again.")
 
     g.current_user = user
+    g.current_membership = membership
+    g.current_organisation = organisation
     set_current_user_id(user.id)
-    structlog.contextvars.bind_contextvars(user_id=str(user.id), role=user.role.value)
+    # Everything below this line reads one tenant's rows and no other. The
+    # filter that enforces it lives in models.base and reads exactly this.
+    set_current_org_id(organisation.id)
+    structlog.contextvars.bind_contextvars(
+        user_id=str(user.id),
+        organisation_id=str(organisation.id),
+        role=membership.role.value,
+    )
     return user
 
 
@@ -89,10 +120,11 @@ def require_permission(capability: str) -> Callable[[Callable[P, R]], Callable[P
     def decorator(fn: Callable[P, R]) -> Callable[P, R]:
         @wraps(fn)
         def wrapper(*args: P.args, **kwargs: P.kwargs) -> R:
-            user = _load_user()
-            if not can(user.role, capability):
+            _load_user()
+            role = current_role()
+            if not can(role, capability):
                 log.warning(
-                    "permission_denied", capability=capability, role=user.role.value
+                    "permission_denied", capability=capability, role=role.value
                 )
                 raise PermissionDeniedError()
             return fn(*args, **kwargs)
@@ -114,8 +146,27 @@ def current_user_id() -> uuid.UUID:
     return current_user().id
 
 
-def role_of(user: User) -> Role:
-    return user.role
+def current_membership() -> OrganisationMember:
+    membership = getattr(g, "current_membership", None)
+    if membership is None:  # pragma: no cover - guarded by the decorators
+        raise AuthenticationError()
+    return cast(OrganisationMember, membership)
+
+
+def current_organisation() -> Organisation:
+    organisation = getattr(g, "current_organisation", None)
+    if organisation is None:  # pragma: no cover - guarded by the decorators
+        raise AuthenticationError()
+    return cast(Organisation, organisation)
+
+
+def current_role() -> Role:
+    """The acting user's role *in the organisation they are acting in*.
+
+    There is no global role: the same account can own one portfolio and merely
+    work in another.
+    """
+    return current_membership().role
 
 
 def describe_route(view: Any) -> str | None:

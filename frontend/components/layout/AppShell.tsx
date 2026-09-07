@@ -27,6 +27,7 @@ import { Fab } from "@/components/layout/Fab";
 import { GlobalSearch } from "@/components/layout/GlobalSearch";
 import { NAV_COOKIE, collapsesOnArrival } from "@/components/layout/nav-preference";
 import { useSession } from "@/components/providers/Providers";
+import { OrganisationSwitcher } from "@/features/organisations/OrganisationSwitcher";
 import { cn } from "@/lib/cn";
 import { api } from "@/services/http";
 import type { Capability } from "@/types/api";
@@ -152,6 +153,10 @@ export function AppShell({
               {collapsed ? <PanelExpandIcon size={16} /> : <PanelCollapseIcon size={16} />}
             </button>
           </div>
+
+          {/* Under the wordmark because it qualifies everything below it: every
+              screen in the nav shows this organisation and no other. */}
+          <OrganisationSwitcher collapsed={collapsed} />
         </div>
 
         <nav className="sidebar-nav">

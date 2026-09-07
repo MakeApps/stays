@@ -23,15 +23,18 @@ from sqlalchemy.engine import Engine, make_url
 from sqlalchemy.exc import OperationalError
 
 from app import create_app
+from app.common.current_org import scoped_to
 from app.config import Settings, get_settings
 from app.extensions import db, password_hasher
 from app.models.base import Base
+from app.models.organisation import Organisation, OrganisationMember
 from app.models.user import Role, User
 
 TEST_DB_SUFFIX = "_test"
 
 ADMIN_EMAIL = "admin@localshouts.co.th"
 ADMIN_PASSWORD = "TestPassword!2026"
+ORGANISATION_NAME = "Test Organisation"
 
 
 def _test_database_url() -> str:
@@ -134,16 +137,45 @@ def _truncate_all() -> None:
 
 
 @pytest.fixture()
-def admin(session: Any) -> User:
+def organisation(session: Any) -> Organisation:
+    """The tenant everything else in a test belongs to.
+
+    Almost every fixture and assertion below is a question about one
+    organisation, so it is created first and the rest hang off it.
+    """
+    org = Organisation(name=ORGANISATION_NAME, is_active=True)
+    session.add(org)
+    session.commit()
+    return org
+
+
+@pytest.fixture()
+def admin(session: Any, organisation: Organisation) -> User:
     user = User(
         email=ADMIN_EMAIL,
         password_hash=password_hasher.hash(ADMIN_PASSWORD),
         full_name="Pim Suwannarat",
-        role=Role.ADMIN,
     )
     session.add(user)
+    session.flush()
+    session.add(
+        OrganisationMember(
+            organisation_id=organisation.id, user_id=user.id, role=Role.ADMIN
+        )
+    )
     session.commit()
     return user
+
+
+@pytest.fixture()
+def scoped(organisation: Organisation) -> Iterator[Organisation]:
+    """Run a test's own writes inside the organisation, as a request would.
+
+    Only needed when a test builds rows directly rather than through the API —
+    the API sets the scope itself, from the token.
+    """
+    with scoped_to(organisation.id):
+        yield organisation
 
 
 @pytest.fixture()
