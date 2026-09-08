@@ -40,6 +40,14 @@ ACTIVITY_READ: Final = "activity:read"
 USER_READ: Final = "user:read"
 USER_WRITE: Final = "user:write"
 
+#: Seeing which channels are connected and why a sync failed. Extends to
+#: managers and staff, who need to know why a calendar shows a night as taken.
+CHANNEL_READ: Final = "channel:read"
+#: Connecting a channel, mapping a listing, forcing a sync. Admin only, per
+#: brief §12 — a channel credential reaches outside the organisation, and a
+#: mis-mapped listing quietly corrupts another unit's calendar.
+CHANNEL_WRITE: Final = "channel:write"
+
 #: Creating a new organisation, and renaming this one. Held by admins
 #: only, so a manager cannot spin up a tenant of their own.
 ORGANISATION_WRITE: Final = "organisation:write"
@@ -64,6 +72,8 @@ ALL_CAPABILITIES: Final[frozenset[str]] = frozenset(
         USER_READ,
         USER_WRITE,
         ORGANISATION_WRITE,
+        CHANNEL_READ,
+        CHANNEL_WRITE,
     }
 )
 
@@ -76,7 +86,8 @@ ALL_CAPABILITIES: Final[frozenset[str]] = frozenset(
 # still allows listing users — a different intent, kept intact rather than
 # quietly redefined under a role that already had a documented meaning.
 _MANAGER: Final[frozenset[str]] = frozenset(
-    ALL_CAPABILITIES - {USER_READ, USER_WRITE, ACTIVITY_READ, ORGANISATION_WRITE}
+    ALL_CAPABILITIES
+    - {USER_READ, USER_WRITE, ACTIVITY_READ, ORGANISATION_WRITE, CHANNEL_WRITE}
 )
 
 # A cleaner needs to know which unit to turn over and when — and nothing about
@@ -100,7 +111,15 @@ _ACCOUNTANT: Final[frozenset[str]] = frozenset(
 )
 
 _STAFF: Final[frozenset[str]] = frozenset(
-    ALL_CAPABILITIES - {CONDO_DELETE, INCOME_EXPORT, USER_WRITE, ACTIVITY_READ, ORGANISATION_WRITE}
+    ALL_CAPABILITIES
+    - {
+        CONDO_DELETE,
+        INCOME_EXPORT,
+        USER_WRITE,
+        ACTIVITY_READ,
+        ORGANISATION_WRITE,
+        CHANNEL_WRITE,
+    }
 )
 
 MATRIX: Final[dict[Role, frozenset[str]]] = {

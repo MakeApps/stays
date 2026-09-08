@@ -41,6 +41,11 @@ class ActivityAction(str, enum.Enum):
     EXPORTED = "exported"
     REFUNDED = "refunded"
     EXPIRED = "expired"
+    #: A channel sync ran. Written only for runs that changed something or
+    #: failed; a no-op poll every ten minutes would drown the feed.
+    SYNCED = "synced"
+    CONNECTED = "connected"
+    DISCONNECTED = "disconnected"
 
 
 class ActivityEntity(str, enum.Enum):
@@ -52,6 +57,7 @@ class ActivityEntity(str, enum.Enum):
     SESSION = "session"
     LEASE = "lease"
     DEPOSIT = "deposit"
+    CHANNEL = "channel"
 
 
 # Dot colours used by the dashboard timeline (design lines 2350–2352).
@@ -66,6 +72,9 @@ TONE_BY_ENTITY: dict[ActivityEntity, str] = {
     # Deposits are capital moving, not profit or loss — its own colour so
     # the feed never reads a recovered deposit as revenue.
     ActivityEntity.DEPOSIT: "green",
+    # Its own colour: a channel event is neither money nor a person acting,
+    # it is another system reaching in.
+    ActivityEntity.CHANNEL: "blue",
 }
 
 

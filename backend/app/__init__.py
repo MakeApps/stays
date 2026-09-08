@@ -82,6 +82,7 @@ def create_app(settings: Settings | None = None) -> Flask:
 def _register_blueprints(app: Flask, s: Settings) -> None:
     from app.routes.auth import bp as auth_bp
     from app.routes.bookings import bp as bookings_bp
+    from app.routes.channels import bp as channels_bp
     from app.routes.condos import bp as condos_bp
     from app.routes.dashboard import bp as dashboard_bp
     from app.routes.expenses import bp as expenses_bp
@@ -98,6 +99,7 @@ def _register_blueprints(app: Flask, s: Settings) -> None:
 
     app.register_blueprint(auth_bp, url_prefix=f"{s.API_PREFIX}/auth")
     app.register_blueprint(condos_bp, url_prefix=f"{s.API_PREFIX}/condos")
+    app.register_blueprint(channels_bp, url_prefix=f"{s.API_PREFIX}/channels")
     app.register_blueprint(bookings_bp, url_prefix=f"{s.API_PREFIX}/bookings")
     app.register_blueprint(expenses_bp, url_prefix=f"{s.API_PREFIX}/expenses")
     app.register_blueprint(income_bp, url_prefix=f"{s.API_PREFIX}/income")

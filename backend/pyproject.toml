@@ -16,6 +16,10 @@ dependencies = [
     "pydantic-settings>=2.3",
     "PyJWT>=2.8",
     "argon2-cffi>=23.1",
+    # Fernet, for third-party credentials at rest. Airbnb's iCal URLs carry a
+    # secret token in the query string, and partner OAuth tokens will land in
+    # the same column once the API application is approved.
+    "cryptography>=42.0",
     "structlog>=24.1",
     "python-dotenv>=1.0",
     "Flask-Cors>=4.0",

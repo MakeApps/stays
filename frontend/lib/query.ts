@@ -46,6 +46,11 @@ export const qk = {
     all: ["users"] as const,
     list: (q: string | null) => [...qk.users.all, "list", q] as const,
   },
+  channels: {
+    all: ["channels"] as const,
+    overview: ["channels", "overview"] as const,
+    logs: (listingId: string | null) => ["channels", "logs", listingId] as const,
+  },
   activity: {
     all: ["activity"] as const,
     recent: (limit: number) => [...qk.activity.all, "recent", limit] as const,

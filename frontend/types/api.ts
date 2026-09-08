@@ -13,6 +13,7 @@ export type Capability =
   | "calendar:read" | "calendar:write"
   | "dashboard:read" | "activity:read"
   | "organisation:write"
+  | "channel:read" | "channel:write"
   | "user:read" | "user:write";
 
 /** One organisation, as seen by the account looking at it. */
@@ -543,4 +544,107 @@ export interface TeamMember {
 export interface TeamListResponse {
   items: TeamMember[];
   meta: PageMeta;
+}
+
+/* ---- channels (Airbnb and other OTAs) ---- */
+
+export type ChannelName = "airbnb";
+export type ChannelConnectionStatus = "connected" | "disconnected" | "error";
+export type ChannelListingStatus = "active" | "paused" | "error";
+
+/**
+ * What the channel's *current transport* can do, straight from the server.
+ *
+ * Read rather than assumed. Airbnb over iCal cannot sync pricing or receive
+ * webhooks at all, so the screen says so instead of showing a tick it has not
+ * earned; when the partner API adapter lands these flip and the same UI is
+ * already correct.
+ */
+export interface ChannelCapabilities {
+  reservation_pull: boolean;
+  availability_pull: boolean;
+  availability_push: boolean;
+  pricing_push: boolean;
+  webhooks: boolean;
+  guest_details: boolean;
+  listing_discovery: boolean;
+}
+
+export interface ChannelConnection {
+  id: string;
+  channel: ChannelName;
+  /** "iCal" today, "Partner API" once approved. */
+  transport: string;
+  status: ChannelConnectionStatus;
+  account_label: string | null;
+  connected_at: string | null;
+  last_error: string | null;
+  capabilities: ChannelCapabilities;
+}
+
+export interface ChannelListingRow {
+  id: string;
+  channel: ChannelName;
+  condo: { id: string; code: string; name: string };
+  external_listing_id: string;
+  external_label: string | null;
+  /** The channel's export URL. A credential; only ever sent to channel:read. */
+  import_url: string | null;
+  /** False when the stored credential cannot be decrypted — reconnect needed. */
+  credentials_readable: boolean;
+  /** Ours, for pasting into the channel. Null until PUBLIC_BASE_URL is set. */
+  feed_url: string | null;
+  status: ChannelListingStatus;
+  last_synced_at: string | null;
+  last_success_at: string | null;
+  last_error: string | null;
+  consecutive_failures: number;
+  next_attempt_at: string | null;
+}
+
+export interface AvailableChannel {
+  channel: ChannelName;
+  transport: string;
+  capabilities: ChannelCapabilities;
+  connected: boolean;
+}
+
+export interface ChannelOverview {
+  connections: ChannelConnection[];
+  listings: ChannelListingRow[];
+  available_channels: AvailableChannel[];
+}
+
+export interface ChannelSyncLogRow {
+  id: string;
+  listing_id: string | null;
+  condo_label: string | null;
+  sync_type: "availability" | "reservation" | "pricing";
+  direction: "inbound" | "outbound";
+  status: "success" | "failed" | "skipped";
+  message: string | null;
+  reference: string | null;
+  retry_count: number;
+  created: number;
+  updated: number;
+  cancelled: number;
+  skipped: number;
+  duration_ms: number | null;
+  when: string;
+}
+
+export interface ChannelSyncOutcome {
+  status: "success" | "failed" | "skipped";
+  created: number;
+  updated: number;
+  cancelled: number;
+  skipped: number;
+  /** Reservations the channel sent that our own booking already holds. */
+  conflicts: number;
+  message: string;
+}
+
+export interface ChannelSyncResponse {
+  listing: ChannelListingRow;
+  outcome: ChannelSyncOutcome;
 }

@@ -92,6 +92,11 @@ _TITLES: dict[tuple[ActivityEntity, ActivityAction], str] = {
     # out or only part of it is the thing a reader wants at a glance, and
     # it is already in the row rather than needing its own enum member.
     (ActivityEntity.DEPOSIT, ActivityAction.REFUNDED): "Deposit refunded",
+    (ActivityEntity.CHANNEL, ActivityAction.CONNECTED): "Channel connected",
+    (ActivityEntity.CHANNEL, ActivityAction.DISCONNECTED): "Channel disconnected",
+    (ActivityEntity.CHANNEL, ActivityAction.CREATED): "Listing mapped",
+    (ActivityEntity.CHANNEL, ActivityAction.DELETED): "Listing unmapped",
+    (ActivityEntity.CHANNEL, ActivityAction.SYNCED): "Channel synced",
 }
 
 

@@ -27,7 +27,16 @@ jobs:
             nvm install 22
             nvm use 22
             cd ~/stays && git fetch origin && git reset --hard origin/staging
-            #cd ~/stays/backend && venv/bin/pip install -r requirements.txt
+            # Backend dependencies, BEFORE alembic. This was commented out and
+            # pointed at a requirements.txt that does not exist, so the server
+            # never installed Python packages at all -- a new dependency landed
+            # in pyproject.toml and simply was not there. app/models imports it
+            # at module scope, so the first symptom is `alembic upgrade` failing
+            # and pm2 restarting an API that crashes on boot: the whole backend
+            # down, not just the new feature. `set -e` stops here rather than
+            # touching the database or bouncing the process.
+            # No -U, so packages that already satisfy pyproject are left alone.
+            cd ~/stays/backend && venv/bin/pip install -q -e .
             cd ~/stays/backend && venv/bin/python -m alembic upgrade head
             # Cold build every time. next build reuses .next/cache, and a tree
             # left inconsistent by an earlier run -- an interrupted build, or a

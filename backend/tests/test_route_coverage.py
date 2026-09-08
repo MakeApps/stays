@@ -25,6 +25,10 @@ EXPECTED_PUBLIC = {
     "auth.refresh",
     "auth.logout",
     "files.serve_file",
+    # A channel's calendar fetcher holds no credentials of ours and cannot
+    # be given any. The guard is a 32-byte token in the path, and the
+    # document carries occupancy dates and nothing else.
+    "channels.calendar_feed",
 }
 
 

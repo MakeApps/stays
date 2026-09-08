@@ -23,6 +23,7 @@ GOOD: dict[str, object] = {
     "JWT_SECRET": "j" * 48,
     "ADMIN_PASSWORD": "7Gq2xVn4TpLw9Rd6",
     "CORS_ORIGINS": "https://stays.example.com",
+    "CHANNEL_ENCRYPTION_KEY": "c" * 48,
 }
 
 
@@ -52,6 +53,18 @@ class TestProductionGuard:
         with pytest.raises(RuntimeError) as caught:
             settings.assert_production_safe()
         assert "SECRET_KEY" in str(caught.value)
+
+    def test_a_missing_channel_key_is_refused(self) -> None:
+        """Channel credentials are decryptable only with the key that wrote them.
+
+        The fallback is SECRET_KEY, which is fine locally; in production it
+        would mean every connected listing silently stopped working the first
+        time the key was rotated.
+        """
+        assert "CHANNEL_ENCRYPTION_KEY" in refuse(CHANNEL_ENCRYPTION_KEY="")
+
+    def test_a_short_channel_key_is_refused(self) -> None:
+        assert "CHANNEL_ENCRYPTION_KEY" in refuse(CHANNEL_ENCRYPTION_KEY="tooshort")
 
     def test_debug_is_refused(self) -> None:
         assert "DEBUG" in refuse(DEBUG=True)

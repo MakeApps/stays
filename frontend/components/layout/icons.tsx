@@ -85,6 +85,14 @@ export const RefreshIcon = ({ size, className }: IconProps) => (
   </svg>
 );
 
+/** Two nodes joined by a link: this system and an outside channel. */
+export const ChannelIcon = ({ size, className }: IconProps) => (
+  <svg {...base} width={size} height={size} className={className}>
+    <path d="M10 13a5 5 0 0 0 7.5.5l3-3a5 5 0 0 0-7-7l-1.7 1.7" />
+    <path d="M14 11a5 5 0 0 0-7.5-.5l-3 3a5 5 0 0 0 7 7L12 19" />
+  </svg>
+);
+
 export const MenuIcon = ({ size, className }: IconProps) => (
   <svg {...base} width={size} height={size} className={className}>
     <path d="M3 6h18M3 12h18M3 18h18" />

@@ -55,6 +55,26 @@ Kill and restart it:
   that hovering a bar updates the header readout, as the design does), global
   search across all three entity types with navigation, and a real CSV download
   checked for its UTF-8 BOM and row count.
+- `channels.mjs` — the Channels screen and the calendar it publishes:
+  connect, map a listing, and then fetch the feed URL **with no cookies at
+  all**, which is how Airbnb hits it. Its two load-bearing assertions are that
+  the screen says pricing is *not* supported over iCal, and that the published
+  feed contains no guest name — a leaked feed URL must disclose occupancy and
+  nothing more.
+
+`channels.mjs` deliberately never presses "Sync now": that makes a real request
+to airbnb.com. The inbound half is covered by `backend/tests/test_channels.py`
+with the socket stubbed at `app.channels.airbnb._fetch`, so the URL validation,
+the iCal parser and the reconciliation all still run for real there.
+
+It needs an admin, and it needs `PUBLIC_BASE_URL` set on the API or the feed
+assertions are skipped with a note rather than quietly passing:
+
+    E2E_EMAIL=admin@example.com E2E_PASSWORD=... node e2e/channels.mjs
+
+It cleans up after itself — the mapping is removed and the channel
+disconnected — so a clean run leaves no rows behind.
+
 - `settings.mjs` — the settings screen and the password change on it: the
   sidebar user pill reaching `/settings` at all, the client-side guards, and
   that the new password works while the old one does not.

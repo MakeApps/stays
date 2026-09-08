@@ -10,6 +10,7 @@ import {
   BellIcon,
   BookingIcon,
   CalendarIcon,
+  ChannelIcon,
   CondoIcon,
   DashboardIcon,
   ExpenseIcon,
@@ -46,6 +47,9 @@ const NAV: {
   { href: "/calendar", label: "Calendar", icon: CalendarIcon, capability: "calendar:read" },
   { href: "/income", label: "Income", icon: IncomeIcon, capability: "income:read" },
   { href: "/expenses", label: "Expenses", icon: ExpenseIcon, capability: "expense:read" },
+  // Managers and staff can see why a night shows as taken; only an admin can
+  // connect a channel, which the screen itself enforces.
+  { href: "/channels", label: "Channels", icon: ChannelIcon, capability: "channel:read" },
   // Admin only: `user:read` is not in any other role's capability set.
   { href: "/users", label: "Users", icon: UsersIcon, capability: "user:read" },
 ];

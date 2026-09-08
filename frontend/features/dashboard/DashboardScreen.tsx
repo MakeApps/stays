@@ -13,6 +13,7 @@ import {
   PlusIcon,
 } from "@/components/layout/icons";
 import { useCan } from "@/components/providers/Providers";
+import { ChannelDashboardCard } from "@/features/channels/ChannelDashboardCard";
 import { PAY_META } from "@/features/bookings/BookingsScreen";
 import { useDashboard } from "@/features/dashboard/api";
 import {
@@ -487,6 +488,10 @@ export function DashboardScreen() {
         {can("activity:read") && data.activity ? (
           <ActivityCard entries={data.activity} />
         ) : null}
+
+        {/* Renders nothing until a channel has been connected, so the row is
+            unchanged for anyone not using one. */}
+        {can("channel:read") ? <ChannelDashboardCard /> : null}
       </div>
     </section>
   );

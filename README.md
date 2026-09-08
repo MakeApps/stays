@@ -92,10 +92,10 @@ is wrong.
 ## Testing
 
 ```bash
-cd backend  && pytest             # 198 tests, needs a reachable database
+cd backend  && pytest             # 358 tests, needs a reachable database
 cd frontend && npm run typecheck
 cd frontend && npm run verify:ds  # fails if the vendored DS drifts from _ds/
-cd frontend && E2E_PASSWORD=... npm run e2e   # 95 browser checks; needs both servers running
+cd frontend && E2E_PASSWORD=... npm run e2e   # browser checks across 11 screens; needs both servers running
 ```
 
 ## Deployment
@@ -106,9 +106,22 @@ been built or run. `docker/README.md` lists what to expect to fix first.
 Shipping compose files as production-ready without running them is how a deploy
 fails at the worst moment, so they say so on the tin.
 
+Channel sync needs a **cron entry**; nothing schedules it in-process, on
+purpose (see the channels note below). Without this, calendars simply never
+sync — there is no error to notice:
+
+```cron
+*/15 * * * * cd ~/stays/backend && venv/bin/flask --app wsgi channels-sync >> ~/channels.log 2>&1
+```
+
+Two settings must be present in production or the feature is inert:
+`CHANNEL_ENCRYPTION_KEY` (the app refuses to boot without it) and
+`PUBLIC_BASE_URL` (blank means no feed URL is shown to paste into Airbnb).
+
 The app **refuses to boot in production** with a generated signing key, DEBUG
-on, wildcard CORS, or a placeholder-looking admin password. Those failures are
-silent in development and expensive later, so they are a startup error instead.
+on, wildcard CORS, a placeholder-looking admin password, or a missing
+`CHANNEL_ENCRYPTION_KEY`. Those failures are silent in development and
+expensive later, so they are a startup error instead.
 
 ## Things worth knowing
 
@@ -158,6 +171,50 @@ unusable after a soft delete.
 field although two screens display m² (the prototype hardcoded 38), and it
 captured property type, address, description and photos then discarded all four
 on save. All five now persist.
+
+**Airbnb syncs over iCal, not an API, and that is not a shortcut.** Airbnb has
+no public API: access is partner-only, behind an application that needs an
+already-shipped product, a data security review and an API quality review. So
+`app/channels/` uses the one path open to every host — the per-listing iCal
+export URL, plus an export of our own that Airbnb polls. That carries dates and
+a status label and nothing else: **no guest names, no amounts, no pricing, no
+webhooks**, and one to four hours of latency each way.
+
+Rather than hide that, each adapter declares a `ChannelCapability` set and the
+UI reads it, so the screen says "Pricing — not supported over this connection"
+instead of showing a tick it has not earned. When the partner application is
+approved, a second adapter behind the same interface declares more and the same
+screens light up unchanged.
+
+Three rules in `channel_service.py` are load-bearing, and each exists because
+the alternative loses somebody's money:
+
+- **An imported stay lands as a *block*, not a booking.** It holds the nights so
+  the unit cannot be sold twice, but `MAINTENANCE` is outside `REVENUE_STATUSES`,
+  so a stay with no amount attached cannot drag the dashboard's net figure.
+- **A local booking is never overwritten.** A feed that disagrees with a booking
+  someone was paid for records a conflict for a human; it does not delete it.
+  Each attempt runs in its own savepoint, because `BookingService.create`
+  flushes the booking before claiming its nights and a caught conflict would
+  otherwise commit a phantom booking holding no nights.
+- **A channel's own reservations are never echoed back to it.**
+
+**The published calendar feed is deliberately unauthenticated.** Airbnb's
+fetcher holds no credentials of ours and cannot be given any. Its guard is a
+32-byte token in the path, and the document carries occupancy dates and nothing
+else. The subtle part is tenancy: `_apply_organisation_scope` filters on the
+ambient organisation, and an unauthenticated request has *none* — which means
+unfiltered, not denied. `calendar_for_token` re-establishes the owning
+organisation's scope before reading a single booking, and a test asserts one
+tenant's token never returns another's nights.
+
+**Channel syncs run from cron, not from a thread.** `flask channels-sync` every
+ten to fifteen minutes. Gunicorn runs several workers, so an in-process timer
+would poll every listing once per worker and race the retry counters. Backoff
+state lives on `channel_listings` (5 min doubling to a 6 h cap) and a MySQL
+`GET_LOCK` on its own connection stops two ticks overlapping — its own
+connection because `Session.commit()` returns the pooled one and MySQL drops
+the lock with it.
 
 **Windows notes.** Gunicorn does not run on Windows; use `waitress-serve
 --port=8000 wsgi:app` for a production-like check. Console output of `฿`

@@ -16,6 +16,10 @@ from app.extensions import db
 from app.models.organisation import Organisation
 from app.models.user import Role, User
 
+#: MySQL advisory lock name. Shared by every worker and every cron tick on
+#: this database, which is exactly the scope that needs serialising.
+LOCK_NAME = "localshouts_channels_sync"
+
 
 def _ensure_organisation(user: User, default_name: str) -> Organisation:
     """Make sure the bootstrap admin is an admin of something.
@@ -345,6 +349,95 @@ def register_cli(app: Flask) -> None:
         # Nothing is deleted or cancelled: an expired lease with guests still
         # in the unit is a decision for a person, not a cleanup job.
         click.echo(f"Logged {logged} newly expired lease(s).")
+
+    @app.cli.command("channels-sync")
+    @click.option(
+        "--listing", "listing_ref", default=None, help="One listing id, instead of all due."
+    )
+    @click.option("--force", is_flag=True, help="Sync even if the listing is not due yet.")
+    def channels_sync(listing_ref: str | None, force: bool) -> None:
+        """Poll every connected channel listing that is due.
+
+        This is the scheduler for the whole integration. Run it from cron every
+        ten to fifteen minutes:
+
+            */15 * * * * cd ~/stays/backend && venv/bin/flask --app wsgi channels-sync
+
+        Not an in-process timer: gunicorn runs several workers and a thread
+        inside the app would fire once per worker, so every listing would be
+        polled N times and the retry counters would race each other.
+
+        Safe to run concurrently with itself. A second invocation that arrives
+        while one is running exits immediately rather than double-importing.
+        """
+        import uuid as _uuid
+
+        from sqlalchemy import text
+
+        from app.models.channel import ChannelListing
+        from app.services.channel_service import ChannelService
+
+        settings = app.config["SETTINGS"]
+        if not settings.CHANNEL_SYNC_ENABLED and not force:
+            click.echo("Channel sync is disabled (CHANNEL_SYNC_ENABLED=false).")
+            return
+
+        # The lock lives on its own connection. Taking it on the session's
+        # connection would look right and silently fail: Session.commit()
+        # returns that connection to the pool, and MySQL drops the lock with it.
+        lock_conn = db.engine.connect()
+        try:
+            held = lock_conn.execute(
+                text("SELECT GET_LOCK(:name, 0)"), {"name": LOCK_NAME}
+            ).scalar()
+            if held != 1:
+                click.echo("Another channels-sync is already running; exiting.")
+                return
+
+            service = ChannelService(db.session, settings)
+            if listing_ref:
+                row = db.session.get(ChannelListing, _uuid.UUID(listing_ref))
+                if row is None or row.deleted_at is not None:
+                    raise click.ClickException(f"No live listing {listing_ref}.")
+                due = [row]
+            elif force:
+                due = list(
+                    db.session.scalars(
+                        select(ChannelListing)
+                        .where(ChannelListing.deleted_at.is_(None))
+                        .execution_options(include_all_organisations=True)
+                    )
+                )
+            else:
+                due = service.due_listings()
+
+            if not due:
+                click.echo("Nothing due.")
+                return
+
+            failures = 0
+            for item in due:
+                label = f"{item.connection.channel.value}/{item.external_listing_id}"
+                try:
+                    outcome = service.sync_listing(item)
+                    db.session.commit()
+                except Exception as exc:
+                    db.session.rollback()
+                    failures += 1
+                    click.secho(f"  {label}: crashed - {exc}", fg="red")
+                    continue
+
+                colour = {"failed": "red", "success": "green"}.get(outcome.status.value)
+                click.secho(f"  {label}: {outcome.summary()}", fg=colour)
+                if outcome.status.value == "failed":
+                    failures += 1
+
+            click.echo(f"{len(due)} listing(s) processed, {failures} failed.")
+        finally:
+            # Closing would release it anyway; saying so keeps the intent
+            # visible if this ever moves onto a pooled connection.
+            lock_conn.execute(text("SELECT RELEASE_LOCK(:name)"), {"name": LOCK_NAME})
+            lock_conn.close()
 
     @app.cli.command("routes-audit")
     def routes_audit() -> None:

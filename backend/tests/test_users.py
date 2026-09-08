@@ -40,8 +40,8 @@ class TestWhatANewAccountCanDo:
 
         Nobody hits a permission wall doing the job. What stays with the admin
         is the power that can lock the owner out of their own system, the feed
-        showing what every other employee did, and standing up a new
-        organisation.
+        showing what every other employee did, standing up a new
+        organisation, and connecting an outside channel.
         """
         granted = capabilities_for(Role.MANAGER)
         assert ALL_CAPABILITIES - granted == {
@@ -49,6 +49,10 @@ class TestWhatANewAccountCanDo:
             "user:write",
             "activity:read",
             "organisation:write",
+            # A manager can see why a calendar shows a night as taken, but
+            # connecting a channel hands a credential to another company and a
+            # mis-mapped listing corrupts a different unit's availability.
+            "channel:write",
         }
 
     def test_a_new_account_can_sign_in_and_work(self, auth_client: FlaskClient) -> None:

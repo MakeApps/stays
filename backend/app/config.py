@@ -98,6 +98,29 @@ class Settings(BaseSettings):
     S3_ACCESS_KEY_ID: str = ""
     S3_SECRET_ACCESS_KEY: str = ""
 
+    # ---------- channels (Airbnb and other OTAs) ----------
+    #: Fernet key material for third-party credentials at rest. Any string of
+    #: at least 32 random characters; it is hashed to Fernet's required 32-byte
+    #: key, so it does not have to be generated in that format by hand.
+    #:
+    #: Falls back to SECRET_KEY when unset, which is fine locally but means a
+    #: *generated* SECRET_KEY leaves stored credentials unreadable after a
+    #: restart. Production must set both, and refuses to boot otherwise.
+    CHANNEL_ENCRYPTION_KEY: str = ""
+    #: Kill switch for the sync worker without unmapping anything.
+    CHANNEL_SYNC_ENABLED: bool = True
+    CHANNEL_FETCH_TIMEOUT_SEC: int = 20
+    #: How long after a successful sync the next one is due. The cron tick
+    #: can run more often than this; a listing simply will not be due yet.
+    CHANNEL_SYNC_INTERVAL_MINUTES: int = 15
+    #: How far ahead the outbound feed publishes. Airbnb only reads about a
+    #: year of an imported calendar, so more is wasted bytes on every poll.
+    CHANNEL_FEED_HORIZON_DAYS: int = 400
+    #: Origin the outbound .ics URL is built from, e.g. https://api-stays.example.com.
+    #: Airbnb fetches it from the public internet, so it cannot be inferred
+    #: from a request that arrives through a proxy.
+    PUBLIC_BASE_URL: str = ""
+
     # ---------- money ----------
     # Every monetary column is an integer in minor units. THB minor unit is the
     # satang (1/100). Storing money as float is never acceptable here.
@@ -162,6 +185,16 @@ class Settings(BaseSettings):
             problems.append("DEBUG must be false in production")
         if self.STORAGE_BACKEND == "s3" and not self.S3_BUCKET:
             problems.append("S3_BUCKET is required when STORAGE_BACKEND=s3")
+        # Channel credentials are decryptable only with the key that wrote
+        # them: a generated fallback would differ per worker and per restart,
+        # silently orphaning every connected listing.
+        if not self.CHANNEL_ENCRYPTION_KEY:
+            problems.append(
+                "CHANNEL_ENCRYPTION_KEY is required — without it channel credentials "
+                "are encrypted with a key that differs per worker and per restart"
+            )
+        elif len(self.CHANNEL_ENCRYPTION_KEY) < 32:
+            problems.append("CHANNEL_ENCRYPTION_KEY must be at least 32 characters")
         if "*" in self.cors_origin_list:
             problems.append("CORS_ORIGINS must not be '*' when cookies carry credentials")
         # A placeholder that ships to production is how the first breach happens.
