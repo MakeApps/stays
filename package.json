@@ -1,0 +1,12 @@
+{
+  "name": "localshouts-stays",
+  "version": "0.1.0",
+  "private": true,
+  "description": "Root entry points for the frontend checks. The app itself lives in frontend/; this file only forwards, so there is nothing to install here.",
+  "scripts": {
+    "test": "npm --prefix frontend run typecheck && npm --prefix frontend run verify:ds",
+    "build": "npm --prefix frontend run build",
+    "typecheck": "npm --prefix frontend run typecheck",
+    "verify:ds": "npm --prefix frontend run verify:ds"
+  }
+}
