@@ -5,11 +5,13 @@ import { useRouter, useSearchParams } from "next/navigation";
 import { useCallback, useMemo, useState } from "react";
 import { toast } from "sonner";
 
-import { PlusIcon } from "@/components/layout/icons";
+import { GridIcon, PlusIcon, RowsIcon } from "@/components/layout/icons";
 import { useCan } from "@/components/providers/Providers";
 import { BookingDetailDrawer } from "@/features/bookings/BookingDetailDrawer";
 import { useBooking, useCalendar, useMoveBooking } from "@/features/bookings/api";
+import { CAL_LAYOUT_COOKIE, type CalendarLayout } from "@/features/calendar/layout-preference";
 import { MonthGrid } from "@/features/calendar/MonthGrid";
+import { SQUARE_MONTHS, SquareCalendar } from "@/features/calendar/SquareCalendar";
 import { Timeline, type DragChange } from "@/features/calendar/Timeline";
 import { useCondos } from "@/features/condos/api";
 import { addDays, nightsBetween, overlaps, todayISO } from "@/lib/booking-math";
@@ -47,13 +49,14 @@ function monthLabel(iso: string): string {
   });
 }
 
-export function CalendarScreen() {
+export function CalendarScreen({ defaultLayout }: { defaultLayout: CalendarLayout }) {
   const router = useRouter();
   const params = useSearchParams();
   const can = useCan();
 
   const today = todayISO();
   const [anchor, setAnchor] = useState(() => monthStart(today));
+  const [layout, setLayoutState] = useState(defaultLayout);
   const [view, setView] = useState<"month" | "week">("month");
   const [status, setStatus] = useState("all");
   const [search, setSearch] = useState("");
@@ -66,10 +69,19 @@ export function CalendarScreen() {
   const condos = useMemo(() => condoData?.items ?? [], [condoData]);
   const selectedCondo = condoCode ? condos.find((c) => c.code === condoCode) : undefined;
 
+  // The square view is one listing at a time, as Airbnb's is. With "All
+  // condos" chosen it shows the first one rather than an empty screen, and
+  // leaves the URL alone, so switching back restores every condo.
+  const square = layout === "square";
+  const squareCondo = selectedCondo ?? condos[0];
+  const fetchCondo = square ? squareCondo : selectedCondo;
+
   // Week view starts a day before today so the current stay stays visible,
-  // matching the design (line 2131).
-  const start = view === "week" ? addDays(today, -1) : anchor;
-  const days = view === "week" ? 7 : nightsBetween(anchor, shiftMonth(anchor, 1));
+  // matching the design (line 2131). The square view is months whatever the
+  // timeline was last set to.
+  const weekly = view === "week" && !square;
+  const start = weekly ? addDays(today, -1) : anchor;
+  const days = weekly ? 7 : nightsBetween(anchor, shiftMonth(anchor, 1));
   const end = addDays(start, days);
 
   // The mobile grid draws the days either side of the month to complete its
@@ -85,7 +97,9 @@ export function CalendarScreen() {
   const gridStart = addDays(monthStart(anchor), -weekdayOf(monthStart(anchor)));
   const gridEnd = addDays(gridStart, 42);
   const fetchStart = minISO(start, gridStart);
-  const fetchEnd = maxISO(end, gridEnd);
+  // The square view draws several months below the anchor, not one.
+  const drawnEnd = square ? maxISO(gridEnd, shiftMonth(anchor, SQUARE_MONTHS)) : gridEnd;
+  const fetchEnd = maxISO(end, drawnEnd);
 
   // Reset per month rather than storing a day that is no longer on screen.
   const selectedDay =
@@ -98,13 +112,13 @@ export function CalendarScreen() {
   const { data, isLoading, isPlaceholderData } = useCalendar(
     fetchStart,
     fetchEnd,
-    selectedCondo?.id,
+    fetchCondo?.id,
     anchor,
   );
   const calendarKey = qk.bookings.calendar({
     start: fetchStart,
     end: fetchEnd,
-    condoId: selectedCondo?.id ?? null,
+    condoId: fetchCondo?.id ?? null,
     month: anchor,
   });
   const move = useMoveBooking(calendarKey);
@@ -162,6 +176,14 @@ export function CalendarScreen() {
     setPicked(iso);
   }
 
+  function setLayout(next: CalendarLayout) {
+    setLayoutState(next);
+    // A UI preference, like the sidebar rail's: client-readable so it is
+    // written without a round trip, and read by the page on the server so the
+    // right calendar is the first one drawn.
+    document.cookie = `${CAL_LAYOUT_COOKIE}=${next}; path=/; max-age=31536000; samesite=lax`;
+  }
+
   async function onChange(change: DragChange) {
     try {
       await move.mutateAsync(change);
@@ -179,11 +201,11 @@ export function CalendarScreen() {
 
   return (
     <section style={{ animation: "lsFade 280ms var(--ease-out) both" }}>
-      <div className="page-header">
+      <div className="page-header cal-head">
         <div>
           <h1>Calendar</h1>
           <div className="t-small desktop-only" style={{ marginTop: 6 }}>
-            {view === "week"
+            {weekly
               ? `Week of ${start} · ${plural(resources.length, "unit")}`
               : `${monthLabel(anchor)} · ${plural(resources.length, "unit")} · ${plural(
                   windowEvents.length,
@@ -191,17 +213,18 @@ export function CalendarScreen() {
                 )}`}
           </div>
         </div>
-        {/* Desktop only. On mobile the same action is the floating button,
-            which is thumb-reachable and does not scroll away — two identical
-            primary actions on one screen is a defect, not a feature. */}
-        {can("booking:write") ? (
-          <div className="actions desktop-only">
-            <Link className="btn btn-primary" href="/bookings/new">
+        <div className="actions cal-head-actions">
+          <LayoutToggle layout={layout} onChange={setLayout} />
+          {/* Desktop only. On mobile the same action is the floating button,
+              which is thumb-reachable and does not scroll away — two identical
+              primary actions on one screen is a defect, not a feature. */}
+          {can("booking:write") ? (
+            <Link className="btn btn-primary desktop-only" href="/bookings/new">
               <PlusIcon size={17} />
               New booking
             </Link>
-          </div>
-        ) : null}
+          ) : null}
+        </div>
       </div>
 
       {/* Toolbar — design lines 754–786 */}
@@ -216,36 +239,39 @@ export function CalendarScreen() {
       >
         {/* Month vs week is a timeline distinction. The mobile view is always a
             month grid, so offering the choice there would be a control that
-            changes nothing you can see. */}
-        <div
-          className="desktop-only"
-          style={{
-            display: "flex",
-            background: "var(--surface)",
-            border: "1px solid var(--line-strong)",
-            borderRadius: 10,
-            overflow: "hidden",
-          }}
-        >
-          {(["month", "week"] as const).map((v) => (
-            <button
-              key={v}
-              onClick={() => setView(v)}
-              aria-pressed={view === v}
-              style={{
-                padding: "8px 16px",
-                border: 0,
-                cursor: "pointer",
-                font: "600 13px/1 var(--font-sans)",
-                transition: "all 120ms",
-                background: view === v ? "var(--brand-purple)" : "transparent",
-                color: view === v ? "#fff" : "var(--fg-2)",
-              }}
-            >
-              {v[0]!.toUpperCase() + v.slice(1)}
-            </button>
-          ))}
-        </div>
+            changes nothing you can see — and the square view is months by
+            definition, so it has none either. */}
+        {!square ? (
+          <div
+            className="desktop-only"
+            style={{
+              display: "flex",
+              background: "var(--surface)",
+              border: "1px solid var(--line-strong)",
+              borderRadius: 10,
+              overflow: "hidden",
+            }}
+          >
+            {(["month", "week"] as const).map((v) => (
+              <button
+                key={v}
+                onClick={() => setView(v)}
+                aria-pressed={view === v}
+                style={{
+                  padding: "8px 16px",
+                  border: 0,
+                  cursor: "pointer",
+                  font: "600 13px/1 var(--font-sans)",
+                  transition: "all 120ms",
+                  background: view === v ? "var(--brand-purple)" : "transparent",
+                  color: view === v ? "#fff" : "var(--fg-2)",
+                }}
+              >
+                {v[0]!.toUpperCase() + v.slice(1)}
+              </button>
+            ))}
+          </div>
+        ) : null}
 
         <button
           className="btn btn-outline btn-sm cal-today"
@@ -294,11 +320,12 @@ export function CalendarScreen() {
 
         <select
           className="filter-sel cal-filter"
-          value={condoCode ?? "all"}
+          value={square ? (squareCondo?.code ?? "") : (condoCode ?? "all")}
           onChange={(e) => setParam({ condo: e.target.value === "all" ? null : e.target.value })}
           aria-label="Filter by condo"
         >
-          <option value="all">All condos</option>
+          {/* The square view is one listing at a time, so it has no "all". */}
+          {square ? null : <option value="all">All condos</option>}
           {condos.map((c) => (
             <option key={c.id} value={c.code}>
               {c.name}
@@ -328,7 +355,9 @@ export function CalendarScreen() {
         </div>
       </div>
 
-      {isLoading && !data ? (
+      {/* The square view also waits for the condo list: until it lands there
+          is no listing to draw, and "No condos yet" would be a lie. */}
+      {(isLoading && !data) || (square && !condoData) ? (
         <div className="table-card" style={{ padding: 20 }}>
           <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
             {Array.from({ length: 6 }, (_, i) => (
@@ -336,6 +365,22 @@ export function CalendarScreen() {
             ))}
           </div>
         </div>
+      ) : square ? (
+        <SquareCalendar
+          anchor={anchor}
+          today={today}
+          condo={squareCondo}
+          events={events}
+          allEvents={data?.events ?? []}
+          summary={
+            data?.summary ?? { revenue_label: "฿0", booked_nights: 0, occupancy_pct: 0 }
+          }
+          monthLabel={monthLabel(anchor)}
+          stale={isPlaceholderData}
+          onPrev={() => setAnchor((a) => shiftMonth(a, -1))}
+          onNext={() => setAnchor((a) => shiftMonth(a, 1))}
+          onOpen={(id) => setParam({ booking: id })}
+        />
       ) : (
         <>
           {/* Both render; CSS picks one. Never window.innerWidth — that is a
@@ -381,32 +426,35 @@ export function CalendarScreen() {
       )}
 
       {/* Legend — design lines 835–843. Desktop only: the mobile grid carries
-          its own legend inside the calendar card, where it is read. */}
-      <div
-        className="desktop-only"
-        style={{
-          display: "flex",
-          gap: 20,
-          flexWrap: "wrap",
-          alignItems: "center",
-          marginTop: 16,
-          padding: "14px 18px",
-          background: "var(--surface)",
-          border: "1px solid var(--line)",
-          borderRadius: 14,
-        }}
-      >
-        <span className="t-eyebrow">Legend</span>
-        <Swatch bg="var(--success-bg)" bd="var(--success-border)" label="Available" />
-        <Swatch bg="var(--info-bg)" bd="var(--info-border)" label="Booked" />
-        <Swatch bg="var(--warning-bg)" bd="var(--warning-border)" label="Pending" />
-        <Swatch bg="var(--danger-bg)" bd="var(--danger-border)" label="Maintenance" />
-        <div style={{ flex: 1 }} />
-        <span className="t-caption desktop-only">
-          Click a bar to open it · drag to move · drag an edge to resize
-        </span>
-        <span className="t-caption mobile-only">Tap a day to see its stays</span>
-      </div>
+          its own legend inside the calendar card, where it is read. The square
+          view's pills are not these colours, so it carries its own too. */}
+      {!square ? (
+        <div
+          className="desktop-only"
+          style={{
+            display: "flex",
+            gap: 20,
+            flexWrap: "wrap",
+            alignItems: "center",
+            marginTop: 16,
+            padding: "14px 18px",
+            background: "var(--surface)",
+            border: "1px solid var(--line)",
+            borderRadius: 14,
+          }}
+        >
+          <span className="t-eyebrow">Legend</span>
+          <Swatch bg="var(--success-bg)" bd="var(--success-border)" label="Available" />
+          <Swatch bg="var(--info-bg)" bd="var(--info-border)" label="Booked" />
+          <Swatch bg="var(--warning-bg)" bd="var(--warning-border)" label="Pending" />
+          <Swatch bg="var(--danger-bg)" bd="var(--danger-border)" label="Maintenance" />
+          <div style={{ flex: 1 }} />
+          <span className="t-caption desktop-only">
+            Click a bar to open it · drag to move · drag an edge to resize
+          </span>
+          <span className="t-caption mobile-only">Tap a day to see its stays</span>
+        </div>
+      ) : null}
 
       <BookingDetailDrawer
         booking={detail ?? null}
@@ -414,6 +462,38 @@ export function CalendarScreen() {
         onEdit={() => detail && router.push(`/bookings/new?edit=${detail.id}` as never)}
       />
     </section>
+  );
+}
+
+/** Standard vs square. On every width, unlike month/week: both layouts exist
+ *  on a phone as well as on a desktop. */
+function LayoutToggle({
+  layout,
+  onChange,
+}: {
+  layout: CalendarLayout;
+  onChange: (next: CalendarLayout) => void;
+}) {
+  const options = [
+    { value: "standard", label: "Standard", icon: <RowsIcon size={16} /> },
+    { value: "square", label: "Square", icon: <GridIcon size={16} /> },
+  ] as const;
+  return (
+    <div className="cal-layout" role="group" aria-label="Calendar layout">
+      {options.map((o) => (
+        <button
+          key={o.value}
+          type="button"
+          aria-pressed={layout === o.value}
+          aria-label={`${o.label} view`}
+          onClick={() => onChange(o.value)}
+          title={`${o.label} view`}
+        >
+          {o.icon}
+          <span className="cal-layout-label">{o.label}</span>
+        </button>
+      ))}
+    </div>
   );
 }
 

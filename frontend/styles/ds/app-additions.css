@@ -500,6 +500,382 @@ input, select, textarea, button { font-family: var(--font-sans); }
   .cal-search { order: 3; flex: 1 1 180px; min-width: 0; }
 }
 
+/* ---------- Calendar layout toggle ----------
+ * Standard vs square, at every width. Drawn like the design's month/week
+ * control so the two read as the same kind of switch. */
+.cal-layout {
+  display: flex;
+  flex: none;
+  background: var(--surface);
+  border: 1px solid var(--line-strong);
+  border-radius: 10px;
+  overflow: hidden;
+}
+.cal-layout button {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 8px 14px;
+  border: 0;
+  background: transparent;
+  color: var(--fg-2);
+  font: 600 13px/1 var(--font-sans);
+  cursor: pointer;
+  -webkit-tap-highlight-color: transparent;
+  transition: background 120ms, color 120ms;
+}
+.cal-layout button[aria-pressed="true"] { background: var(--brand-purple); color: #fff; }
+/* Inside the rounded, clipped group an outset ring would be cut off. */
+.cal-layout button:focus-visible { outline-offset: -3px; }
+
+@media (max-width: 768px) {
+  /* Title and toggle share a line, as Airbnb's title and grid icon do. The
+     generic rule sends a header's actions to a full-width row of their own. */
+  .page-header.cal-head { align-items: center; flex-wrap: nowrap; }
+  .page-header.cal-head > :first-child { min-width: 0; }
+  .page-header .cal-head-actions { width: auto; flex: none; }
+  /* Icon only, as Airbnb's header is. Two labelled buttons plus the title
+     overflow a 320px screen, and the icons carry the distinction on their
+     own — the accessible name stays on the button either way. */
+  .cal-layout button { min-height: 44px; min-width: 44px; padding: 0; justify-content: center; }
+  .cal-layout-label { display: none; }
+}
+
+/* ---------- Square calendar ----------
+ * One listing as months of day boxes, stays drawn as pills across them: the
+ * layout of Airbnb's host calendar. It carries Airbnb's neutrals rather than
+ * the DS's warm ones, because looking like Airbnb is the brief — #222 ink on
+ * #ddd hairlines, #717171 for prices. */
+.sq {
+  --sq-ink: #222222;
+  --sq-line: #dddddd;
+  --sq-muted: #717171;
+  --sq-ring: linear-gradient(135deg, #e61e4d, var(--brand-purple));
+  --sq-blocked: repeating-linear-gradient(-45deg, #e6e6e6 0 5px, #f3f3f3 5px 10px);
+  --sq-gap: 8px;
+  /* How far a stay that carries on into next week runs past the row: to the
+     card's edge here, to the screen's on a phone. */
+  --sq-bleed: 20px;
+  --sq-pill-h: 40px;
+  --sq-pill-inset: 10px;
+  display: grid;
+  gap: 16px;
+  align-items: start;
+}
+@media (min-width: 1100px) {
+  .sq { grid-template-columns: minmax(0, 1fr) 300px; }
+  .sq-panel { order: 2; position: sticky; top: 24px; }
+}
+
+.sq-panel {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  min-width: 0;
+  padding: 16px;
+  background: var(--surface);
+  border: 1px solid var(--line);
+  border-radius: 16px;
+  box-shadow: var(--shadow-xs);
+}
+.sq-listing { display: flex; align-items: center; gap: 12px; min-width: 0; }
+.sq-listing-photo {
+  position: relative;
+  width: 56px;
+  height: 56px;
+  flex: none;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 12px;
+  overflow: hidden;
+  background: var(--bg-alt);
+  color: var(--fg-4);
+}
+.sq-listing-text { flex: 1; min-width: 0; }
+.sq-listing-name,
+.sq-listing-sub {
+  display: block;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.sq-listing-name { font: 700 16px/1.25 var(--font-sans); color: var(--sq-ink); }
+.sq-listing-sub { margin-top: 3px; font: 400 13px/1.3 var(--font-sans); color: var(--sq-muted); }
+.sq-nav { display: flex; gap: 4px; flex: none; }
+.sq-nav .icon-btn { font-size: 20px; }
+
+.sq-figures {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 10px;
+  padding-top: 14px;
+  border-top: 1px solid var(--line);
+  transition: opacity 120ms;
+}
+.sq-figures.is-stale { opacity: .4; }
+.sq-figures-title { grid-column: 1 / -1; }
+.sq-figure {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr);
+  column-gap: 10px;
+  align-items: center;
+  min-width: 0;
+}
+.sq-figure .stat-icon { grid-row: span 2; width: 32px; height: 32px; border-radius: 9px; }
+.sq-figure .stat-icon svg { width: 16px; height: 16px; }
+.sq-figure-label { font: 400 12px/1.3 var(--font-sans); color: var(--fg-3); }
+.sq-figure-value {
+  font: 700 15px/1.25 var(--font-sans);
+  color: var(--fg);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+@media (min-width: 1100px) {
+  .sq-figures { grid-template-columns: minmax(0, 1fr); gap: 12px; }
+}
+
+.sq-legend {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px 16px;
+  padding-top: 14px;
+  border-top: 1px solid var(--line);
+}
+.sq-legend-item {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  font: 500 12px/1 var(--font-sans);
+  color: var(--fg-3);
+}
+.sq-legend-pill { width: 22px; height: 12px; flex: none; border-radius: 999px; }
+.sq-legend-pill.is-booked { background: var(--sq-ink); }
+.sq-legend-pill.is-pending { background: var(--surface); border: 1.5px dashed var(--sq-ink); }
+.sq-legend-pill.is-maintenance { background: var(--sq-blocked); box-shadow: inset 0 0 0 1px #d4d4d4; }
+.sq-legend-today {
+  width: 14px;
+  height: 14px;
+  flex: none;
+  border: 2px solid transparent;
+  border-radius: 999px;
+  background: linear-gradient(var(--surface), var(--surface)) padding-box, var(--sq-ring) border-box;
+}
+
+.sq-months {
+  min-width: 0;
+  padding: 0 20px 24px;
+  background: var(--surface);
+  border: 1px solid var(--line);
+  border-radius: 16px;
+  box-shadow: var(--shadow-xs);
+  /* A stay running on into next week stops at the card's edge. `clip`, not
+     `hidden`: hidden makes a scroll container, and the weekday row inside
+     could no longer stick. */
+  overflow: hidden;
+  overflow: clip;
+  transition: opacity 120ms;
+}
+/* Muted and inert while the next window loads, like the compact grid. */
+.sq-months.is-stale { opacity: .4; pointer-events: none; }
+
+.sq-weekdays {
+  position: sticky;
+  top: 0;
+  z-index: 3;
+  display: grid;
+  grid-template-columns: repeat(7, minmax(0, 1fr));
+  gap: var(--sq-gap);
+  /* Full width of the card, so pills scrolling under it are covered right to
+     the edge they bleed to. */
+  margin: 0 -20px;
+  padding: 14px 20px 12px;
+  background: var(--surface);
+  border-bottom: 1px solid var(--line);
+  font: 500 13px/1 var(--font-sans);
+  color: var(--sq-muted);
+  text-align: center;
+}
+
+.sq-month-title {
+  margin: 28px 0 18px;
+  font: 700 24px/1.15 var(--font-sans);
+  letter-spacing: -.02em;
+  color: var(--sq-ink);
+}
+.sq-weeks { display: flex; flex-direction: column; gap: var(--sq-gap); }
+.sq-week {
+  position: relative;
+  display: grid;
+  grid-template-columns: repeat(7, minmax(0, 1fr));
+  gap: var(--sq-gap);
+  /* So a box can be told to be exactly one column tall. See .sq-day. */
+  container-type: inline-size;
+}
+.sq-blank { min-width: 0; }
+
+.sq-day {
+  /* Square, as asked for: one column of the row, measured off the row itself.
+     Not `aspect-ratio`, which reads the height back out into a minimum *width*
+     the moment min-height bites — seven 96px boxes crammed into a 492px row,
+     with Saturday clipped off the edge of the card at every width from a
+     tablet up to about 1360px. Bounded so a narrow column still fits a pill
+     under the date, and a 2560px monitor does not draw 250px boxes. */
+  height: clamp(96px, calc((100cqi - 6 * var(--sq-gap)) / 7), 148px);
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 10px;
+  padding-top: 10px;
+  background: var(--surface);
+  border: 1px solid var(--sq-line);
+  border-radius: 12px;
+}
+.sq-num {
+  width: 30px;
+  height: 30px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 999px;
+  font: 600 15px/1 var(--font-sans);
+  font-variant-numeric: tabular-nums;
+  color: var(--sq-ink);
+}
+.sq-price {
+  font: 400 13px/1 var(--font-sans);
+  color: var(--sq-muted);
+  white-space: nowrap;
+}
+.sq-day.is-past .sq-num { color: #b0b0b0; }
+/* A gradient ring round today's date, as Airbnb marks it. */
+.sq-day.is-today .sq-num {
+  border: 2px solid transparent;
+  background: linear-gradient(var(--surface), var(--surface)) padding-box, var(--sq-ring) border-box;
+}
+
+.sq-lane { position: absolute; inset: 0; z-index: 1; pointer-events: none; }
+.sq-pill {
+  position: absolute;
+  bottom: var(--sq-pill-inset);
+  height: var(--sq-pill-h);
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 0 14px 0 5px;
+  border: 0;
+  border-radius: 999px;
+  background: var(--sq-ink);
+  color: #fff;
+  font: 600 14px/1 var(--font-sans);
+  text-align: left;
+  overflow: hidden;
+  cursor: pointer;
+  pointer-events: auto;
+  /* So the name can drop out of a pill too short to hold it. */
+  container-type: inline-size;
+  -webkit-tap-highlight-color: transparent;
+  transition: box-shadow 120ms, filter 120ms;
+}
+.sq-pill:hover { box-shadow: var(--shadow-md); }
+.sq-pill:active { filter: brightness(1.3); }
+.sq-pill.is-flat-l { border-top-left-radius: 0; border-bottom-left-radius: 0; }
+.sq-pill.is-flat-r { border-top-right-radius: 0; border-bottom-right-radius: 0; }
+.sq-pill.is-pending { background: var(--surface); color: var(--sq-ink); border: 1.5px dashed var(--sq-ink); }
+.sq-pill.is-maintenance { background: var(--sq-blocked); color: #484848; box-shadow: inset 0 0 0 1px #d4d4d4; }
+.sq-avatar {
+  width: calc(var(--sq-pill-h) - 10px);
+  height: calc(var(--sq-pill-h) - 10px);
+  flex: none;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 999px;
+  font: 700 11px/1 var(--font-sans);
+  letter-spacing: .02em;
+}
+.sq-pill-name { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+/* One night on a phone is ~50px: room for the avatar, not for "W…". */
+@container (max-width: 96px) {
+  .sq-pill-name { display: none; }
+}
+
+.sq-empty {
+  padding: 56px 20px;
+  text-align: center;
+  background: var(--surface);
+  border: 1px solid var(--line);
+  border-radius: 16px;
+}
+
+@media (max-width: 768px) {
+  .sq {
+    --sq-gap: 5px;
+    --sq-bleed: 12px;
+    --sq-pill-h: 36px;
+    --sq-pill-inset: 6px;
+    gap: 12px;
+  }
+  .sq-panel { padding: 12px; gap: 12px; }
+  .sq-listing-photo { width: 48px; height: 48px; border-radius: 10px; }
+  .sq-legend { justify-content: space-between; gap: 8px 12px; padding-top: 12px; }
+
+  /* Edge to edge, as Airbnb's is: no card, and the boxes run to 12px from the
+     sides of the screen — cancelling 8 of the page's 20px gutter. At 390px
+     that is seven 48px columns, Airbnb's own width. */
+  .sq-months {
+    margin-inline: -8px;
+    padding: 0;
+    background: transparent;
+    border: 0;
+    border-radius: 0;
+    box-shadow: none;
+    overflow: visible;
+  }
+  .sq-weekdays {
+    /* Pinned under the sticky top bar: its tallest child is the 36px
+       hamburger, with 12px padding either side and a 1px rule. */
+    top: 61px;
+    margin: 0 -12px;
+    padding: 12px 12px 10px;
+    background: var(--bg);
+    border-bottom-color: var(--sq-line);
+    font-size: 12px;
+  }
+  .sq-month-title { margin: 22px 4px 14px; font-size: 22px; }
+  /* One height for every phone, as Airbnb's cells are, rather than a ratio.
+     A ratio has to give way below ~370px, where a 4:7 box is shorter than the
+     date circle and the pill stacked and the pill cuts through the number —
+     and raising its floor is not an option, because a min-height on a box with
+     an aspect-ratio transfers back through the ratio into a minimum *width*,
+     which pushes Saturday off the side of the screen. So: the stack itself.
+     8px of padding, the 28px circle, 6px of air, then the pill and its inset.
+     That is 84px, which is what 4:7 already drew at 390px. */
+  .sq-week { min-height: calc(42px + var(--sq-pill-h) + var(--sq-pill-inset)); }
+  .sq-day {
+    /* Filled by the row's floor above, not by a column's width. */
+    height: auto;
+    gap: 12px;
+    padding-top: 8px;
+    border-radius: 10px;
+  }
+  .sq-num { width: 28px; height: 28px; font-size: 14px; }
+  .sq-price { font-size: 12px; }
+  .sq-pill { gap: 6px; padding: 0 10px 0 4px; font-size: 13px; }
+  .sq-avatar { font-size: 10px; }
+
+  /* `.main` clips sideways overflow with `hidden`, which makes it a scroll
+     container that never scrolls — so nothing inside it can stick, the top
+     bar included. `clip` clips the same overflow without that side effect.
+     Scoped to the square calendar, whose weekday row has to stay pinned the
+     way Airbnb's does, rather than changing every screen at once. */
+  @supports (overflow: clip) {
+    .main:has(.sq) { overflow-x: clip; }
+  }
+}
+
 /* ---------- KPI grids ----------
  * Columns live here rather than in an inline style so a media query can reach
  * them; inline beats any stylesheet rule short of !important, which the

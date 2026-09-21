@@ -188,6 +188,25 @@ export const ChartIcon = ({ size, className }: IconProps) => (
   </svg>
 );
 
+/** Calendar layout toggle: the standard view's stacked rows. */
+export const RowsIcon = ({ size, className }: IconProps) => (
+  <svg {...base} width={size} height={size} className={className}>
+    <rect x="3" y="4" width="18" height="4" rx="1.5" />
+    <rect x="3" y="10" width="18" height="4" rx="1.5" />
+    <rect x="3" y="16" width="18" height="4" rx="1.5" />
+  </svg>
+);
+
+/** Calendar layout toggle: the square view, drawn as Airbnb draws it. */
+export const GridIcon = ({ size, className }: IconProps) => (
+  <svg {...base} width={size} height={size} className={className}>
+    <rect x="3" y="3" width="7.5" height="7.5" rx="2" />
+    <rect x="13.5" y="3" width="7.5" height="7.5" rx="2" />
+    <rect x="3" y="13.5" width="7.5" height="7.5" rx="2" />
+    <rect x="13.5" y="13.5" width="7.5" height="7.5" rx="2" />
+  </svg>
+);
+
 export const UsersIcon = ({ size, className }: IconProps) => (
   <svg {...base} width={size} height={size} className={className}>
     <path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2" />
