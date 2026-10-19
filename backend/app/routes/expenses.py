@@ -377,6 +377,8 @@ def income_summary() -> Any:
     net_month = revenue_month - lease_month - expenses_month
     owed, owed_count = analytics.outstanding()
     received_total, paying_bookings = analytics.received_total()
+    expenses_total = analytics.expenses_total()
+    gross_profit = received_total - expenses_total
     deposits_held, deposits_count = total_held(db.session)
 
     finances = analytics.per_condo(start, end)
@@ -439,6 +441,13 @@ def income_summary() -> Any:
                 # booking is in "outstanding", not here.
                 "total": format_money(received_total),
                 "total_bookings": paying_bookings,
+                # Total income less total expenses, both all-time. Rent is
+                # not in it: lease costs are a commitment of a different kind
+                # from a bill, and the screen says so beside the figure
+                # rather than quietly folding them in.
+                "total_expenses": format_money(expenses_total),
+                "gross_profit": format_money(gross_profit),
+                "gross_profit_negative": gross_profit < 0,
             },
             # Money we hold rather than money we earned. A sibling of the KPIs,
             # never a term in them: net profit is revenue less lease and

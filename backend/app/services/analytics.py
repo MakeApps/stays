@@ -194,6 +194,25 @@ class AnalyticsService:
         ).one()
         return int(row[0] or 0), int(row[1] or 0)
 
+    def expenses_total(self) -> int:
+        """Every operating expense ever logged, cancelled ones excepted.
+
+        All-time to pair with ``received_total``: gross profit is the one
+        less the other, and a windowed figure against an all-time one would
+        be a number with no meaning. Pending bills count -- they are costs
+        whether or not the invoice has been settled -- and lease costs are
+        not here at all; gross profit deliberately leaves rent out.
+        """
+        return int(
+            self.session.scalar(
+                select(func.coalesce(func.sum(Expense.amount), 0)).where(
+                    Expense.deleted_at.is_(None),
+                    Expense.status != ExpenseStatus.CANCELLED,
+                )
+            )
+            or 0
+        )
+
     # ---------- rollups ----------
     def per_condo(self, start: date, end: date) -> dict[uuid.UUID, CondoFinance]:
         """One row per condo for the window — three queries, not three per unit."""

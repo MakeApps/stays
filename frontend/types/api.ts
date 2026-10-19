@@ -387,6 +387,11 @@ export interface IncomeSummary {
     total: string;
     /** Bookings that have paid something. */
     total_bookings: number;
+    /** All-time operating expenses, cancelled ones excepted. */
+    total_expenses: string;
+    /** `total` less `total_expenses`. Rent is deliberately not in it. */
+    gross_profit: string;
+    gross_profit_negative: boolean;
   };
   /** Capital held, reported alongside earnings and never mixed into them. */
   money_held: { deposits: string; deposits_count: number };

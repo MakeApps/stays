@@ -78,11 +78,16 @@ export function IncomeScreen() {
         <Stat tone="blue" label="This week" value={k.week} />
         <Stat tone="green" label="This month" value={k.month} />
         <Stat tone="amber" label="Lease costs" value={k.lease} />
+        {/* Total income less total expenses, both all-time. Rent is not in
+            it, and the note says so rather than leaving the reader to wonder
+            why this and net profit disagree. */}
         <Stat
-          tone="red"
-          label="Operating expenses"
-          value={k.expenses}
-          link={{ href: "/expenses", label: "Details" }}
+          tone="blue"
+          label="Gross profit"
+          value={k.gross_profit}
+          note="Rent not calculated"
+          negative={k.gross_profit_negative}
+          link={{ href: "/expenses", label: "Expenses" }}
         />
         <Stat
           tone="green"
@@ -363,6 +368,7 @@ function Stat({
   label,
   value,
   delta,
+  note,
   link,
   emphasis,
   negative,
@@ -371,6 +377,8 @@ function Stat({
   label: string;
   value: string;
   delta?: string;
+  /** A caveat about the figure, set in grey so it never reads as a trend. */
+  note?: string;
   link?: { href: string; label: string };
   emphasis?: boolean;
   negative?: boolean;
@@ -385,13 +393,20 @@ function Stat({
       </div>
       <div
         className="stat-value"
-        style={emphasis ? { color: negative ? "var(--danger)" : "var(--success)" } : undefined}
+        style={
+          negative
+            ? { color: "var(--danger)" }
+            : emphasis
+              ? { color: "var(--success)" }
+              : undefined
+        }
       >
         {value}
       </div>
       <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 8 }}>
         <div className="stat-label">{label}</div>
         {delta ? <span className="stat-delta up">{delta}</span> : null}
+        {note ? <span className="stat-delta neutral">{note}</span> : null}
         {link ? (
           <Link href={link.href as never} style={{ font: "600 12px/1 var(--font-sans)" }}>
             {link.label}

@@ -245,6 +245,34 @@ class TestGrossIncome:
         kpis = auth_client.get("/api/v1/income/summary").get_json()["kpis"]
         assert kpis["total"] == "฿4,000"
         assert kpis["total_bookings"] == 1
+        # Gross profit is the total less every expense, and nothing else:
+        # no lease cost comes off it.
+        assert kpis["total_expenses"] == "฿700"
+        assert kpis["gross_profit"] == "฿3,300"
+        assert kpis["gross_profit_negative"] is False
+
+    def test_gross_profit_goes_negative_honestly(
+        self, auth_client: Any, condo: Condo, lookups: Any, session: Any
+    ) -> None:
+        make_booking(condo, "2026-08-01", "2026-08-05", to_minor(4000), received=to_minor(1000))
+        category, method = lookups
+        service = ExpenseService(session)
+        service.create(
+            condo_id=condo.id, category_id=category.id, method_id=method.id,
+            spent_on=D("2026-08-02"), amount=to_minor(2500), description="Repair",
+        )
+        service.create(
+            condo_id=condo.id, category_id=category.id, method_id=method.id,
+            spent_on=D("2026-08-03"), amount=to_minor(9999), description="Voided",
+            status=ExpenseStatus.CANCELLED,
+        )
+        session.commit()
+
+        kpis = auth_client.get("/api/v1/income/summary").get_json()["kpis"]
+        # 1,000 received, 2,500 spent; the cancelled bill and the 3,000 still
+        # owed by the guest are both out of it.
+        assert kpis["gross_profit"] == "-฿1,500"
+        assert kpis["gross_profit_negative"] is True
 
 
 class TestExpenseListTotals:
