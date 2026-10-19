@@ -35,6 +35,8 @@ interface FormState {
   other_charges: string;
   tax_pct: string;
   received: string;
+  /** While on, the received amount is the total and the amount input is hidden. */
+  paid_in_full: boolean;
   status: string;
   notes: string;
 }
@@ -59,6 +61,7 @@ function initialState(): FormState {
     // rate keeps it when edited, and the summary still shows that line.
     tax_pct: "0",
     received: "0",
+    paid_in_full: false,
     status: "booked",
     notes: "",
   };
@@ -113,27 +116,34 @@ export function BookingForm() {
       other_charges: existing.other_charges,
       tax_pct: existing.tax_pct,
       received: existing.received,
+      // Off even for a paid booking. Switching it on says that the whole of
+      // whatever the total *becomes* has been received, and that is for the
+      // person editing to assert, not for the form to assume on their behalf.
+      paid_in_full: false,
       status: existing.status,
       notes: existing.notes ?? "",
     });
   }, [existing]);
 
-  const quote = useMemo(
-    () =>
-      computeQuote({
-        checkIn: form.check_in,
-        checkOut: form.check_out,
-        mode: form.mode,
-        nightRate: form.night_rate,
-        totalManual: form.total_manual,
-        discount: form.discount,
-        cleaningFee: form.cleaning_fee,
-        otherCharges: form.other_charges,
-        taxPct: form.tax_pct,
-        received: form.received,
-      }),
-    [form],
-  );
+  const quote = useMemo(() => {
+    const input = {
+      checkIn: form.check_in,
+      checkOut: form.check_out,
+      mode: form.mode,
+      nightRate: form.night_rate,
+      totalManual: form.total_manual,
+      discount: form.discount,
+      cleaningFee: form.cleaning_fee,
+      otherCharges: form.other_charges,
+      taxPct: form.tax_pct,
+      received: form.received,
+    };
+    const typed = computeQuote(input);
+    // "Paid in full" means the received amount is whatever the total comes to,
+    // so it is derived from the quote rather than typed, and follows every
+    // change to the price for as long as the switch stays on.
+    return form.paid_in_full ? computeQuote({ ...input, received: toMajor(typed.total) }) : typed;
+  }, [form]);
 
   const { data: availability } = useAvailability({
     condoId: form.condo_id,
@@ -187,6 +197,22 @@ export function BookingForm() {
     });
   }
 
+  function onPaidInFull(on: boolean) {
+    // The same status rule as typing the amount: a settled booking is booked,
+    // unless it is a block or has been cancelled. Switching off hands the
+    // decision back to whatever amount was last typed.
+    const typed = Number(form.received || 0) > 0;
+    set({
+      paid_in_full: on,
+      status:
+        form.status === "maintenance" || form.status === "cancelled"
+          ? form.status
+          : on || typed
+            ? "booked"
+            : "pending",
+    });
+  }
+
   async function save() {
     setTouched(true);
     if (conflict) {
@@ -224,7 +250,7 @@ export function BookingForm() {
       cleaning_fee: form.cleaning_fee || "0",
       other_charges: form.other_charges || "0",
       tax_pct: form.tax_pct || "0",
-      received: form.received || "0",
+      received: form.paid_in_full ? toMajor(quote.total) : form.received || "0",
       status: form.status,
       notes: form.notes || null,
     };
@@ -523,11 +549,30 @@ export function BookingForm() {
 
           <Card title="Payment">
             <Grid min={180}>
-              <MoneyField
-                label="Amount received"
-                value={form.received}
-                onChange={onReceived}
-              />
+              <Field label="Paid in full">
+                <button
+                  type="button"
+                  role="switch"
+                  aria-checked={form.paid_in_full}
+                  onClick={() => onPaidInFull(!form.paid_in_full)}
+                  style={SWITCH_ROW}
+                >
+                  <span
+                    className={form.paid_in_full ? "toggle-switch on" : "toggle-switch"}
+                    style={{ display: "inline-block" }}
+                    aria-hidden="true"
+                  />
+                  {form.paid_in_full ? "Yes — the total was received" : "No — enter what was received"}
+                </button>
+              </Field>
+              {/* Only asked for when it is not simply the total. */}
+              {form.paid_in_full ? null : (
+                <MoneyField
+                  label="Amount received"
+                  value={form.received}
+                  onChange={onReceived}
+                />
+              )}
               <Field label="Balance">
                 <div
                   style={{
@@ -742,6 +787,22 @@ export function BookingForm() {
 }
 
 /* ---------------------------------------------------------------- bits */
+
+/** The "paid in full" switch, sized and bordered like the inputs beside it. */
+const SWITCH_ROW: React.CSSProperties = {
+  display: "flex",
+  alignItems: "center",
+  gap: 10,
+  height: 44,
+  padding: "0 12px",
+  border: "1px solid var(--line-strong)",
+  borderRadius: 8,
+  background: "var(--surface)",
+  font: "500 14px/1 var(--font-sans)",
+  color: "var(--fg)",
+  cursor: "pointer",
+  textAlign: "left",
+};
 
 const INPUT_WRAP: React.CSSProperties = {
   display: "flex",
