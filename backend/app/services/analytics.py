@@ -175,6 +175,23 @@ class AnalyticsService:
         ).one()
         return int(row[0] or 0), int(row[1] or 0)
 
+    def revenue_total(self) -> tuple[int, int]:
+        """Everything ever earned, before any cost, and the bookings behind it.
+
+        Gross and all-time where the rest of this service is accrued and
+        windowed. It sums booking totals rather than nightly shares because
+        the shares of a booking sum back to its total exactly, so over *all*
+        time the two agree and this is the cheaper query. Cancelled stays and
+        maintenance blocks are not income and are left out, as everywhere.
+        """
+        row = self.session.execute(
+            select(func.coalesce(func.sum(Booking.total), 0), func.count()).where(
+                Booking.deleted_at.is_(None),
+                Booking.status.in_(REVENUE_STATUSES),
+            )
+        ).one()
+        return int(row[0] or 0), int(row[1] or 0)
+
     # ---------- rollups ----------
     def per_condo(self, start: date, end: date) -> dict[uuid.UUID, CondoFinance]:
         """One row per condo for the window — three queries, not three per unit."""

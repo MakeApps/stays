@@ -204,6 +204,40 @@ class TestExpenses:
         assert rows[0][2] == to_minor(2000)
 
 
+class TestGrossIncome:
+    """All-time income before any deduction: the one figure that is not windowed."""
+
+    def test_sums_every_live_booking_and_nothing_else(
+        self, analytics: AnalyticsService, condo: Condo, session: Any
+    ) -> None:
+        make_booking(condo, "2026-08-01", "2026-08-05", to_minor(4000))
+        make_booking(condo, "2026-09-10", "2026-09-12", to_minor(1500))
+        cancelled = make_booking(condo, "2026-10-01", "2026-10-03", to_minor(9999))
+        cancelled.status = BookingStatus.CANCELLED
+        session.commit()
+
+        assert analytics.revenue_total() == (to_minor(5500), 2)
+
+    def test_the_income_screen_shows_it_gross(
+        self, auth_client: Any, condo: Condo, lookups: Any, session: Any
+    ) -> None:
+        make_booking(condo, "2026-08-01", "2026-08-05", to_minor(4000))
+        category, method = lookups
+        ExpenseService(session).create(
+            condo_id=condo.id,
+            category_id=category.id,
+            method_id=method.id,
+            spent_on=D("2026-08-02"),
+            amount=to_minor(700),
+            description="Not deducted from the total",
+        )
+        session.commit()
+
+        kpis = auth_client.get("/api/v1/income/summary").get_json()["kpis"]
+        assert kpis["total"] == "฿4,000"
+        assert kpis["total_bookings"] == 1
+
+
 class TestExpenseListTotals:
     """The list carries the total of the whole selection, not of the page."""
 

@@ -381,6 +381,10 @@ export interface IncomeSummary {
     margin_pct: number;
     outstanding: string;
     outstanding_count: number;
+    /** All-time and gross: every live booking's total, before lease costs or
+     *  expenses. The one figure here that is not windowed to the month. */
+    total: string;
+    total_bookings: number;
   };
   /** Capital held, reported alongside earnings and never mixed into them. */
   money_held: { deposits: string; deposits_count: number };
