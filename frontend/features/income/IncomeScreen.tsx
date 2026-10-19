@@ -83,7 +83,7 @@ export function IncomeScreen() {
             why this and net profit disagree. */}
         <Stat
           tone="blue"
-          label="Gross profit"
+          label="Gross income"
           value={k.gross_profit}
           note="Rent not calculated"
           negative={k.gross_profit_negative}

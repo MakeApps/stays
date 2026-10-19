@@ -194,6 +194,11 @@ def dashboard() -> Any:
     )
 
     nights = analytics.nights_between(start, end)
+    # The same figure the Income screen calls gross income: everything ever
+    # received less every expense ever logged, rent left out. All-time where
+    # the rest of these are today's or this month's.
+    received_total, _ = analytics.received_total()
+    gross_income = received_total - analytics.expenses_total()
 
     return jsonify(
         {
@@ -206,6 +211,8 @@ def dashboard() -> Any:
                 "maintenance": statuses["maintenance"],
                 "occupancy_pct": round(occupied / total * 100) if total else 0,
                 "revenue_today": format_money(revenue_today),
+                "gross_income": format_money(gross_income),
+                "gross_income_negative": gross_income < 0,
                 "revenue_month": format_money(revenue_month),
                 "expenses_month": format_money(expenses_month),
                 "lease_month": format_money(lease_month),

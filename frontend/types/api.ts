@@ -408,6 +408,10 @@ export interface DashboardKpis {
   maintenance: number;
   occupancy_pct: number;
   revenue_today: string;
+  /** All-time: everything received less every expense, rent left out. The
+   *  same figure the Income screen shows. */
+  gross_income: string;
+  gross_income_negative: boolean;
   revenue_month: string;
   expenses_month: string;
   lease_month: string;

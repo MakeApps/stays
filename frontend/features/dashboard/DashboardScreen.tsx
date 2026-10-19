@@ -125,7 +125,9 @@ export function DashboardScreen() {
         <Stat tone="purple" icon={<CondoIcon size={17} />} value={String(k.total_condos)} label="Total condos" delta="all units" />
         <Stat tone="blue" icon={<BookingIcon size={17} />} value={String(k.occupied)} label="Occupied today" delta={`${k.occupancy_pct}%`} />
         <Stat tone="green" icon={<CondoIcon size={17} />} value={String(k.vacant)} label="Vacant today" link={{ href: "/condos", label: "Fill them" }} />
-        <Stat tone="purple" icon={<IncomeIcon size={17} />} value={k.revenue_today} label="Today's revenue" delta="accrued" />
+        {/* All-time, where its neighbours are today's: received less every
+            expense, with rent left out and the note saying so. */}
+        <Stat tone="purple" icon={<IncomeIcon size={17} />} value={k.gross_income} label="Gross income" delta="rent not calculated" negative={k.gross_income_negative} link={{ href: "/income", label: "Income" }} />
         <Stat tone="green" icon={<IncomeIcon size={17} />} value={k.revenue_month} label="Month revenue" />
         <Stat tone="amber" icon={<CalendarIcon size={17} />} value={String(k.check_ins_7d)} label="Check-ins · 7 days" link={{ href: "/calendar", label: "View" }} />
         <Stat tone="amber" icon={<CalendarIcon size={17} />} value={String(k.check_outs_7d)} label="Check-outs · 7 days" link={{ href: "/calendar", label: "View" }} />
@@ -560,6 +562,7 @@ function Stat({
   delta,
   link,
   onClick,
+  negative,
 }: {
   tone: "purple" | "green" | "amber" | "blue" | "red";
   icon: React.ReactNode;
@@ -568,6 +571,8 @@ function Stat({
   delta?: string;
   link?: { href: string; label: string };
   onClick?: () => void;
+  /** A money figure below zero is drawn in red rather than left to be misread. */
+  negative?: boolean;
 }) {
   // A clickable stat is a real button, not a div with a handler: keyboard
   // reachable, announced as a control, and no bespoke key handling.
@@ -584,7 +589,9 @@ function Stat({
       }
     >
       <div className={`stat-icon ${tone}`}>{icon}</div>
-      <div className="stat-value">{value}</div>
+      <div className="stat-value" style={negative ? { color: "var(--danger)" } : undefined}>
+        {value}
+      </div>
       <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 8 }}>
         <div className="stat-label">{label}</div>
         {delta ? <span className="stat-delta neutral">{delta}</span> : null}

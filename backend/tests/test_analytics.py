@@ -274,6 +274,11 @@ class TestGrossIncome:
         assert kpis["gross_profit"] == "-฿1,500"
         assert kpis["gross_profit_negative"] is True
 
+        # The dashboard shows the very same figure, not a second definition.
+        dashboard = auth_client.get("/api/v1/dashboard").get_json()["kpis"]
+        assert dashboard["gross_income"] == "-฿1,500"
+        assert dashboard["gross_income_negative"] is True
+
 
 class TestExpenseListTotals:
     """The list carries the total of the whole selection, not of the page."""
