@@ -376,7 +376,7 @@ def income_summary() -> Any:
     lease_month = analytics.lease_costs_between(start, end)
     net_month = revenue_month - lease_month - expenses_month
     owed, owed_count = analytics.outstanding()
-    revenue_total, revenue_bookings = analytics.revenue_total()
+    received_total, paying_bookings = analytics.received_total()
     deposits_held, deposits_count = total_held(db.session)
 
     finances = analytics.per_condo(start, end)
@@ -435,8 +435,10 @@ def income_summary() -> Any:
                 # Gross and all-time, beside figures that are windowed and
                 # mostly net: the one number that answers "how much has this
                 # portfolio ever taken in" before a single cost comes off it.
-                "total": format_money(revenue_total),
-                "total_bookings": revenue_bookings,
+                # Money received, never money billed -- the unpaid part of a
+                # booking is in "outstanding", not here.
+                "total": format_money(received_total),
+                "total_bookings": paying_bookings,
             },
             # Money we hold rather than money we earned. A sibling of the KPIs,
             # never a term in them: net profit is revenue less lease and

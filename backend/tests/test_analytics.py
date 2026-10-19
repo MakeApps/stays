@@ -50,7 +50,9 @@ def analytics(session: Any) -> AnalyticsService:
     return AnalyticsService(session)
 
 
-def make_booking(condo: Condo, check_in: str, check_out: str, total: int) -> Any:
+def make_booking(
+    condo: Condo, check_in: str, check_out: str, total: int, *, received: int = 0
+) -> Any:
     booking = BookingService(db.session).create(
         condo_id=condo.id,
         guest_name="Guest",
@@ -58,6 +60,7 @@ def make_booking(condo: Condo, check_in: str, check_out: str, total: int) -> Any
         check_out=D(check_out),
         mode=PricingMode.TOTAL,
         total_manual=total,
+        received=received,
     )
     db.session.commit()
     return booking
@@ -205,23 +208,29 @@ class TestExpenses:
 
 
 class TestGrossIncome:
-    """All-time income before any deduction: the one figure that is not windowed."""
+    """All-time money received before any deduction: the one figure not windowed."""
 
-    def test_sums_every_live_booking_and_nothing_else(
+    def test_counts_what_was_paid_and_nothing_else(
         self, analytics: AnalyticsService, condo: Condo, session: Any
     ) -> None:
-        make_booking(condo, "2026-08-01", "2026-08-05", to_minor(4000))
-        make_booking(condo, "2026-09-10", "2026-09-12", to_minor(1500))
-        cancelled = make_booking(condo, "2026-10-01", "2026-10-03", to_minor(9999))
+        # Paid in full, part-paid, unpaid, and a cancelled stay that was paid.
+        make_booking(condo, "2026-08-01", "2026-08-05", to_minor(4000), received=to_minor(4000))
+        make_booking(condo, "2026-09-10", "2026-09-12", to_minor(1500), received=to_minor(500))
+        make_booking(condo, "2026-09-20", "2026-09-22", to_minor(2000))
+        cancelled = make_booking(
+            condo, "2026-10-01", "2026-10-03", to_minor(9999), received=to_minor(9999)
+        )
         cancelled.status = BookingStatus.CANCELLED
         session.commit()
 
-        assert analytics.revenue_total() == (to_minor(5500), 2)
+        # 4,000 plus the 500 actually paid; the 1,000 still owed and the
+        # untouched 2,000 are outstanding, not income.
+        assert analytics.received_total() == (to_minor(4500), 2)
 
     def test_the_income_screen_shows_it_gross(
         self, auth_client: Any, condo: Condo, lookups: Any, session: Any
     ) -> None:
-        make_booking(condo, "2026-08-01", "2026-08-05", to_minor(4000))
+        make_booking(condo, "2026-08-01", "2026-08-05", to_minor(4000), received=to_minor(4000))
         category, method = lookups
         ExpenseService(session).create(
             condo_id=condo.id,

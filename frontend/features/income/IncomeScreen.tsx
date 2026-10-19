@@ -64,13 +64,15 @@ export function IncomeScreen() {
       </div>
 
       <div className="ls-kpis" style={{ ...GRID_STATS, marginBottom: 24 }}>
-        {/* Gross and all-time, first: what the portfolio has ever taken in
-            before a single cost comes off. Everything after it is this month. */}
+        {/* Gross and all-time, first: what the portfolio has actually taken
+            in before a single cost comes off. Received, not billed -- the
+            unpaid part of a booking is "Outstanding balance" below, not income.
+            Everything after it is this month. */}
         <Stat
           tone="purple"
           label="Total income"
           value={k.total}
-          delta={`${k.total_bookings} ${k.total_bookings === 1 ? "booking" : "bookings"} · before costs`}
+          delta={`${k.total_bookings} ${k.total_bookings === 1 ? "booking" : "bookings"} paid · before costs`}
         />
         <Stat tone="purple" label="Today's income" value={k.today} />
         <Stat tone="blue" label="This week" value={k.week} />

@@ -175,19 +175,21 @@ class AnalyticsService:
         ).one()
         return int(row[0] or 0), int(row[1] or 0)
 
-    def revenue_total(self) -> tuple[int, int]:
-        """Everything ever earned, before any cost, and the bookings behind it.
+    def received_total(self) -> tuple[int, int]:
+        """Everything ever paid in, before any cost, and the bookings that paid.
 
         Gross and all-time where the rest of this service is accrued and
-        windowed. It sums booking totals rather than nightly shares because
-        the shares of a booking sum back to its total exactly, so over *all*
-        time the two agree and this is the cheaper query. Cancelled stays and
-        maintenance blocks are not income and are left out, as everywhere.
+        windowed -- and *received*, not billed: a booking's unpaid balance is
+        money owed, which ``outstanding()`` reports, and counting it here
+        would show income the business does not yet have. A part-paid booking
+        contributes what it has paid. Cancelled stays and maintenance blocks
+        are not income and are left out, as everywhere.
         """
         row = self.session.execute(
-            select(func.coalesce(func.sum(Booking.total), 0), func.count()).where(
+            select(func.coalesce(func.sum(Booking.received), 0), func.count()).where(
                 Booking.deleted_at.is_(None),
                 Booking.status.in_(REVENUE_STATUSES),
+                Booking.received > 0,
             )
         ).one()
         return int(row[0] or 0), int(row[1] or 0)
