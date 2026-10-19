@@ -304,6 +304,9 @@ export interface Expense {
 export interface ExpenseListResponse {
   items: Expense[];
   meta: PageMeta;
+  /** The whole selection, every page of it. Cancelled rows are listed but
+   *  not counted, as they are left out of every other total. */
+  totals: { amount: string; label: string; count: number };
 }
 
 export interface Lookups {

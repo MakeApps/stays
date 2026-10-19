@@ -346,6 +346,30 @@ export function ExpensesScreen() {
             </select>
           </div>
 
+          {/* The total of everything the filters select, across every page --
+              a filter by condo or category is a question whose answer is a
+              figure, not a list. Sized as one box rather than a KPI row, so a
+              single stat does not stretch the width of the page. */}
+          <div
+            className="ls-kpis"
+            style={{ ...GRID_STATS, gridTemplateColumns: "minmax(186px, 320px)", marginBottom: 16 }}
+          >
+            <Stat
+              tone="red"
+              label={filtered ? "Total for this selection" : "Total expenses"}
+              value={list?.totals.label ?? `${currency.symbol}0`}
+              delta={
+                list
+                  ? `${list.totals.count} ${list.totals.count === 1 ? "expense" : "expenses"}${
+                      status === "cancelled" || list.totals.count < list.meta.total
+                        ? " · cancelled not counted"
+                        : ""
+                    }`
+                  : undefined
+              }
+            />
+          </div>
+
           <div className="table-card">
             <div
               style={{

@@ -155,23 +155,48 @@ def list_expenses() -> Any:
         page=params.page, per_page=params.per_page, sort=params.sort, order=params.order
     )
 
-    stmt = service.base_query()
-    if params.condo_id:
-        stmt = stmt.where(Expense.condo_id == params.condo_id)
-    if params.category_id:
-        stmt = stmt.where(Expense.category_id == params.category_id)
-    if params.status != "all":
-        stmt = stmt.where(Expense.status == ExpenseStatus(params.status))
-    if params.start:
-        stmt = stmt.where(Expense.spent_on >= params.start)
-    if params.end:
-        stmt = stmt.where(Expense.spent_on < params.end)
-    if params.q:
-        stmt = service.search_filter(stmt, params.q)
+    def narrow(stmt: Any) -> Any:
+        """The filters, applied to the rows and to their total alike."""
+        if params.condo_id:
+            stmt = stmt.where(Expense.condo_id == params.condo_id)
+        if params.category_id:
+            stmt = stmt.where(Expense.category_id == params.category_id)
+        if params.status != "all":
+            stmt = stmt.where(Expense.status == ExpenseStatus(params.status))
+        if params.start:
+            stmt = stmt.where(Expense.spent_on >= params.start)
+        if params.end:
+            stmt = stmt.where(Expense.spent_on < params.end)
+        if params.q:
+            stmt = service.search_filter(stmt, params.q)
+        return stmt
 
+    stmt = narrow(service.base_query())
     stmt = apply_sort(stmt, page_params, allowed=SORTABLE, default="spent_on")
     page = paginate(db.session, stmt, page_params)
-    return jsonify(page.envelope(lambda e: _serialise(e, service))), 200
+
+    # The total of the whole selection, not of the page: a filter by condo or
+    # category is a question whose answer is a figure, and the page is only
+    # the first screenful of the rows behind it. Cancelled expenses stay in
+    # the list but out of the sum, as they are out of every other total -- so
+    # a list filtered to cancelled ones honestly totals nothing. The same
+    # column-select shape as the summary's pending figure, so the tenant
+    # filter reaches it the same way.
+    total, counted = db.session.execute(
+        narrow(
+            select(func.coalesce(func.sum(Expense.amount), 0), func.count()).where(
+                Expense.deleted_at.is_(None),
+                Expense.status != ExpenseStatus.CANCELLED,
+            )
+        )
+    ).one()
+    body = page.envelope(lambda e: _serialise(e, service))
+    body["totals"] = {
+        "amount": str(to_major(int(total or 0))),
+        "label": format_money(int(total or 0)),
+        "count": int(counted or 0),
+    }
+    return jsonify(body), 200
 
 
 @bp.post("")

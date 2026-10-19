@@ -204,6 +204,63 @@ class TestExpenses:
         assert rows[0][2] == to_minor(2000)
 
 
+class TestExpenseListTotals:
+    """The list carries the total of the whole selection, not of the page."""
+
+    def _spend(self, session: Any, condo: Condo, lookups: Any, amount: int, **kw: Any) -> None:
+        category, method = lookups
+        ExpenseService(session).create(
+            condo_id=condo.id,
+            category_id=category.id,
+            method_id=method.id,
+            spent_on=D("2026-08-05"),
+            amount=to_minor(amount),
+            description="Bill",
+            **kw,
+        )
+        session.commit()
+
+    def test_the_total_spans_every_page(
+        self, auth_client: Any, condo: Condo, lookups: Any, session: Any
+    ) -> None:
+        for amount in (100, 200, 300):
+            self._spend(session, condo, lookups, amount)
+
+        body = auth_client.get("/api/v1/expenses?per_page=1").get_json()
+        assert len(body["items"]) == 1
+        assert body["totals"] == {"amount": "600.00", "label": "฿600", "count": 3}
+
+    def test_cancelled_rows_are_listed_but_not_counted(
+        self, auth_client: Any, condo: Condo, lookups: Any, session: Any
+    ) -> None:
+        self._spend(session, condo, lookups, 1000)
+        self._spend(session, condo, lookups, 9999, status=ExpenseStatus.CANCELLED)
+
+        body = auth_client.get("/api/v1/expenses").get_json()
+        assert len(body["items"]) == 2
+        assert body["totals"] == {"amount": "1000.00", "label": "฿1,000", "count": 1}
+
+        # Filtered to the cancelled ones, the list is honest about summing nothing.
+        only_cancelled = auth_client.get("/api/v1/expenses?status=cancelled").get_json()
+        assert len(only_cancelled["items"]) == 1
+        assert only_cancelled["totals"]["count"] == 0
+        assert only_cancelled["totals"]["label"] == "฿0"
+
+    def test_the_total_follows_the_filters(
+        self, auth_client: Any, condo: Condo, lookups: Any, session: Any
+    ) -> None:
+        other = Condo(code="B-2", name="Other", night_rate=to_minor(1000))
+        session.add(other)
+        session.commit()
+        self._spend(session, condo, lookups, 500)
+        self._spend(session, other, lookups, 2000)
+
+        mine = auth_client.get(f"/api/v1/expenses?condo_id={condo.id}").get_json()
+        assert mine["totals"] == {"amount": "500.00", "label": "฿500", "count": 1}
+        everything = auth_client.get("/api/v1/expenses").get_json()
+        assert everything["totals"]["label"] == "฿2,500"
+
+
 class TestProfitAndOccupancy:
     def test_per_condo_rollup(
         self, analytics: AnalyticsService, condo: Condo, lookups: Any, session: Any
