@@ -54,7 +54,10 @@ function initialState(): FormState {
     discount: "0",
     cleaning_fee: "500",
     other_charges: "0",
-    tax_pct: "7",
+    // Tax is hidden from the form for now, so a new booking carries none.
+    // The field stays in the state and the payload: a booking saved with a
+    // rate keeps it when edited, and the summary still shows that line.
+    tax_pct: "0",
     received: "0",
     status: "booked",
     notes: "",
@@ -429,7 +432,7 @@ export function BookingForm() {
               <Field
                 label="Check-out"
                 style={{ flex: "1 1 180px" }}
-                error={quote.error && !quote.error.startsWith("Tax") ? quote.error : undefined}
+                error={quote.error ?? undefined}
               >
                 <input
                   type="date"
@@ -515,22 +518,6 @@ export function BookingForm() {
                 value={form.other_charges}
                 onChange={(v) => set({ other_charges: v })}
               />
-              <Field
-                label="Tax"
-                error={quote.error?.startsWith("Tax") ? quote.error : undefined}
-              >
-                <div style={INPUT_WRAP}>
-                  <input
-                    value={form.tax_pct}
-                    onChange={(e) => set({ tax_pct: e.target.value })}
-                    inputMode="decimal"
-                    style={BARE_INPUT}
-                  />
-                  <span style={{ font: "500 14px/1 var(--font-sans)", color: "var(--fg-3)" }}>
-                    %
-                  </span>
-                </div>
-              </Field>
             </Grid>
           </Card>
 
@@ -683,7 +670,12 @@ export function BookingForm() {
               />
               <Line label="Cleaning fee" value={`+${money(quote.cleaningFee)}`} />
               <Line label="Other charges" value={`+${money(quote.otherCharges)}`} />
-              <Line label={`Tax (${form.tax_pct || 0}%)`} value={`+${money(quote.tax)}`} />
+              {/* Only for bookings that already carry a rate: the input is
+                  hidden for now, and a charge nobody can see must still be
+                  shown rather than folded silently into the total. */}
+              {quote.tax > 0 ? (
+                <Line label={`Tax (${form.tax_pct}%)`} value={`+${money(quote.tax)}`} />
+              ) : null}
             </div>
 
             <div
