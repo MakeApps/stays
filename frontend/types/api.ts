@@ -16,12 +16,21 @@ export type Capability =
   | "channel:read" | "channel:write"
   | "user:read" | "user:write";
 
+/** ISO 4217 codes the API knows. Mirrors `backend/app/common/money.py`. */
+export type CurrencyCode = "THB" | "INR";
+
 /** One organisation, as seen by the account looking at it. */
 export interface OrganisationSummary {
   id: string;
   name: string;
   /** Held here. The same account can be an admin in one and a manager in another. */
   role: Role;
+  /** The currency the books are kept in. Every amount under this organisation
+   *  is in it, and nothing is ever converted. */
+  currency: CurrencyCode;
+  /** Sent with the code so a figure the browser computes itself is written
+   *  with exactly what the API would have used. */
+  currency_symbol: string;
 }
 
 export interface SessionUser {
@@ -43,6 +52,8 @@ export interface OrganisationListResponse {
 export interface OrganisationDetail {
   id: string;
   name: string;
+  currency: CurrencyCode;
+  currency_symbol: string;
   created_at: string;
   role?: Role;
 }
@@ -70,8 +81,8 @@ export interface Condo {
   bedrooms: number;
   bathrooms: number;
   size_sqm: number | null;
-  /** Decimal strings in baht. The API stores satang; never parse these with
-   *  parseFloat for arithmetic that gets persisted. */
+  /** Decimal strings in the organisation's currency. The API stores minor
+   *  units; never parse these with parseFloat for arithmetic that gets persisted. */
   night_rate: string;
   month_rate: string;
   cleaning_fee: string;
@@ -99,9 +110,11 @@ export interface Condo {
   status: UnitStatus;
   images: CondoImage[];
   cover_url: string | null;
-  /** Pre-rendered by the API so ฿ formatting cannot drift between the two apps. */
+  /** Pre-rendered by the API, in the organisation's currency, so money
+   *  formatting cannot drift between the two apps. */
   night_rate_label: string;
   month_rate_label: string;
+  cleaning_fee_label: string;
 }
 
 export interface PageMeta {
@@ -161,7 +174,7 @@ export interface Booking {
   payment_status: PaymentStatus;
   pricing_mode: PricingMode;
 
-  /** Decimal strings in baht. The API stores satang. */
+  /** Decimal strings in the organisation's currency. The API stores minor units. */
   night_rate: string;
   subtotal: string;
   discount: string;
@@ -178,6 +191,7 @@ export interface Booking {
   total_label: string;
   balance_label: string;
   night_rate_label: string;
+  received_label: string;
 }
 
 export interface BookingListResponse {

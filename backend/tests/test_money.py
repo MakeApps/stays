@@ -12,7 +12,16 @@ import pytest
 from hypothesis import given
 from hypothesis import strategies as st
 
-from app.common.money import format_thb, split_evenly, to_major, to_minor
+from app.common.money import (
+    CURRENCIES,
+    MINOR_UNITS,
+    currency_for,
+    format_money,
+    is_supported,
+    split_evenly,
+    to_major,
+    to_minor,
+)
 
 
 class TestConversion:
@@ -54,8 +63,42 @@ class TestFormatting:
         ],
     )
     def test_matches_the_design(self, satang: int, rendered: str) -> None:
-        # The prototype's money() renders grouped whole baht: "฿1,800".
-        assert format_thb(satang) == rendered
+        # The prototype's money() renders grouped whole baht: "฿1,800". With
+        # no organisation in scope the currency is the default, which is baht.
+        assert format_money(satang) == rendered
+
+    @pytest.mark.parametrize(
+        ("paise", "rendered"),
+        [
+            (180_000, "₹1,800"),
+            (245_050, "₹2,451"),
+            (0, "₹0"),
+            (-2_500_000, "-₹25,000"),
+        ],
+    )
+    def test_rupees_render_the_same_way(self, paise: int, rendered: str) -> None:
+        """Only the symbol differs: the grouping and rounding are the design's."""
+        assert format_money(paise, "INR") == rendered
+        assert format_money(paise, CURRENCIES["INR"]) == rendered
+
+    def test_the_sign_leads_the_symbol(self) -> None:
+        assert format_money(-2_500_000) == "-฿25,000"
+
+    def test_an_unknown_code_falls_back_rather_than_failing(self) -> None:
+        # A label must never take a screen down. The strict check lives where
+        # a code is chosen, in OrganisationService.set_currency.
+        assert format_money(100, "XXX") == "฿1"
+        assert currency_for("usd").code == "THB"
+        assert currency_for("inr").code == "INR"
+        assert currency_for(None).code == "THB"
+
+    def test_every_supported_currency_shares_the_minor_unit(self) -> None:
+        """MINOR_UNITS is one constant, so a currency needing another cannot slip in."""
+        assert set(CURRENCIES) == {"THB", "INR"}
+        assert all(is_supported(code) for code in CURRENCIES)
+        assert not is_supported(None)
+        assert not is_supported("USD")
+        assert MINOR_UNITS == 100
 
 
 class TestSplitEvenly:

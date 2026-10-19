@@ -8,6 +8,7 @@ import { toast } from "sonner";
 import { z } from "zod";
 
 import { CloseIcon, PlusIcon, TrashIcon } from "@/components/layout/icons";
+import { useCurrency } from "@/components/providers/Providers";
 import { DEPOSIT_META } from "@/features/condos/display";
 import {
   useCreateCondo,
@@ -107,6 +108,7 @@ export function CondoFormModal({
 }) {
   const editing = Boolean(condo);
   const create = useCreateCondo();
+  const currency = useCurrency();
   const update = useUpdateCondo(condo?.id ?? "");
   const uploadImage = useUploadCondoImage(condo?.id ?? "");
   const deleteImage = useDeleteCondoImage(condo?.id ?? "");
@@ -279,15 +281,15 @@ export function CondoFormModal({
                   <input placeholder="42" inputMode="numeric" {...register("size_sqm")} />
                 </Field>
 
-                <Field label="Night rate (฿)" error={errors.night_rate?.message}>
+                <Field label={`Night rate (${currency.symbol})`} error={errors.night_rate?.message}>
                   <input placeholder="1500" inputMode="decimal" {...register("night_rate")} />
                 </Field>
 
-                <Field label="Monthly rate (฿)" error={errors.month_rate?.message}>
+                <Field label={`Monthly rate (${currency.symbol})`} error={errors.month_rate?.message}>
                   <input placeholder="28000" inputMode="decimal" {...register("month_rate")} />
                 </Field>
 
-                <Field label="Cleaning fee (฿)" error={errors.cleaning_fee?.message}>
+                <Field label={`Cleaning fee (${currency.symbol})`} error={errors.cleaning_fee?.message}>
                   <input placeholder="500" inputMode="decimal" {...register("cleaning_fee")} />
                 </Field>
 
@@ -324,7 +326,7 @@ export function CondoFormModal({
                 </Field>
 
                 <Field
-                  label="Monthly lease (฿)"
+                  label={`Monthly lease (${currency.symbol})`}
                   error={errors.monthly_lease_amount?.message}
                   hint="Paid to the owner. Counts against profit."
                 >
@@ -336,7 +338,7 @@ export function CondoFormModal({
                 </Field>
 
                 <Field
-                  label="Security deposit (฿)"
+                  label={`Security deposit (${currency.symbol})`}
                   error={errors.security_deposit?.message}
                   hint="Refundable deposit paid to the property owner. This is not an operating expense."
                 >

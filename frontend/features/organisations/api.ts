@@ -3,6 +3,7 @@ import { useRouter } from "next/navigation";
 
 import { api } from "@/services/http";
 import type {
+  CurrencyCode,
   OrganisationDetail,
   OrganisationListResponse,
   SessionUser,
@@ -49,23 +50,54 @@ export function useSwitchOrganisation() {
   });
 }
 
+export interface NewOrganisation {
+  name: string;
+  /** The currency its books are kept in. Settled at creation because it is
+   *  far cheaper to choose before the first rate is typed than to relabel
+   *  a portfolio after. */
+  currency: CurrencyCode;
+}
+
 export function useCreateOrganisation() {
   const client = useQueryClient();
   return useMutation({
-    mutationFn: (name: string) => api.post<OrganisationDetail>("/organisations", { name }),
+    mutationFn: (input: NewOrganisation) =>
+      api.post<OrganisationDetail>("/organisations", input),
     onSuccess: () => {
       void client.invalidateQueries({ queryKey: ["organisations"] });
     },
   });
 }
 
-export function useRenameOrganisation(id: string) {
+/** Only the fields being changed are sent; the rest stay as they are. */
+export interface OrganisationChanges {
+  name?: string;
+  currency?: CurrencyCode;
+}
+
+/**
+ * Rename the organisation, change the currency its books are kept in, or both.
+ *
+ * A currency change drops the whole query cache, exactly as switching
+ * organisation does: every label the API has sent is pre-rendered in the old
+ * currency, and merely invalidating would leave "฿1,800" on screen beside a
+ * form that now says rupees until each refetch landed. A rename only needs the
+ * list and the shell to catch up.
+ */
+export function useUpdateOrganisation(id: string) {
   const client = useQueryClient();
   const router = useRouter();
   return useMutation({
-    mutationFn: (name: string) => api.patch<OrganisationDetail>(`/organisations/${id}`, { name }),
-    onSuccess: () => {
-      void client.invalidateQueries({ queryKey: ["organisations"] });
+    mutationFn: (changes: OrganisationChanges) =>
+      api.patch<OrganisationDetail>(`/organisations/${id}`, changes),
+    onSuccess: (_result, changes) => {
+      if (changes.currency !== undefined) {
+        client.clear();
+      } else {
+        void client.invalidateQueries({ queryKey: ["organisations"] });
+      }
+      // The session (and with it the currency every screen reads) is read on
+      // the server, so the shell only learns about the change on a refresh.
       router.refresh();
     },
   });

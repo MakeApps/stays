@@ -8,17 +8,23 @@ import { toast } from "sonner";
 import { z } from "zod";
 
 import { CloseIcon } from "@/components/layout/icons";
+import { useSession } from "@/components/providers/Providers";
 import {
   useCreateOrganisation,
   useSwitchOrganisation,
 } from "@/features/organisations/api";
+import { CURRENCIES, currencyOf } from "@/lib/money";
 import { ApiError } from "@/services/http";
+import type { CurrencyCode } from "@/types/api";
 
 /** Matches the server's floor. Anything stricter belongs in one place. */
 const MIN_NAME = 2;
 
+const CURRENCY_CODES = CURRENCIES.map((c) => c.code) as [CurrencyCode, ...CurrencyCode[]];
+
 const schema = z.object({
   name: z.string().trim().min(MIN_NAME, `At least ${MIN_NAME} characters`).max(160),
+  currency: z.enum(CURRENCY_CODES),
 });
 
 type Values = z.infer<typeof schema>;
@@ -30,6 +36,11 @@ type Values = z.infer<typeof schema>;
  * to relocate a session as a side effect, because doing that would drop an
  * admin out of the organisation they were working in without being asked. Here
  * the person did ask, so the switch follows immediately.
+ *
+ * The currency is asked for here, before the first rate is typed, because it
+ * cannot be fixed by conversion later — only relabelled. It starts as whatever
+ * the current organisation uses, which is the likeliest answer for a second
+ * portfolio and one click away from the other.
  */
 export function NewOrganisationModal({
   open,
@@ -38,8 +49,10 @@ export function NewOrganisationModal({
   open: boolean;
   onClose: () => void;
 }) {
+  const user = useSession();
   const create = useCreateOrganisation();
   const switcher = useSwitchOrganisation();
+  const current = currencyOf(user?.organisation);
 
   const {
     register,
@@ -50,25 +63,30 @@ export function NewOrganisationModal({
   } = useForm<Values>({
     resolver: zodResolver(schema),
     mode: "onTouched",
-    defaultValues: { name: "" },
+    defaultValues: { name: "", currency: current.code },
   });
 
   useEffect(() => {
-    if (open) reset({ name: "" });
-  }, [open, reset]);
+    if (open) reset({ name: "", currency: current.code });
+  }, [open, reset, current.code]);
 
   async function onSubmit(values: Values) {
     try {
-      const created = await create.mutateAsync(values.name);
+      const created = await create.mutateAsync({
+        name: values.name,
+        currency: values.currency,
+      });
       toast.success("Organisation created", {
-        description: `Now showing ${created.name}. It starts empty.`,
+        description: `Now showing ${created.name}. It starts empty, in ${created.currency_symbol}.`,
       });
       onClose();
       await switcher.mutateAsync(created.id);
     } catch (error) {
       if (error instanceof ApiError) {
-        const message = error.fields.name?.[0];
-        if (message) setError("name", { message });
+        const nameMessage = error.fields.name?.[0];
+        if (nameMessage) setError("name", { message: nameMessage });
+        const currencyMessage = error.fields.currency?.[0];
+        if (currencyMessage) setError("currency", { message: currencyMessage });
         toast.error("Could not create organisation", { description: error.message });
         return;
       }
@@ -116,7 +134,7 @@ export function NewOrganisationModal({
                 </Dialog.Close>
               </div>
 
-              <div className="modal-body">
+              <div className="modal-body" style={{ display: "flex", flexDirection: "column", gap: 14 }}>
                 <div className="field">
                   <label>Name</label>
                   <input
@@ -128,6 +146,25 @@ export function NewOrganisationModal({
                     <small className="error">{errors.name.message}</small>
                   ) : (
                     <small>You will be its admin, and can add people to it.</small>
+                  )}
+                </div>
+
+                <div className="field">
+                  <label>Currency</label>
+                  <select
+                    {...register("currency")}
+                    aria-invalid={errors.currency ? true : undefined}
+                  >
+                    {CURRENCIES.map((c) => (
+                      <option key={c.code} value={c.code}>
+                        {c.name} ({c.symbol}) · {c.code}
+                      </option>
+                    ))}
+                  </select>
+                  {errors.currency?.message ? (
+                    <small className="error">{errors.currency.message}</small>
+                  ) : (
+                    <small>What its books are kept in. It can be changed later in Settings.</small>
                   )}
                 </div>
               </div>

@@ -19,6 +19,7 @@ import uuid
 from sqlalchemy import Boolean, Enum, ForeignKey, Index, String
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
+from app.common.money import DEFAULT_CURRENCY
 from app.models.base import (
     GUID,
     AuditMixin,
@@ -34,6 +35,14 @@ class Organisation(Base, UUIDPrimaryKeyMixin, AuditMixin, SoftDeleteMixin):
 
     name: Mapped[str] = mapped_column(String(160), nullable=False)
     is_active: Mapped[bool] = mapped_column(Boolean, nullable=False, default=True)
+    # ISO 4217 code, one of app.common.money.CURRENCIES. The books are *kept*
+    # in it: every amount under this organisation is read in this currency and
+    # nothing is ever converted. Changing it changes the symbol in front of
+    # every figure and nothing else, which is why it is a setting and not a
+    # migration.
+    currency: Mapped[str] = mapped_column(
+        String(3), nullable=False, default=DEFAULT_CURRENCY, server_default=DEFAULT_CURRENCY
+    )
 
     members: Mapped[list[OrganisationMember]] = relationship(
         back_populates="organisation", cascade="all, delete-orphan"

@@ -17,7 +17,7 @@ from app.auth.permissions import (
     CALENDAR_READ,
 )
 from app.common.api import parse_body, parse_query
-from app.common.money import format_thb, to_major, to_minor
+from app.common.money import format_money, to_major, to_minor
 from app.common.pagination import PageParams, apply_sort, paginate
 from app.extensions import db
 from app.models.booking import Booking, BookingStatus
@@ -255,7 +255,7 @@ def calendar() -> Any:
                 "occupied": occupied,
                 "available": max(0, len(sellable_condos) - occupied),
                 "revenue": str(to_major(cell.revenue if cell else 0)),
-                "revenue_label": format_thb(cell.revenue if cell else 0),
+                "revenue_label": format_money(cell.revenue if cell else 0),
             }
         )
 
@@ -263,7 +263,7 @@ def calendar() -> Any:
         {
             "range": {"start": params.start.isoformat(), "end": end.isoformat()},
             "summary": {
-                "revenue_label": format_thb(revenue_total),
+                "revenue_label": format_money(revenue_total),
                 "booked_nights": nights_total,
                 # Clamped: a night can only be sold once, but a stale row
                 # for a unit since taken out of service could otherwise push
@@ -298,7 +298,7 @@ def calendar() -> Any:
                     "nights": b.nights,
                     "status": b.status.value,
                     "payment_status": b.payment_status,
-                    "total_label": format_thb(b.total),
+                    "total_label": format_money(b.total),
                 }
                 for b in bookings
             ],

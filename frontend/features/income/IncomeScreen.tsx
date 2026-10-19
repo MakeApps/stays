@@ -4,11 +4,13 @@ import Link from "next/link";
 
 import { Donut, PairedBars } from "@/components/ds/Donut";
 import { IncomeIcon } from "@/components/layout/icons";
+import { useCurrency } from "@/components/providers/Providers";
 import { useIncomeSummary } from "@/features/expenses/api";
 
 /** Income screen — design lines 847–1062. */
 export function IncomeScreen() {
   const { data, isLoading } = useIncomeSummary();
+  const currency = useCurrency();
 
   if (isLoading || !data) {
     return (
@@ -29,7 +31,7 @@ export function IncomeScreen() {
 
   const k = data.kpis;
   const netNegative = k.net.includes("-");
-  /** "-฿17,800" -> -17800, for the chart maths only. */
+  /** "-฿17,800" or "-₹17,800" -> -17800, for the chart maths only. Any symbol goes. */
   const amount = (label: string) => Number(label.replace(/[^\d.-]/g, ""));
   const totals = data.by_condo.reduce(
     (acc, r) => ({
@@ -136,6 +138,7 @@ export function IncomeScreen() {
             </div>
           </div>
           <PairedBars
+            symbol={currency.symbol}
             data={data.trend.map((t) => ({
               month: t.month,
               revenue: Number(t.revenue),

@@ -108,9 +108,13 @@ export function Donut({
 /** Paired revenue/expense bars — design lines 937–948. */
 export function PairedBars({
   data,
+  symbol,
   height = 200,
 }: {
   data: { month: string; revenue: number; expenses: number; net: number }[];
+  /** The organisation's currency symbol. A DS component takes it as a prop
+   *  rather than reading the session, so it stays usable on the proof sheet. */
+  symbol: string;
   height?: number;
 }) {
   const max = Math.max(1, ...data.flatMap((d) => [d.revenue, d.expenses]));
@@ -138,11 +142,11 @@ export function PairedBars({
               color: d.net >= 0 ? "var(--success)" : "var(--danger)",
             }}
           >
-            {`฿${Math.round(d.net / 1000)}k`}
+            {`${symbol}${Math.round(d.net / 1000)}k`}
           </div>
           <div style={{ display: "flex", alignItems: "flex-end", gap: 4, height: "100%" }}>
             <div
-              title={`Revenue ฿${d.revenue.toLocaleString("en-US")}`}
+              title={`Revenue ${symbol}${d.revenue.toLocaleString("en-US")}`}
               style={{
                 flex: 1,
                 height: `${Math.max(3, Math.round((d.revenue / max) * 100))}%`,
@@ -151,7 +155,7 @@ export function PairedBars({
               }}
             />
             <div
-              title={`Expenses ฿${d.expenses.toLocaleString("en-US")}`}
+              title={`Expenses ${symbol}${d.expenses.toLocaleString("en-US")}`}
               style={{
                 flex: 1,
                 height: `${Math.max(3, Math.round((d.expenses / max) * 100))}%`,

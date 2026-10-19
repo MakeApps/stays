@@ -21,6 +21,7 @@ from app.auth.service import AuthService, IssuedSession
 from app.common import activity
 from app.common.api import parse_body
 from app.common.errors import AuthenticationError
+from app.common.money import currency_for
 from app.extensions import db, limiter
 from app.models.activity_log import ActivityAction, ActivityEntity
 from app.models.organisation import Organisation
@@ -49,6 +50,11 @@ def _organisation(organisation: Organisation, role: Role) -> dict[str, Any]:
         "id": str(organisation.id),
         "name": organisation.name,
         "role": role.value,
+        # The symbol travels with the code so the client never has to know the
+        # registry: a figure it computes itself (a quote while typing) is
+        # written with exactly what the API would have used.
+        "currency": organisation.currency,
+        "currency_symbol": currency_for(organisation.currency).symbol,
     }
 
 

@@ -157,7 +157,7 @@ export function BookingDetailDrawer({
                   <div style={{ display: "flex", flexDirection: "column", gap: 11 }}>
                     <Row label="Night rate" value={booking.night_rate_label} />
                     <Row label="Total amount" value={booking.total_label} strong />
-                    <Row label="Received" value={`฿${group(booking.received)}`} tone="success" />
+                    <Row label="Received" value={booking.received_label} tone="success" />
                     <div
                       style={{
                         display: "flex",
@@ -383,6 +383,3 @@ function Row({
   );
 }
 
-function group(amount: string): string {
-  return Math.round(Number(amount)).toLocaleString("en-US");
-}

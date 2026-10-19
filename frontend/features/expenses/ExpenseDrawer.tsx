@@ -5,6 +5,7 @@ import { useEffect, useRef, useState } from "react";
 import { toast } from "sonner";
 
 import { CloseIcon, PlusIcon } from "@/components/layout/icons";
+import { useCurrency } from "@/components/providers/Providers";
 import { useCondos } from "@/features/condos/api";
 import {
   useCreateExpense,
@@ -13,6 +14,7 @@ import {
   useUploadReceipt,
 } from "@/features/expenses/api";
 import { todayISO } from "@/lib/booking-math";
+import { formatMajor } from "@/lib/money";
 import { ApiError } from "@/services/http";
 import type { Expense } from "@/types/api";
 
@@ -61,6 +63,7 @@ export function ExpenseDrawer({
   const { data: lookups } = useLookups();
   const { data: condoData } = useCondos({ per_page: 100, sort: "name" });
   const create = useCreateExpense();
+  const currency = useCurrency();
   const update = useUpdateExpense(expense?.id ?? "");
   const upload = useUploadReceipt(expense?.id ?? "");
 
@@ -236,7 +239,7 @@ export function ExpenseDrawer({
                 />
               </Field>
 
-              <Field label="Amount (฿)" error={errors.amount}>
+              <Field label={`Amount (${currency.symbol})`} error={errors.amount}>
                 <div
                   style={{
                     display: "flex",
@@ -249,7 +252,7 @@ export function ExpenseDrawer({
                   }}
                 >
                   <span style={{ font: "500 14px/1 var(--font-sans)", color: "var(--fg-3)" }}>
-                    ฿
+                    {currency.symbol}
                   </span>
                   <input
                     value={form.amount}
@@ -431,7 +434,7 @@ export function ExpenseDrawer({
                   marginTop: 2,
                 }}
               >
-                ฿{Math.round(amountPreview).toLocaleString("en-US")}
+                {formatMajor(amountPreview, currency.symbol)}
               </div>
             </div>
             <button className="btn btn-outline" onClick={onClose}>

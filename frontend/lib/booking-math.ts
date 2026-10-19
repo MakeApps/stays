@@ -6,13 +6,19 @@
  * because a figure that changes between the form and the confirmation is the
  * fastest way to lose a user's trust in a money screen.
  *
- * Arithmetic is done in satang as integers. Never accumulate baht as floats:
- * `0.1 + 0.2` problems in a system that reports net profit are not acceptable.
+ * Arithmetic is done in minor units (satang, paise) as integers. Never
+ * accumulate major units as floats: `0.1 + 0.2` problems in a system that
+ * reports net profit are not acceptable.
+ *
+ * Rendering lives in `lib/money.ts`, because which symbol goes in front is a
+ * fact about the organisation, not about the arithmetic.
  */
 
+/** Minor units per major unit. The same for every currency the app supports;
+ *  one that differs (JPY) would have to carry this per organisation. */
 export const MINOR_UNITS = 100;
 
-/** Baht (as typed) → satang, half-up at the satang boundary. */
+/** Major units (as typed) → minor units, half-up at the minor-unit boundary. */
 export function toMinor(value: string | number | null | undefined): number {
   if (value === null || value === undefined || value === "") return 0;
   const n = typeof value === "number" ? value : Number(String(value).replace(/,/g, ""));
@@ -20,18 +26,9 @@ export function toMinor(value: string | number | null | undefined): number {
   return Math.round(n * MINOR_UNITS);
 }
 
-/** Satang → baht, for putting a computed value back into an input. */
+/** Minor units → major units, for putting a computed value back into an input. */
 export function toMajor(minor: number): string {
   return (minor / MINOR_UNITS).toFixed(2).replace(/\.00$/, "");
-}
-
-/** Renders the way the design does: grouped whole baht, e.g. "฿1,800". */
-export function formatTHB(minor: number): string {
-  const baht = Math.round(minor / MINOR_UNITS);
-  // Sign before the symbol, matching the API's format_thb. "฿-25,000" puts the
-  // minus inside the number and reads as a typo.
-  const sign = baht < 0 ? "-" : "";
-  return `${sign}฿${Math.abs(baht).toLocaleString("en-US")}`;
 }
 
 /**

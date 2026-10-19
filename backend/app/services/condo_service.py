@@ -10,7 +10,7 @@ from flask import current_app
 
 from app.common import activity
 from app.common.errors import DuplicateError, NotFoundError, ValidationError
-from app.common.money import format_thb, to_minor
+from app.common.money import format_money, to_minor
 from app.common.pagination import Page, PageParams, paginate
 from app.models.activity_log import ActivityAction, ActivityEntity
 from app.models.condo import Condo, CondoImage, DepositTransaction
@@ -160,7 +160,7 @@ class CondoService:
             ActivityEntity.CONDO,
             entity_id=condo.id,
             entity_label=condo.name,
-            meta={"summary": f"{condo.name} · {format_thb(condo.night_rate)} per night"},
+            meta={"summary": f"{condo.name} · {format_money(condo.night_rate)} per night"},
         )
         self._record_lease_started(condo)
         self._record_deposit_taken(condo, previous=0)
@@ -183,7 +183,7 @@ class CondoService:
             entity_label=condo.name,
             meta={
                 "summary": (
-                    f"{condo.name} · {format_thb(condo.monthly_lease_amount)} per month"
+                    f"{condo.name} · {format_money(condo.monthly_lease_amount)} per month"
                     f"{_term_suffix(condo)}"
                 ),
                 "lease_start_date": condo.lease_start_date,
@@ -202,7 +202,7 @@ class CondoService:
             entity_label=condo.name,
             meta={
                 "summary": (
-                    f"{format_thb(condo.security_deposit)} held with "
+                    f"{format_money(condo.security_deposit)} held with "
                     f"{condo.name}'s owner"
                 ),
                 "deposit_satang": condo.security_deposit,
@@ -275,7 +275,7 @@ class CondoService:
                     entity_label=condo.name,
                     meta={
                         "summary": (
-                            f"{condo.name} · {format_thb(condo.monthly_lease_amount)} "
+                            f"{condo.name} · {format_money(condo.monthly_lease_amount)} "
                             f"per month{_term_suffix(condo)}"
                         ),
                         "changed": sorted(f for f in LEASE_FIELDS if f in data),
@@ -315,7 +315,7 @@ class CondoService:
                 details={
                     "fields": {
                         "refunded_amount": [
-                            f"Only {format_thb(state.outstanding)} of this deposit is "
+                            f"Only {format_money(state.outstanding)} of this deposit is "
                             f"still outstanding."
                         ]
                     },
@@ -336,9 +336,9 @@ class CondoService:
         self.repo.flush()
 
         after = deposit_state(condo, [*condo.deposit_movements, transaction])
-        summary = f"{format_thb(refunded)} recovered from {condo.name}'s owner"
+        summary = f"{format_money(refunded)} recovered from {condo.name}'s owner"
         if deducted:
-            summary += f", {format_thb(deducted)} withheld for {payload.deduction_reason}"
+            summary += f", {format_money(deducted)} withheld for {payload.deduction_reason}"
 
         activity.record(
             ActivityAction.REFUNDED,

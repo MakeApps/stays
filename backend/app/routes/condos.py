@@ -13,7 +13,7 @@ from app.auth.decorators import require_permission
 from app.auth.permissions import CONDO_DELETE, CONDO_READ, CONDO_WRITE
 from app.common.api import parse_body, parse_query
 from app.common.errors import ValidationError
-from app.common.money import format_thb, to_major
+from app.common.money import format_money, to_major
 from app.extensions import db
 from app.models.booking import Booking
 from app.models.expense import Expense
@@ -125,14 +125,14 @@ def condo_finance(condo_id: uuid.UUID) -> Any:
     return jsonify(
         {
             "period": {"start": start.isoformat(), "end": end.isoformat()},
-            "revenue": format_thb(fin.revenue if fin else 0),
-            "lease_cost": format_thb(fin.lease_cost if fin else 0),
-            "expenses": format_thb(fin.expenses if fin else 0),
-            "net": format_thb(fin.net if fin else 0),
+            "revenue": format_money(fin.revenue if fin else 0),
+            "lease_cost": format_money(fin.lease_cost if fin else 0),
+            "expenses": format_money(fin.expenses if fin else 0),
+            "net": format_money(fin.net if fin else 0),
             "net_is_negative": bool(fin and fin.net < 0),
             # Reported beside profit, never inside it: capital lodged with the
             # owner, not a cost of trading.
-            "deposit_outstanding": format_thb(deposit.outstanding),
+            "deposit_outstanding": format_money(deposit.outstanding),
             "deposit_status": deposit.status,
             "occupancy_pct": fin.occupancy_pct if fin else 0,
             "booked_nights": fin.nights if fin else 0,
@@ -145,7 +145,7 @@ def condo_finance(condo_id: uuid.UUID) -> Any:
                     "check_in": b.check_in.isoformat(),
                     "check_out": b.check_out.isoformat(),
                     "nights": b.nights,
-                    "total_label": format_thb(b.total),
+                    "total_label": format_money(b.total),
                     "payment_status": b.payment_status,
                 }
                 for b in upcoming
@@ -157,7 +157,7 @@ def condo_finance(condo_id: uuid.UUID) -> Any:
                     "category": e.category.name,
                     "tone": e.category.tone,
                     "spent_on": e.spent_on.isoformat(),
-                    "amount_label": format_thb(e.amount),
+                    "amount_label": format_money(e.amount),
                     "amount": str(to_major(e.amount)),
                 }
                 for e in recent
@@ -180,17 +180,17 @@ def condo_deposit(condo_id: uuid.UUID) -> Any:
             "condo_name": condo.name,
             "status": state.status,
             "original": str(to_major(state.original)),
-            "original_label": format_thb(state.original),
-            "refunded_label": format_thb(state.refunded),
-            "deducted_label": format_thb(state.deducted),
+            "original_label": format_money(state.original),
+            "refunded_label": format_money(state.refunded),
+            "deducted_label": format_money(state.deducted),
             "outstanding": str(to_major(state.outstanding)),
-            "outstanding_label": format_thb(state.outstanding),
+            "outstanding_label": format_money(state.outstanding),
             "movements": [
                 {
                     "id": str(m.id),
                     "refund_date": m.refund_date.isoformat(),
-                    "refunded_label": format_thb(m.refunded_amount),
-                    "deducted_label": format_thb(m.deducted_amount),
+                    "refunded_label": format_money(m.refunded_amount),
+                    "deducted_label": format_money(m.deducted_amount),
                     "deducted": str(to_major(m.deducted_amount)),
                     "deduction_reason": m.deduction_reason,
                     "notes": m.notes,
@@ -215,7 +215,7 @@ def refund_condo_deposit(condo_id: uuid.UUID) -> Any:
         {
             "condo": service.serialise(condo, deposit=state).model_dump(mode="json"),
             "status": state.status,
-            "outstanding_label": format_thb(state.outstanding),
+            "outstanding_label": format_money(state.outstanding),
         }
     ), 201
 

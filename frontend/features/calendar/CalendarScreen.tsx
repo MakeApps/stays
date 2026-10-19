@@ -6,7 +6,7 @@ import { useCallback, useMemo, useState } from "react";
 import { toast } from "sonner";
 
 import { GridIcon, PlusIcon, RowsIcon } from "@/components/layout/icons";
-import { useCan } from "@/components/providers/Providers";
+import { useCan, useCurrency } from "@/components/providers/Providers";
 import { BookingDetailDrawer } from "@/features/bookings/BookingDetailDrawer";
 import { useBooking, useCalendar, useMoveBooking } from "@/features/bookings/api";
 import { CAL_LAYOUT_COOKIE, type CalendarLayout } from "@/features/calendar/layout-preference";
@@ -53,6 +53,7 @@ export function CalendarScreen({ defaultLayout }: { defaultLayout: CalendarLayou
   const router = useRouter();
   const params = useSearchParams();
   const can = useCan();
+  const currency = useCurrency();
 
   const today = todayISO();
   const [anchor, setAnchor] = useState(() => monthStart(today));
@@ -373,7 +374,7 @@ export function CalendarScreen({ defaultLayout }: { defaultLayout: CalendarLayou
           events={events}
           allEvents={data?.events ?? []}
           summary={
-            data?.summary ?? { revenue_label: "฿0", booked_nights: 0, occupancy_pct: 0 }
+            data?.summary ?? { revenue_label: `${currency.symbol}0`, booked_nights: 0, occupancy_pct: 0 }
           }
           monthLabel={monthLabel(anchor)}
           stale={isPlaceholderData}
@@ -408,7 +409,7 @@ export function CalendarScreen({ defaultLayout }: { defaultLayout: CalendarLayou
             resources={data?.resources ?? []}
             days={data?.days ?? []}
             summary={
-              data?.summary ?? { revenue_label: "฿0", booked_nights: 0, occupancy_pct: 0 }
+              data?.summary ?? { revenue_label: `${currency.symbol}0`, booked_nights: 0, occupancy_pct: 0 }
             }
             monthLabel={monthLabel(anchor)}
             // True while the newly-selected month is still in flight.

@@ -6,7 +6,7 @@ import { toast } from "sonner";
 
 import { Donut, PairedBars } from "@/components/ds/Donut";
 import { EditIcon, ExpenseIcon, PlusIcon, TrashIcon } from "@/components/layout/icons";
-import { useCan } from "@/components/providers/Providers";
+import { useCan, useCurrency } from "@/components/providers/Providers";
 import { ExpenseDrawer } from "@/features/expenses/ExpenseDrawer";
 import {
   useDeleteExpense,
@@ -45,6 +45,7 @@ export function ExpensesScreen() {
   const router = useRouter();
   const params = useSearchParams();
   const can = useCan();
+  const currency = useCurrency();
 
   const tab = params.get("tab") === "list" ? "list" : "overview";
   const editId = params.get("edit");
@@ -211,7 +212,7 @@ export function ExpensesScreen() {
                         value: Number(c.amount),
                         color: SLICE_COLORS[i % SLICE_COLORS.length]!,
                       }))}
-                      centerValue={`฿${Math.round(Number(summary.month.expenses) / 1000)}k`}
+                      centerValue={`${currency.symbol}${Math.round(Number(summary.month.expenses) / 1000)}k`}
                       centerLabel="total"
                     />
                     <div
@@ -281,6 +282,7 @@ export function ExpensesScreen() {
                   </div>
                 </div>
                 <PairedBars
+                  symbol={currency.symbol}
                   data={summary.trend.map((t) => ({
                     month: t.month,
                     revenue: Number(t.revenue),

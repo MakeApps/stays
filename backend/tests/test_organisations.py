@@ -373,3 +373,121 @@ class TestWritesLandInTheRightPlace:
             session.add(Condo(code="NOWHERE-1", name="Nowhere"))
             session.flush()
         session.rollback()
+
+
+class TestCurrency:
+    """The currency the books are kept in is a fact about the organisation.
+
+    A relabel, never a conversion: the integers in the database do not move,
+    only the symbol in front of them does — and only inside the organisation
+    that chose it.
+    """
+
+    def test_the_default_is_baht(self, auth_client: FlaskClient) -> None:
+        me = auth_client.get("/api/v1/auth/me").get_json()["user"]["organisation"]
+        assert (me["currency"], me["currency_symbol"]) == ("THB", "฿")
+
+    def test_an_admin_can_change_it_and_every_label_follows(
+        self, auth_client: FlaskClient, organisation: Organisation
+    ) -> None:
+        response = auth_client.post(
+            "/api/v1/condos", json={"name": "Unit", "code": "INR-1", "night_rate": "1800"}
+        )
+        condo = response.get_json()
+        assert condo["night_rate_label"] == "฿1,800"
+
+        response = auth_client.patch(
+            f"/api/v1/organisations/{organisation.id}", json={"currency": "inr"}
+        )
+        assert response.status_code == 200, response.get_json()
+        assert (response.get_json()["currency"], response.get_json()["currency_symbol"]) == (
+            "INR",
+            "₹",
+        )
+
+        me = auth_client.get("/api/v1/auth/me").get_json()["user"]["organisation"]
+        assert me["currency"] == "INR"
+
+        fetched = auth_client.get(f"/api/v1/condos/{condo['id']}").get_json()
+        assert fetched["night_rate_label"] == "₹1,800"
+        # The amount itself did not move; only what it is written in.
+        assert fetched["night_rate"] == condo["night_rate"]
+        assert auth_client.get("/api/v1/dashboard").get_json()["kpis"]["revenue_month"] == "₹0"
+
+    def test_it_is_per_organisation(
+        self,
+        app: Flask,
+        auth_client: FlaskClient,
+        organisation: Organisation,
+        other_org: Organisation,
+    ) -> None:
+        auth_client.patch(f"/api/v1/organisations/{organisation.id}", json={"currency": "INR"})
+
+        theirs = sign_in(app, OTHER_EMAIL, OTHER_PASSWORD)
+        me = theirs.get("/api/v1/auth/me").get_json()["user"]["organisation"]
+        assert me["currency"] == "THB"
+        condo = make_condo(theirs, "THB-1")
+        assert condo["night_rate_label"].startswith("฿")
+
+    def test_a_new_organisation_can_start_in_rupees(self, auth_client: FlaskClient) -> None:
+        created = auth_client.post(
+            "/api/v1/organisations", json={"name": "Goa Portfolio", "currency": "INR"}
+        ).get_json()
+        assert (created["currency"], created["currency_symbol"]) == ("INR", "₹")
+
+        listed = auth_client.get("/api/v1/auth/organisations").get_json()["items"]
+        assert {o["name"]: o["currency"] for o in listed}["Goa Portfolio"] == "INR"
+
+    @pytest.mark.parametrize("code", ["USD", "", "x", "BAHT"])
+    def test_an_unknown_currency_is_refused_on_the_field(
+        self, auth_client: FlaskClient, organisation: Organisation, code: str
+    ) -> None:
+        response = auth_client.patch(
+            f"/api/v1/organisations/{organisation.id}", json={"currency": code}
+        )
+        assert response.status_code == 422, response.get_json()
+        assert "currency" in response.get_json()["error"]["details"]["fields"]
+
+        me = auth_client.get("/api/v1/auth/me").get_json()["user"]["organisation"]
+        assert me["currency"] == "THB"
+
+    def test_nothing_to_change_is_refused(
+        self, auth_client: FlaskClient, organisation: Organisation
+    ) -> None:
+        response = auth_client.patch(f"/api/v1/organisations/{organisation.id}", json={})
+        assert response.status_code == 422
+
+    def test_renaming_alone_still_works(
+        self, auth_client: FlaskClient, organisation: Organisation
+    ) -> None:
+        response = auth_client.patch(
+            f"/api/v1/organisations/{organisation.id}", json={"name": "Renamed Portfolio"}
+        )
+        assert response.status_code == 200, response.get_json()
+        assert response.get_json()["name"] == "Renamed Portfolio"
+        assert response.get_json()["currency"] == "THB"
+
+    def test_a_manager_cannot_change_it(
+        self, app: Flask, auth_client: FlaskClient, organisation: Organisation
+    ) -> None:
+        auth_client.post(
+            "/api/v1/users",
+            json={
+                "full_name": "Nok Chaiyaphum",
+                "email": "nok@localshouts.co.th",
+                "password": "correct-horse-battery",
+            },
+        )
+        theirs = sign_in(app, "nok@localshouts.co.th", "correct-horse-battery")
+        response = theirs.patch(
+            f"/api/v1/organisations/{organisation.id}", json={"currency": "INR"}
+        )
+        assert response.status_code == 403
+
+    def test_the_csv_export_names_the_currency(
+        self, auth_client: FlaskClient, organisation: Organisation
+    ) -> None:
+        auth_client.patch(f"/api/v1/organisations/{organisation.id}", json={"currency": "INR"})
+        response = auth_client.get("/api/v1/dashboard/export?kind=bookings")
+        assert response.status_code == 200
+        assert "Total (INR)" in response.get_data(as_text=True)

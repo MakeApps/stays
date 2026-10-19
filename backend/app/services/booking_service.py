@@ -11,7 +11,7 @@ from sqlalchemy.exc import IntegrityError
 
 from app.common import activity
 from app.common.errors import BookingConflictError, NotFoundError, ValidationError
-from app.common.money import format_thb, split_evenly
+from app.common.money import format_money, split_evenly
 from app.extensions import db
 from app.models.activity_log import ActivityAction, ActivityEntity
 from app.models.booking import Booking, BookingNight, BookingStatus, PricingModeColumn
@@ -209,7 +209,7 @@ class BookingService:
                 "summary": (
                     f"{booking.guest_name} · {_span(check_in, check_out)} · {condo.name}"
                 ),
-                "total": format_thb(q.total),
+                "total": format_money(q.total),
             },
         )
         return booking
@@ -282,7 +282,7 @@ class BookingService:
             ActivityEntity.BOOKING,
             entity_id=booking.id,
             entity_label=booking.guest_name,
-            meta={"summary": f"{booking.guest_name} updated", "total": format_thb(q.total)},
+            meta={"summary": f"{booking.guest_name} updated", "total": format_money(q.total)},
         )
         return booking
 

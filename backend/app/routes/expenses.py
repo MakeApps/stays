@@ -20,7 +20,7 @@ from app.auth.permissions import (
 )
 from app.common.api import parse_body, parse_query
 from app.common.errors import ValidationError
-from app.common.money import format_thb, to_major, to_minor
+from app.common.money import format_money, to_major, to_minor
 from app.common.pagination import PageParams, apply_sort, paginate
 from app.extensions import db
 from app.models.condo import Condo
@@ -61,7 +61,7 @@ def _serialise(expense: Expense, service: ExpenseService) -> dict[str, Any]:
         "method": expense.method.name,
         "spent_on": expense.spent_on.isoformat(),
         "amount": str(to_major(expense.amount)),
-        "amount_label": format_thb(expense.amount),
+        "amount_label": format_money(expense.amount),
         "vendor": expense.vendor,
         "reference": expense.reference,
         "description": expense.description,
@@ -289,21 +289,21 @@ def expense_summary() -> Any:
     return jsonify(
         {
             "period": {"start": start.isoformat(), "end": end.isoformat()},
-            "today": {"amount": str(to_major(spent_today)), "label": format_thb(spent_today)},
+            "today": {"amount": str(to_major(spent_today)), "label": format_money(spent_today)},
             "month": {
                 "expenses": str(to_major(month_expenses)),
-                "expenses_label": format_thb(month_expenses),
+                "expenses_label": format_money(month_expenses),
                 "lease": str(to_major(month_lease)),
-                "lease_label": format_thb(month_lease),
+                "lease_label": format_money(month_lease),
                 "revenue": str(to_major(month_revenue)),
-                "revenue_label": format_thb(month_revenue),
+                "revenue_label": format_money(month_revenue),
                 "net": str(to_major(month_net)),
-                "net_label": format_thb(month_net),
+                "net_label": format_money(month_net),
                 "margin_pct": round(month_net / month_revenue * 100) if month_revenue else 0,
             },
             "pending": {
                 "amount": str(to_major(int(pending_rows[0] or 0))),
-                "label": format_thb(int(pending_rows[0] or 0)),
+                "label": format_money(int(pending_rows[0] or 0)),
                 "count": int(pending_rows[1] or 0),
             },
             "by_category": [
@@ -311,7 +311,7 @@ def expense_summary() -> Any:
                     "category": name,
                     "tone": tone,
                     "amount": str(to_major(total)),
-                    "label": format_thb(total),
+                    "label": format_money(total),
                     "pct": round(total / month_expenses * 100) if month_expenses else 0,
                 }
                 for name, tone, total in categories
@@ -371,15 +371,15 @@ def income_summary() -> Any:
                 "bookings": fin.bookings,
                 "nights": fin.nights,
                 "revenue": str(to_major(fin.revenue)),
-                "revenue_label": format_thb(fin.revenue),
+                "revenue_label": format_money(fin.revenue),
                 "lease_cost": str(to_major(fin.lease_cost)),
-                "lease_cost_label": format_thb(fin.lease_cost),
+                "lease_cost_label": format_money(fin.lease_cost),
                 "expenses": str(to_major(fin.expenses)),
-                "expenses_label": format_thb(fin.expenses),
+                "expenses_label": format_money(fin.expenses),
                 "net": str(to_major(fin.net)),
-                "net_label": format_thb(fin.net),
+                "net_label": format_money(fin.net),
                 "occupancy_pct": fin.occupancy_pct,
-                "deposit_outstanding_label": format_thb(states[condo_id].outstanding),
+                "deposit_outstanding_label": format_money(states[condo_id].outstanding),
                 "deposit_status": states[condo_id].status,
                 "lease_status": lease_status(condo, today=today),
                 "lease_end_date": (
@@ -397,21 +397,21 @@ def income_summary() -> Any:
         {
             "period": {"start": start.isoformat(), "end": end.isoformat()},
             "kpis": {
-                "today": format_thb(revenue_today),
-                "week": format_thb(revenue_week),
-                "month": format_thb(revenue_month),
-                "lease": format_thb(lease_month),
-                "expenses": format_thb(expenses_month),
-                "net": format_thb(net_month),
+                "today": format_money(revenue_today),
+                "week": format_money(revenue_week),
+                "month": format_money(revenue_month),
+                "lease": format_money(lease_month),
+                "expenses": format_money(expenses_month),
+                "net": format_money(net_month),
                 "margin_pct": round(net_month / revenue_month * 100) if revenue_month else 0,
-                "outstanding": format_thb(owed),
+                "outstanding": format_money(owed),
                 "outstanding_count": owed_count,
             },
             # Money we hold rather than money we earned. A sibling of the KPIs,
             # never a term in them: net profit is revenue less lease and
             # operating costs, and a refundable deposit is neither.
             "money_held": {
-                "deposits": format_thb(deposits_held),
+                "deposits": format_money(deposits_held),
                 "deposits_count": deposits_count,
             },
             "by_condo": rows,

@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import { createContext, useContext, useMemo, useState } from "react";
 import { Toaster } from "sonner";
 
+import { type Currency, currencyOf } from "@/lib/money";
 import { createQueryClient } from "@/lib/query";
 import type { Capability, SessionUser } from "@/types/api";
 
@@ -19,6 +20,17 @@ export function useSession(): SessionUser | null {
 export function useCan(): (capability: Capability) => boolean {
   const user = useSession();
   return (capability) => Boolean(user?.capabilities.includes(capability));
+}
+
+/**
+ * The currency the organisation keeps its books in.
+ *
+ * For the few figures the browser renders itself — a quote while typing, the
+ * symbol beside an input. Everything the API sends is already labelled.
+ */
+export function useCurrency(): Currency {
+  const user = useSession();
+  return useMemo(() => currencyOf(user?.organisation), [user]);
 }
 
 export function Providers({

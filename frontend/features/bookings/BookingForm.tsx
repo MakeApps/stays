@@ -6,6 +6,7 @@ import { useEffect, useMemo, useState } from "react";
 import { toast } from "sonner";
 
 import { CalendarIcon, CheckIcon } from "@/components/layout/icons";
+import { useCurrency } from "@/components/providers/Providers";
 import { useCondos } from "@/features/condos/api";
 import { formatDay } from "@/features/condos/display";
 import {
@@ -14,7 +15,8 @@ import {
   useCreateBooking,
   useUpdateBooking,
 } from "@/features/bookings/api";
-import { addDays, computeQuote, formatTHB, toMajor, todayISO } from "@/lib/booking-math";
+import { addDays, computeQuote, toMajor, todayISO } from "@/lib/booking-math";
+import { formatMinor } from "@/lib/money";
 import { ApiError } from "@/services/http";
 import type { BookingConflict } from "@/types/api";
 
@@ -73,6 +75,8 @@ export function BookingForm() {
 
   const { data: existing } = useBooking(editId);
   const create = useCreateBooking();
+  const currency = useCurrency();
+  const money = (minor: number) => formatMinor(minor, currency.symbol);
   const update = useUpdateBooking(editId ?? "");
 
   const set = (patch: Partial<FormState>) => setForm((f) => ({ ...f, ...patch }));
@@ -550,7 +554,7 @@ export function BookingForm() {
                     color: quote.balance > 0 ? "var(--warning)" : "var(--success)",
                   }}
                 >
-                  {formatTHB(quote.balance)}
+                  {money(quote.balance)}
                 </div>
               </Field>
               <Field label="Status">
@@ -669,17 +673,17 @@ export function BookingForm() {
 
             <div style={{ display: "flex", flexDirection: "column", gap: 11, padding: "16px 0" }}>
               <Line
-                label={`${quote.nights} nights × ${formatTHB(quote.nightRate)}`}
-                value={formatTHB(quote.subtotal)}
+                label={`${quote.nights} nights × ${money(quote.nightRate)}`}
+                value={money(quote.subtotal)}
               />
               <Line
                 label="Discount"
-                value={quote.discount ? `−${formatTHB(quote.discount)}` : formatTHB(0)}
+                value={quote.discount ? `−${money(quote.discount)}` : money(0)}
                 tone={quote.discount ? "success" : "muted"}
               />
-              <Line label="Cleaning fee" value={`+${formatTHB(quote.cleaningFee)}`} />
-              <Line label="Other charges" value={`+${formatTHB(quote.otherCharges)}`} />
-              <Line label={`Tax (${form.tax_pct || 0}%)`} value={`+${formatTHB(quote.tax)}`} />
+              <Line label="Cleaning fee" value={`+${money(quote.cleaningFee)}`} />
+              <Line label="Other charges" value={`+${money(quote.otherCharges)}`} />
+              <Line label={`Tax (${form.tax_pct || 0}%)`} value={`+${money(quote.tax)}`} />
             </div>
 
             <div
@@ -702,12 +706,12 @@ export function BookingForm() {
                   letterSpacing: "-.02em",
                 }}
               >
-                {formatTHB(quote.total)}
+                {money(quote.total)}
               </span>
             </div>
 
             <div style={{ display: "flex", flexDirection: "column", gap: 11, paddingTop: 16 }}>
-              <Line label="Received" value={formatTHB(quote.received)} tone="success" />
+              <Line label="Received" value={money(quote.received)} tone="success" />
               <div style={{ display: "flex", justifyContent: "space-between", alignItems: "baseline" }}>
                 <span style={{ font: "600 14px/1.4 var(--font-sans)", color: "var(--fg)" }}>
                   Balance due
@@ -718,7 +722,7 @@ export function BookingForm() {
                     color: quote.balance > 0 ? "var(--warning)" : "var(--success)",
                   }}
                 >
-                  {formatTHB(quote.balance)}
+                  {money(quote.balance)}
                 </span>
               </div>
             </div>
@@ -825,10 +829,13 @@ function MoneyField({
   onChange: (value: string) => void;
   disabled?: boolean;
 }) {
+  const currency = useCurrency();
   return (
     <Field label={label}>
       <div style={{ ...INPUT_WRAP, background: disabled ? "var(--bg-alt)" : "var(--surface)" }}>
-        <span style={{ font: "500 14px/1 var(--font-sans)", color: "var(--fg-3)" }}>฿</span>
+        <span style={{ font: "500 14px/1 var(--font-sans)", color: "var(--fg-3)" }}>
+          {currency.symbol}
+        </span>
         <input
           value={value}
           onChange={(e) => onChange(e.target.value)}

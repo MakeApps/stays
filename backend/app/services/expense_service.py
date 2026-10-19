@@ -12,7 +12,7 @@ from sqlalchemy.orm import Session
 
 from app.common import activity
 from app.common.errors import NotFoundError, ValidationError
-from app.common.money import format_thb
+from app.common.money import format_money
 from app.models.activity_log import ActivityAction, ActivityEntity
 from app.models.condo import Condo
 from app.models.expense import Expense, ExpenseCategory, ExpenseStatus, PaymentMethod
@@ -138,7 +138,7 @@ class ExpenseService:
             entity_id=expense.id,
             entity_label=expense.description,
             meta={
-                "summary": f"{category.name} · {format_thb(amount)} · {condo.name}",
+                "summary": f"{category.name} · {format_money(amount)} · {condo.name}",
             },
         )
         return expense
@@ -191,7 +191,7 @@ class ExpenseService:
             entity_label=expense.description,
             meta={
                 "summary": (
-                    f"{expense.category.name} · {format_thb(expense.amount)} removed"
+                    f"{expense.category.name} · {format_money(expense.amount)} removed"
                 )
             },
         )

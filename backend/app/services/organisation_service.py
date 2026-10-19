@@ -16,6 +16,7 @@ from sqlalchemy.orm import Session
 
 from app.common import activity
 from app.common.errors import NotFoundError, ValidationError
+from app.common.money import CURRENCIES, DEFAULT_CURRENCY, currency_for, is_supported
 from app.models.activity_log import ActivityAction, ActivityEntity
 from app.models.organisation import Organisation, OrganisationMember
 from app.models.user import Role, User
@@ -80,15 +81,23 @@ class OrganisationService:
         return list(self.session.scalars(stmt))
 
     # ---------- writes ----------
-    def create(self, *, name: str, owner: User) -> Organisation:
+    def create(
+        self, *, name: str, owner: User, currency: str | None = None
+    ) -> Organisation:
         """Stand up a new organisation with its creator as its admin.
 
         Seeded with its own categories and payment methods, so the expense form
         works on the very first visit rather than presenting empty pickers.
+
+        The currency is settled here rather than left to the default because
+        it is far cheaper to choose it before the first rate is typed than to
+        relabel a portfolio after: nothing converts amounts, so a condo priced
+        in rupees under a baht sign is a figure that is simply wrong.
         """
         cleaned = self._clean_name(name)
+        code = self._clean_currency(currency) if currency else DEFAULT_CURRENCY
 
-        organisation = Organisation(name=cleaned, is_active=True)
+        organisation = Organisation(name=cleaned, is_active=True, currency=code)
         self.session.add(organisation)
         # Flushed before anything references it: the membership and the seeded
         # lookups both need a real id.
@@ -126,6 +135,32 @@ class OrganisationService:
             )
         return organisation
 
+    def set_currency(self, organisation: Organisation, code: str) -> Organisation:
+        """Change the currency the books are kept in.
+
+        A relabel, not a conversion. Every stored amount stays exactly as it
+        is and only the symbol in front of it changes, so this is the right
+        call for "we set this up in baht by mistake" and the wrong one for
+        "we moved the business to India" — that is a new organisation.
+
+        Summaries already written to the activity feed keep the symbol they
+        were written with. They are a record of what was said at the time,
+        and rewriting history to match a setting is what makes a feed
+        untrustworthy.
+        """
+        cleaned = self._clean_currency(code)
+        if cleaned != organisation.currency:
+            organisation.currency = cleaned
+            chosen = currency_for(cleaned)
+            activity.record(
+                ActivityAction.UPDATED,
+                ActivityEntity.ORGANISATION,
+                entity_id=organisation.id,
+                entity_label=organisation.name,
+                meta={"summary": f"Currency set to {chosen.name} ({chosen.symbol})"},
+            )
+        return organisation
+
     def add_member(
         self, organisation_id: uuid.UUID, user: User, *, role: Role = Role.MANAGER
     ) -> OrganisationMember:
@@ -156,5 +191,16 @@ class OrganisationService:
             raise ValidationError(
                 "That name is too long.",
                 details={"fields": {"name": [f"At most {MAX_NAME_LENGTH} characters."]}},
+            )
+        return cleaned
+
+    def _clean_currency(self, code: str) -> str:
+        cleaned = code.strip().upper()
+        if not is_supported(cleaned):
+            raise ValidationError(
+                "That currency is not supported.",
+                details={
+                    "fields": {"currency": [f"Choose one of {', '.join(CURRENCIES)}."]}
+                },
             )
         return cleaned

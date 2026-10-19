@@ -60,7 +60,7 @@ class Quote:
         return "pending"
 
     def as_dict(self) -> dict[str, object]:
-        from app.common.money import format_thb, to_major
+        from app.common.money import format_money, to_major
 
         return {
             "nights": self.nights,
@@ -76,9 +76,9 @@ class Quote:
             "balance": str(to_major(self.balance)),
             "payment_status": self.payment_status,
             # Pre-rendered so ฿ formatting cannot drift between the two apps.
-            "total_label": format_thb(self.total),
-            "balance_label": format_thb(self.balance),
-            "night_rate_label": format_thb(self.night_rate),
+            "total_label": format_money(self.total),
+            "balance_label": format_money(self.balance),
+            "night_rate_label": format_money(self.night_rate),
         }
 
 

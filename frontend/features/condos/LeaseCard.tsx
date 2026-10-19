@@ -3,6 +3,7 @@
 import { useState } from "react";
 
 import { CalendarIcon } from "@/components/layout/icons";
+import { useCurrency } from "@/components/providers/Providers";
 import { DepositRefundModal } from "@/features/condos/DepositRefundModal";
 import {
   DEPOSIT_META,
@@ -10,6 +11,7 @@ import {
   formatDay,
   leaseCountdown,
 } from "@/features/condos/display";
+import { formatMajor } from "@/lib/money";
 import type { Condo } from "@/types/api";
 
 /**
@@ -22,6 +24,7 @@ import type { Condo } from "@/types/api";
  */
 export function LeaseCard({ condo }: { condo: Condo }) {
   const [refunding, setRefunding] = useState(false);
+  const currency = useCurrency();
   const lease = LEASE_META[condo.lease_status];
   const deposit = DEPOSIT_META[condo.deposit_status];
   const countdown = leaseCountdown(condo.lease_days_remaining);
@@ -121,9 +124,9 @@ export function LeaseCard({ condo }: { condo: Condo }) {
           ) : Number(condo.security_deposit) > 0 ? (
             <div className="t-caption" style={{ marginTop: 12 }}>
               {condo.security_deposit_label} deposit fully settled —{" "}
-              {condo.deposit_refunded !== "0.00" ? `฿${Number(condo.deposit_refunded).toLocaleString("en-US")} recovered` : "nothing recovered"}
+              {condo.deposit_refunded !== "0.00" ? `${formatMajor(condo.deposit_refunded, currency.symbol)} recovered` : "nothing recovered"}
               {Number(condo.deposit_deducted) > 0
-                ? `, ฿${Number(condo.deposit_deducted).toLocaleString("en-US")} withheld.`
+                ? `, ${formatMajor(condo.deposit_deducted, currency.symbol)} withheld.`
                 : "."}
             </div>
           ) : null}

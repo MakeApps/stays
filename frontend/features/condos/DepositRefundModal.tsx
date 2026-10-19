@@ -8,7 +8,9 @@ import { toast } from "sonner";
 import { z } from "zod";
 
 import { CloseIcon } from "@/components/layout/icons";
+import { useCurrency } from "@/components/providers/Providers";
 import { useRefundDeposit } from "@/features/condos/api";
+import { formatMajor } from "@/lib/money";
 import { ApiError } from "@/services/http";
 import type { Condo } from "@/types/api";
 
@@ -49,6 +51,8 @@ export function DepositRefundModal({
   onClose: () => void;
 }) {
   const refund = useRefundDeposit(condo.id);
+  const currency = useCurrency();
+  const money = (amount: number) => formatMajor(amount, currency.symbol);
   const {
     register,
     handleSubmit,
@@ -97,7 +101,7 @@ export function DepositRefundModal({
         notes: values.notes || null,
       });
       toast.success("Deposit recorded", {
-        description: `฿${refunded.toLocaleString("en-US")} recovered from ${condo.name}'s owner.`,
+        description: `${money(refunded)} recovered from ${condo.name}'s owner.`,
       });
       onClose();
     } catch (error) {
@@ -164,12 +168,12 @@ export function DepositRefundModal({
                     <input type="date" {...register("refund_date")} />
                   </Field>
 
-                  <Field label="Refunded amount (฿)" error={errors.refunded_amount?.message}>
+                  <Field label={`Refunded amount (${currency.symbol})`} error={errors.refunded_amount?.message}>
                     <input placeholder="45000" inputMode="decimal" {...register("refunded_amount")} />
                   </Field>
 
                   <Field
-                    label="Deduction (฿)"
+                    label={`Deduction (${currency.symbol})`}
                     error={errors.deducted_amount?.message}
                     hint="What the owner withheld."
                   >
@@ -194,18 +198,18 @@ export function DepositRefundModal({
                     border: "1px solid var(--line)",
                   }}
                 >
-                  <Row label="Deposit outstanding" value={`฿${outstanding.toLocaleString("en-US")}`} />
-                  <Row label="Recovering now" value={`฿${(refunded + deducted).toLocaleString("en-US")}`} />
+                  <Row label="Deposit outstanding" value={money(outstanding)} />
+                  <Row label="Recovering now" value={money(refunded + deducted)} />
                   <div style={{ height: 1, background: "var(--line)", margin: "8px 0" }} />
                   <Row
                     label={remaining < 0 ? "Over-recovered" : "Still held after this"}
-                    value={`฿${Math.abs(remaining).toLocaleString("en-US")}`}
+                    value={money(Math.abs(remaining))}
                     strong
                     tone={remaining < 0 ? "var(--danger)" : undefined}
                   />
                   {deducted > 0 ? (
                     <div className="t-caption" style={{ marginTop: 8 }}>
-                      Only the ฿{deducted.toLocaleString("en-US")} deduction is a real loss. The
+                      Only the {money(deducted)} deduction is a real loss. The
                       refunded portion is capital returning to the business, not income.
                     </div>
                   ) : null}

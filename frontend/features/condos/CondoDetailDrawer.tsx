@@ -6,7 +6,7 @@ import Link from "next/link";
 import { CloseIcon, EditIcon, TrashIcon } from "@/components/layout/icons";
 import { useCan } from "@/components/providers/Providers";
 import { useCondoFinance } from "@/features/condos/api";
-import { STATUS_META, groupBaht, specLine } from "@/features/condos/display";
+import { STATUS_META, specLine } from "@/features/condos/display";
 import type { Condo } from "@/types/api";
 
 /**
@@ -125,8 +125,8 @@ export function CondoDetailDrawer({
                 <div style={{ display: "flex", flexDirection: "column", gap: 11 }}>
                   <Row label="Rate per night" value={condo.night_rate_label} />
                   <Row label="Rate per month" value={condo.month_rate_label} />
-                  <Row label="Cleaning fee" value={`฿${groupBaht(condo.cleaning_fee)}`} />
-                  <Row label="Security deposit" value={`฿${groupBaht(condo.security_deposit)}`} />
+                  <Row label="Cleaning fee" value={condo.cleaning_fee_label} />
+                  <Row label="Security deposit" value={condo.security_deposit_label} />
                 </div>
 
                 {condo.address ? (

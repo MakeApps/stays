@@ -4,6 +4,7 @@ import Image from "next/image";
 import { useMemo } from "react";
 
 import { CalendarIcon, ChartIcon, CondoIcon, WalletIcon } from "@/components/layout/icons";
+import { useCurrency } from "@/components/providers/Providers";
 import { MINOR_UNITS, addDays, nightsBetween, toMinor } from "@/lib/booking-math";
 import type { BookingStatus, CalendarEvent, Condo } from "@/types/api";
 
@@ -105,12 +106,12 @@ function toneFor(name: string) {
 /** `1400.00` → `฿1.4K`: a nightly rate that fits in a box a phone draws 48px
  *  wide, the way Airbnb abbreviates it. Built by hand rather than with Intl's
  *  compact notation so the server and the browser cannot render it apart. */
-function compactBaht(rate: string): string | null {
-  const baht = Math.round(toMinor(rate) / MINOR_UNITS);
-  if (baht <= 0) return null;
-  if (baht < 1000) return `฿${baht}`;
-  const [value, unit] = baht < 1_000_000 ? [baht / 1000, "K"] : [baht / 1_000_000, "M"];
-  return `฿${Math.round(value * 10) / 10}${unit}`;
+function compactRate(rate: string, symbol: string): string | null {
+  const whole = Math.round(toMinor(rate) / MINOR_UNITS);
+  if (whole <= 0) return null;
+  if (whole < 1000) return `${symbol}${whole}`;
+  const [value, unit] = whole < 1_000_000 ? [whole / 1000, "K"] : [whole / 1_000_000, "M"];
+  return `${symbol}${Math.round(value * 10) / 10}${unit}`;
 }
 
 function monthTitle(month: string, today: string): string {
@@ -251,6 +252,7 @@ export function SquareCalendar({
   onOpen: (id: string) => void;
 }) {
   const condoId = condo?.id;
+  const currency = useCurrency();
   const windowEnd = addMonths(anchor, SQUARE_MONTHS);
 
   const months = useMemo(
@@ -296,7 +298,7 @@ export function SquareCalendar({
     );
   }
 
-  const price = compactBaht(condo.night_rate);
+  const price = compactRate(condo.night_rate, currency.symbol);
 
   return (
     <div className="sq">

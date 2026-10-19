@@ -125,10 +125,23 @@ expensive later, so they are a startup error instead.
 
 ## Things worth knowing
 
-**Money is integer satang.** Never floats. The API speaks baht at its edges
-because that is what the design's inputs show; conversion lives only in
-`backend/app/common/money.py`. `split_evenly()` guarantees prorated shares sum
-exactly to the total, which is what keeps accrual revenue honest.
+**Money is integer minor units** — satang or paise. Never floats. The API
+speaks major units at its edges because that is what the design's inputs show;
+conversion lives only in `backend/app/common/money.py`. `split_evenly()`
+guarantees prorated shares sum exactly to the total, which is what keeps accrual
+revenue honest.
+
+**Currency is per organisation, and it is a label, not a conversion.** Each
+organisation keeps its books in one currency — Thai baht or Indian rupee today —
+chosen in Settings or when the organisation is created. Every label the API
+renders (`night_rate_label`, the dashboard KPIs, the CSV headers) comes out in
+it, resolved by `format_money()` from the same scope that confines queries, so
+no call site passes a currency around and the browser only formats the handful
+of figures it computes itself. Changing it changes the symbol in front of every
+figure and nothing else: the stored integers do not move. Both supported
+currencies have 100 minor units, which is what lets `MINOR_UNITS` stay one
+constant; adding one that does not (JPY) means carrying the exponent per
+organisation first.
 
 **Condo status is derived, never stored.** It comes from today's date against
 that unit's bookings. Only an explicit maintenance flag is persisted.

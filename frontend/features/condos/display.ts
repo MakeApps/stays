@@ -24,11 +24,6 @@ export function specLine(condo: Condo): string {
   return `${beds} · ${condo.bathrooms} bath${size}`;
 }
 
-/** Whole baht, grouped — matches the prototype's money() helper. */
-export function groupBaht(amount: string): string {
-  return Math.round(Number(amount)).toLocaleString("en-US");
-}
-
 /** Lease term → the same DS pill vocabulary the unit statuses use. */
 export const LEASE_META: Record<LeaseStatus, { label: string; pill: string; color: string }> = {
   none: { label: "No lease", pill: "pill", color: "var(--fg-4)" },

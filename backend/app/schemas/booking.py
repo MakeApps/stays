@@ -9,7 +9,7 @@ from typing import Annotated, Literal
 
 from pydantic import BaseModel, ConfigDict, Field, model_validator
 
-from app.common.money import format_thb, to_major, to_minor
+from app.common.money import format_money, to_major, to_minor
 from app.models.booking import Booking, BookingStatus, PricingModeColumn
 from app.services.pricing import PricingMode
 
@@ -196,6 +196,7 @@ class BookingOut(BaseModel):
     total_label: str
     balance_label: str
     night_rate_label: str
+    received_label: str
 
     @staticmethod
     def from_model(booking: Booking, *, condo_name: str, condo_code: str) -> BookingOut:
@@ -226,9 +227,10 @@ class BookingOut(BaseModel):
             received=to_major(booking.received),
             balance=to_major(booking.balance),
             notes=booking.notes,
-            total_label=format_thb(booking.total),
-            balance_label=format_thb(booking.balance),
-            night_rate_label=format_thb(booking.night_rate),
+            total_label=format_money(booking.total),
+            balance_label=format_money(booking.balance),
+            night_rate_label=format_money(booking.night_rate),
+            received_label=format_money(booking.received),
         )
 
 

@@ -22,7 +22,7 @@ from app.auth.permissions import (
 )
 from app.common import activity as activity_helper
 from app.common.api import parse_query
-from app.common.money import format_thb, to_major
+from app.common.money import current_currency, format_money, to_major
 from app.extensions import db
 from app.models.activity_log import ActivityLog
 from app.models.booking import Booking, BookingStatus
@@ -159,7 +159,7 @@ def dashboard() -> Any:
             {
                 "date": day.isoformat(),
                 "amount": str(to_major(amount)),
-                "label": format_thb(amount),
+                "label": format_money(amount),
                 "is_today": day == today,
             }
         )
@@ -205,23 +205,23 @@ def dashboard() -> Any:
                 "vacant": statuses["available"] + statuses["reserved"],
                 "maintenance": statuses["maintenance"],
                 "occupancy_pct": round(occupied / total * 100) if total else 0,
-                "revenue_today": format_thb(revenue_today),
-                "revenue_month": format_thb(revenue_month),
-                "expenses_month": format_thb(expenses_month),
-                "lease_month": format_thb(lease_month),
+                "revenue_today": format_money(revenue_today),
+                "revenue_month": format_money(revenue_month),
+                "expenses_month": format_money(expenses_month),
+                "lease_month": format_money(lease_month),
                 # Lease is a cost of holding the unit; the deposit is not a
                 # cost at all and is deliberately absent from this figure.
-                "net_month": format_thb(revenue_month - lease_month - expenses_month),
-                "deposits_held": format_thb(deposits_held),
+                "net_month": format_money(revenue_month - lease_month - expenses_month),
+                "deposits_held": format_money(deposits_held),
                 "deposits_count": deposits_count,
                 "check_ins_7d": int(check_ins),
                 "check_outs_7d": int(check_outs),
-                "outstanding": format_thb(owed),
+                "outstanding": format_money(owed),
                 "outstanding_count": owed_count,
                 "booked_nights": nights,
-                "avg_per_day": format_thb(revenue_month // span if span else 0),
+                "avg_per_day": format_money(revenue_month // span if span else 0),
                 "best_day": best["date"] if best else None,
-                "best_day_label": best["label"] if best else format_thb(0),
+                "best_day_label": best["label"] if best else format_money(0),
             },
             "occupancy": {
                 "occupied": occupied,
@@ -232,14 +232,14 @@ def dashboard() -> Any:
             # Capital parked with owners. Its own block, never mixed into the
             # revenue/expense/profit figures above it.
             "deposits": {
-                "total_label": format_thb(deposits_held),
+                "total_label": format_money(deposits_held),
                 "count": deposits_count,
                 "items": [
                     {
                         "id": str(c.id),
                         "name": c.name,
                         "code": c.code,
-                        "amount_label": format_thb(states[c.id].outstanding),
+                        "amount_label": format_money(states[c.id].outstanding),
                         "status": states[c.id].status,
                     }
                     for c in sorted(
@@ -255,7 +255,7 @@ def dashboard() -> Any:
                     "lease_end_date": c.lease_end_date.isoformat() if c.lease_end_date else None,
                     "days_remaining": days_remaining(c, today=today),
                     "status": lease_status(c, today=today),
-                    "monthly_lease_label": format_thb(c.monthly_lease_amount),
+                    "monthly_lease_label": format_money(c.monthly_lease_amount),
                 }
                 for c in expiring[:5]
             ],
@@ -268,7 +268,7 @@ def dashboard() -> Any:
                     "check_in": b.check_in.isoformat(),
                     "check_out": b.check_out.isoformat(),
                     "nights": b.nights,
-                    "total_label": format_thb(b.total),
+                    "total_label": format_money(b.total),
                     "payment_status": b.payment_status,
                 }
                 for b in upcoming
@@ -355,7 +355,7 @@ def global_search() -> Any:
                 {
                     "id": str(e.id),
                     "title": e.description,
-                    "subtitle": f"{e.category.name} · {format_thb(e.amount)}",
+                    "subtitle": f"{e.category.name} · {format_money(e.amount)}",
                     "href": f"/expenses?tab=list&edit={e.id}",
                 }
                 for e in expenses
@@ -384,11 +384,14 @@ def export_csv() -> Any:
 
     header: list[str]
     rows: list[list[Any]]
+    # Named in the header rather than in every cell, so the column still
+    # sums in a spreadsheet and the sheet still says what it is in.
+    code = current_currency().code
 
     if params.kind == "bookings":
         header = [
             "Check-in", "Check-out", "Nights", "Guest", "Condo", "Code",
-            "Status", "Payment", "Total (THB)", "Received (THB)", "Balance (THB)",
+            "Status", "Payment", f"Total ({code})", f"Received ({code})", f"Balance ({code})",
         ]
         records = db.session.execute(
             select(
@@ -417,7 +420,7 @@ def export_csv() -> Any:
     elif params.kind == "expenses":
         header = [
             "Date", "Condo", "Code", "Category", "Description", "Vendor",
-            "Reference", "Method", "Status", "Amount (THB)",
+            "Reference", "Method", "Status", f"Amount ({code})",
         ]
         records = db.session.execute(
             select(
@@ -448,9 +451,9 @@ def export_csv() -> Any:
         # outside them, so the exported sheet cannot be summed into a total
         # that treats held capital as a cost.
         header = [
-            "Condo", "Code", "Bookings", "Booked nights", "Revenue (THB)",
-            "Lease cost (THB)", "Operating expenses (THB)", "Net profit (THB)",
-            "Occupancy %", "Lease ends", "Deposit held (THB)", "Deposit status",
+            "Condo", "Code", "Bookings", "Booked nights", f"Revenue ({code})",
+            f"Lease cost ({code})", f"Operating expenses ({code})", f"Net profit ({code})",
+            "Occupancy %", "Lease ends", f"Deposit held ({code})", "Deposit status",
         ]
         finances = _analytics().per_condo(start, end)
         condo_rows = list(db.session.scalars(select(Condo).where(Condo.deleted_at.is_(None))))

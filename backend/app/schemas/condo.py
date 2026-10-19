@@ -173,10 +173,12 @@ class CondoOut(BaseModel):
     images: list[CondoImageOut]
     cover_url: str | None
 
-    # Pre-formatted for the UI so ฿ rendering cannot drift between the two
-    # apps — the design shows "฿1,800", never "1800.00".
+    # Pre-formatted for the UI so money rendering cannot drift between the
+    # two apps — the design shows "฿1,800", never "1800.00" — and so the
+    # organisation's currency is applied in one place.
     night_rate_label: str
     month_rate_label: str
+    cleaning_fee_label: str
 
     @staticmethod
     def from_model(
@@ -187,7 +189,7 @@ class CondoOut(BaseModel):
         deposit: DepositState | None = None,
         today: date | None = None,
     ) -> CondoOut:
-        from app.common.money import format_thb
+        from app.common.money import format_money
         from app.services.lease import deposit_state
 
         images = [
@@ -218,22 +220,23 @@ class CondoOut(BaseModel):
             lease_start_date=condo.lease_start_date,
             lease_end_date=condo.lease_end_date,
             monthly_lease_amount=to_major(condo.monthly_lease_amount),
-            monthly_lease_label=format_thb(condo.monthly_lease_amount),
+            monthly_lease_label=format_money(condo.monthly_lease_amount),
             lease_status=lease_status(condo, today=today),
             lease_days_remaining=days_remaining(condo, today=today),
-            security_deposit_label=format_thb(condo.security_deposit),
+            security_deposit_label=format_money(condo.security_deposit),
             deposit_status=state.status,
             deposit_refunded=to_major(state.refunded),
             deposit_deducted=to_major(state.deducted),
             deposit_outstanding=to_major(state.outstanding),
-            deposit_outstanding_label=format_thb(state.outstanding),
+            deposit_outstanding_label=format_money(state.outstanding),
             address=condo.address,
             description=condo.description,
             status=status,
             images=images,
             cover_url=images[0].url if images else None,
-            night_rate_label=format_thb(condo.night_rate),
-            month_rate_label=format_thb(condo.month_rate),
+            night_rate_label=format_money(condo.night_rate),
+            month_rate_label=format_money(condo.month_rate),
+            cleaning_fee_label=format_money(condo.cleaning_fee),
         )
 
 

@@ -12,7 +12,7 @@ import {
   IncomeIcon,
   PlusIcon,
 } from "@/components/layout/icons";
-import { useCan } from "@/components/providers/Providers";
+import { useCan, useCurrency } from "@/components/providers/Providers";
 import { ChannelDashboardCard } from "@/features/channels/ChannelDashboardCard";
 import { PAY_META } from "@/features/bookings/BookingsScreen";
 import { useDashboard } from "@/features/dashboard/api";
@@ -54,6 +54,7 @@ const DOT: Record<string, string> = {
 export function DashboardScreen() {
   const { data, isLoading } = useDashboard();
   const can = useCan();
+  const currency = useCurrency();
   const [hover, setHover] = useState<number | null>(null);
   const [showDeposits, setShowDeposits] = useState(false);
 
@@ -237,7 +238,7 @@ export function DashboardScreen() {
             </div>
             <div style={{ textAlign: "right", minWidth: 120 }}>
               <div style={{ font: "700 15px/1.2 var(--font-sans)", color: "var(--fg)" }}>
-                {shown?.label ?? "฿0"}
+                {shown?.label ?? `${currency.symbol}0`}
               </div>
               <div className="t-caption">{shown ? dayLabel(shown.date) : ""}</div>
             </div>

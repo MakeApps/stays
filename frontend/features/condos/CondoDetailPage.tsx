@@ -4,7 +4,7 @@ import Link from "next/link";
 import { CalendarIcon, CondoIcon, EditIcon } from "@/components/layout/icons";
 import { CondoFinancePanels } from "@/features/condos/CondoFinancePanels";
 import { LeaseCard } from "@/features/condos/LeaseCard";
-import { STATUS_META, groupBaht, specLine } from "@/features/condos/display";
+import { STATUS_META, specLine } from "@/features/condos/display";
 import type { Condo } from "@/types/api";
 
 /**
@@ -116,7 +116,7 @@ export function CondoDetailPage({ condo }: { condo: Condo }) {
       >
         <Stat label="Per night" value={condo.night_rate_label} tone="purple" />
         <Stat label="Per month" value={condo.month_rate_label} tone="blue" />
-        <Stat label="Cleaning fee" value={`฿${groupBaht(condo.cleaning_fee)}`} tone="green" />
+        <Stat label="Cleaning fee" value={condo.cleaning_fee_label} tone="green" />
       </div>
 
       {/* Lease before the finance panels: what the unit costs to hold frames
